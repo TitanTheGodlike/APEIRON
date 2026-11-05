@@ -2696,6 +2696,14 @@ function webStatic(layer) {
     };
     place(br.start, 0, th0 - span / 2, th0 + span / 2, W.root, th0);
   });
+  // Upgrades can branch from bonus nodes too: about half of the grown chains start from the bonus node just
+  // before the big upgrade they hang from (it always costs less, so prices still rise along every path)
+  for (let i = 0; i < edges.length; i++) {
+    const [x, y] = edges[i], nx = nodes[x], ny = nodes[y];
+    if (!nx || !ny || !ny.gen || nx.gen || nx.type !== 'notable' || hashStr('bonusroot:' + y) % 2) continue;
+    const mid = `m:${layer}:${nx.br}:${x}:2`, m = nodes[mid];
+    if (m && m.costLog <= ny.costLog) { edges[i] = [mid, y]; ny.fromBonus = true; }
+  }
   const adj = {};
   for (const id in nodes) adj[id] = [];
   for (const [x, y] of edges) { adj[x].push(y); adj[y].push(x); }
@@ -3120,7 +3128,7 @@ function buildGuideTab() {
     [() => true, 'Generators', 'Flickers make Quanta every second. Every other generator makes the one below it: Sparks make Flickers, Embers make Sparks, and so on. So a higher tier boosts everything underneath it. There is no last tier: whenever you buy the highest one, a new one appears above it. Your first world is heavy: until you Collapse, every tier makes the one below it much more slowly, and each Collapse halves that weight.'],
     [() => true, 'Resonance', 'Every 10 of a generator you buy multiplies that generator by its Resonance (about ×1.8 at first). Some upgrades make a generator resonate sooner, every 9 bought or fewer. The thin bar under each multiplier shows how close you are to the next 10.'],
     [() => true, 'Clock Speed', 'Multiplies every generator at once. Each level costs more than the last, but it is always worth buying. It starts once you own a Flicker.'],
-    [() => true, 'Upgrades', 'The <b>Upgrade web</b> holds hundreds of upgrades paid in Quanta, in three branches: Light (production), Harmony (resonance and clock) and Cascade (higher tiers and Shards). Buy any node next to one you own; big upgrades link straight to each other and the small bonus nodes between them are optional. Nodes still in the fog cannot be bought yet, and every upgrade costs a bit more than the one before. Until you own Memory (Shard web) the Upgrade web resets when you Collapse; Wholesale (Shard web) adds a <b>Buy all</b> button (key U). A dot on a tab means something there is affordable. <b>Max all</b> (key M) buys as many generators and Clock Speed levels as you can afford.'],
+    [() => true, 'Upgrades', 'The <b>Upgrade web</b> holds hundreds of upgrades paid in Quanta, in three branches: Light (production), Harmony (resonance and clock) and Cascade (higher tiers and Shards). Buy any node next to one you own; big upgrades link straight to each other, and the small bonus nodes between them are detours that some upgrades branch off. Nodes still in the fog cannot be bought yet, and every upgrade costs a bit more than the one before. Until you own Memory (Shard web) the Upgrade web resets when you Collapse; Wholesale (Shard web) adds a <b>Buy all</b> button (key U). A dot on a tab means something there is affordable. <b>Max all</b> (key M) buys as many generators and Clock Speed levels as you can afford.'],
     [() => S.ai.log.length > 0, 'The Architect', 'The game\'s own AI. It talks to you in a speech bubble, writes endless upgrades for every layer (Quanta, Shards, Essence) that grow as diamond nodes in the webs, and names every new generator tier. Each new upgrade is invented when you buy the previous one, shaped by how you play: it builds for your favourite and newest generators, rewards clicking if you click a lot, and rewards idling if you leave the game running.'],
     [shardsVisible, 'Collapse and Shards', 'At 1e25 Quanta you can Collapse: Quanta, generators and Clock Speed reset, and you get Shards. Shards buy upgrades in the <b>Shard tree</b>: start at Fracture, then grow three branches. The first nodes open new things rather than boosting old ones: Fracture starts the Architect’s cards, Forgeworks unlocks the Shard repeatables, Wholesale adds a Buy all button to the Upgrade web and Shard Visions lets the Architect invent Shard ideas. Memory, a little deeper in Clockwork, keeps your Upgrade web through Collapses. Radiance is raw power, Clockwork is speed and automation, Echoes is the Shard economy and the active abilities <b>Surge</b> and <b>Time Fold</b>. At each fork you choose one of two paths. <b>Reshape the tree</b> refunds every Shard so you can try a different build. More Quanta at the moment you Collapse means more Shards.'],
     [autoVisible, 'Automation', 'The Clockwork branch of the Shard web has one autobuyer per generator: Automata I buys Flickers, II buys Sparks, and from Automata IX on every one you own adds the next, so there is always one more. Clockmaker buys Clock Speed; Lightkeeper, Harmonist and Cascader each buy one Upgrade-web node every 15 seconds; Self-Collapse adds Auto-Collapse. Later, the Prism, Gear and Echo Stewards in the Essence web do the same for the Shard web, leaving path choices to you. Configure them all in the Automation tab.'],
@@ -3165,7 +3173,7 @@ function buildUpgTab() {
   T.append(h('h2', {}, 'Upgrade web'));
   const note = h('div', { class: 'muted', style: 'margin:-2px 0 8px' }); T.append(note);
   buildWebView(T, 'q', 'upg');
-  up(() => setT(note, 'Buy any node next to one you own. Big upgrades link straight to each other; the small bonus nodes between them are optional detours. Diamonds are the Architect’s ideas. ' + (hasS('s2') ? 'Memory keeps this web through Collapses.' : 'The web resets when you Collapse until you own Memory (Shard web).')), 'upg');
+  up(() => setT(note, 'Buy any node next to one you own. Big upgrades link straight to each other; the small bonus nodes between them are detours, and some upgrades branch off them. Diamonds are the Architect’s ideas. ' + (hasS('s2') ? 'Memory keeps this web through Collapses.' : 'The web resets when you Collapse until you own Memory (Shard web).')), 'upg');
   const relHead = h('h2', {}, 'Relics');
   const relNote = h('div', { class: 'muted', style: 'margin:-4px 0 8px' }, 'Found through secret achievements. Once bought, a Relic is yours forever.');
   const relGrid = h('div', { class: 'cards' });

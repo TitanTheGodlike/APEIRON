@@ -1,0 +1,10 @@
+# Android build output (the APK is built by GitHub Actions)
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+# copied in at build time from index.html and icon-192.png
+android/app/src/main/assets/
+android/app/src/main/res/mipmap-xxxhdpi/
+# local test helpers
+dev-sim.js

@@ -5,6 +5,10 @@ Apeiron is an idle/incremental browser game about an unfinished world and the AI
 **▶ Play online:** https://titanthegodlike.github.io/APEIRON/
 (or download `index.html` and open it in any modern browser; no install, no internet needed)
 
+**📱 On your phone:**
+- **Android app:** [download Apeiron.apk](https://github.com/TitanTheGodlike/APEIRON/releases/latest/download/Apeiron.apk) and open it. Android asks you to allow installing apps from your browser the first time. The app runs fully offline.
+- **Or install it from the website:** open the Play online link in Chrome (Android) or Safari (iPhone) and choose *Add to Home screen* / *Install app*.
+
 ![The Architect introduces itself](screenshots/intro.jpg)
 
 ## The story

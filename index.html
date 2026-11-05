@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#04050d">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Apeiron</title>
 <style>
 :root{
@@ -281,7 +286,26 @@ body[data-theme=mono] .tier,body[data-theme=mono] .bar10 i{filter:saturate(0)}
 .ach .rwd{margin-top:4px;color:var(--es);font-size:11.5px}
 .orb.poke{cursor:pointer}
 .anom{--c:rgba(var(--esr),.75)!important;border-color:rgba(var(--esr),.3)!important}
-.anom .tier{background:rgba(var(--esr),.15);color:var(--es);border-color:rgba(var(--esr),.5)}@media (max-width:760px){.row{grid-template-columns:1fr 1fr}.res .v{font-size:18px}header{gap:14px}#intro .dlg{font-size:16px}}</style>
+.anom .tier{background:rgba(var(--esr),.15);color:var(--es);border-color:rgba(var(--esr),.5)}@media (max-width:760px){
+  header{padding:8px 10px;gap:8px 12px;padding-top:max(8px,env(safe-area-inset-top))}
+  .title{font-size:0;gap:0;letter-spacing:0}.title .orb{width:26px;height:26px}
+  .res{min-width:0;padding-left:8px}.res .v{font-size:16px}.res .r{font-size:10.5px}.res .lbl{font-size:9.5px}
+  .spacer{display:none}.prestige{width:100%}.btn-big{min-width:0;flex:1;padding:6px 8px;font-size:11px}
+  nav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:0 4px}nav::-webkit-scrollbar{display:none}
+  nav button{padding:10px 9px 9px;font-size:10.5px;white-space:nowrap;flex:none}
+  main{padding:10px 8px}
+  .toolbar .muted{display:none}.pulse{width:auto;flex:1 1 140px}.abil{width:auto;flex:1 1 140px}
+  .row{grid-template-columns:1fr 1fr;gap:6px 10px;padding:8px 10px}
+  .cards{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .treeview{height:68vh}.treehint{display:none}
+  .nodepanel{left:8px;right:8px;top:auto;bottom:8px;width:auto;max-height:46%;overflow:auto}
+  #toasts{left:10px;right:10px;bottom:46px}.toast{max-width:none}
+  .chals{grid-template-columns:1fr}.auto-grid{grid-template-columns:1fr 1fr}
+  #intro .dlg{font-size:16px;padding:18px 18px 30px}#intro .bigorb{width:110px;height:110px;margin-bottom:30px}
+  button{min-height:34px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 <canvas id="stars"></canvas>
@@ -529,10 +553,21 @@ const SUPG = [
   { id: 's8', name: 'Gear Down', cost: 500, desc: 'Clock Speed cost grows ×6 per level instead of ×10.' },
   { id: 's21', name: 'Patient Hands', cost: 2.5e4, desc: 'While you have not touched the game for a minute, Quanta production ×100.' },
   { id: 's22', name: 'Busy Hands', cost: 2.5e4, desc: 'Pulse recharges twice as fast, and for 3 seconds after each Pulse, Quanta production ×100.' },
-  { id: 's4', name: 'Automata I', cost: 2.5e5, auto: true, desc: 'Unlock autobuyers for Flicker–Flare and Clock Speed.' },
+  { id: 'ab0', name: 'Automata I', cost: 3, auto: true, desc: 'An autobuyer for Flickers.' },
+  { id: 'ab1', name: 'Automata II', cost: 8, auto: true, desc: 'An autobuyer for Sparks.' },
+  { id: 'abC', name: 'Clockmaker', cost: 15, auto: true, desc: 'An autobuyer for Clock Speed.' },
+  { id: 'ab2', name: 'Automata III', cost: 20, auto: true, desc: 'An autobuyer for Embers.' },
+  { id: 'ab3', name: 'Automata IV', cost: 60, auto: true, desc: 'An autobuyer for Flares.' },
+  { id: 'ab4', name: 'Automata V', cost: 200, auto: true, desc: 'An autobuyer for Pulsars.' },
+  { id: 'abL', name: 'Lightkeeper', cost: 400, auto: true, desc: 'Automatically buys nodes in the Light branch of the Upgrade web.' },
+  { id: 'ab5', name: 'Automata VI', cost: 700, auto: true, desc: 'An autobuyer for Quasars.' },
+  { id: 'abH', name: 'Harmonist', cost: 1500, auto: true, desc: 'Automatically buys nodes in the Harmony branch of the Upgrade web.' },
+  { id: 'ab6', name: 'Automata VII', cost: 2500, auto: true, desc: 'An autobuyer for Novas.' },
+  { id: 'abK', name: 'Cascader', cost: 5000, auto: true, desc: 'Automatically buys nodes in the Cascade branch of the Upgrade web.' },
+  { id: 'ab7', name: 'Automata VIII', cost: 1e4, auto: true, desc: 'An autobuyer for Rifts.' },
+  { id: 'ab8', name: 'Automata IX', cost: 5e4, auto: true, desc: 'An autobuyer for every generator above Rift.' },
   { id: 's11', name: 'Starseed', cost: 6e6, auto: true, desc: 'Start every Collapse with 1e6 Quanta.' },
-  { id: 's6', name: 'Automata II', cost: 3e8, auto: true, desc: 'Unlock autobuyers for every other generator and for Quanta upgrades.' },
-  { id: 's9', name: 'Self-Collapse', cost: 1.6e10, auto: true, desc: 'Unlock Auto-Collapse.' },
+  { id: 's9', name: 'Self-Collapse', cost: 2e5, auto: true, desc: 'Unlock Auto-Collapse.' },
   { id: 's27', name: 'Overclock III', cost: 2.6e12, desc: 'Clock Speed base +0.03.' },
   { id: 's15', name: 'Refraction', cost: 6e14, desc: 'Quanta production ×1,000.' },
   // Echoes: the Shard economy and active abilities
@@ -740,7 +775,7 @@ function forgeNew(layer) {
   const bits = NAME_BITS[kind];
   const name = (kind === 'tier' ? genDef(tier).name : rnd(bits[0])) + ' ' + rnd(bits[1]);
   const reason = rnd((REASONS[kind] || REASONS.any)(tier));
-  const u = { n, kind, v: forgeValue(layer, kind, n), tier, name, reason };
+  const u = { n, kind, v: forgeValue(layer, kind, n), tier, name, reason, own: false };
   if (WEB_DEF[layer]) { u.branch = ARCH_BRANCH[layer](kind); u.parent = pickParentWeb(layer, u.branch); }
   list.push(u);
   return u;
@@ -765,14 +800,26 @@ function procUpg(layer, n) {
   while (S.forge[layer].length <= n) forgeNew(layer);
   return S.forge[layer][n];
 }
+// how many unbought ideas the Architect keeps on offer at once, spread around the web
+const OPEN_IDEAS = { q: 3, s: 3, e: 1 };
+const ideaOwned = (layer, i) => { const u = S.forge[layer][i]; return !!u && !!u.own; };
+const openIdeas = layer => { const out = []; S.forge[layer].forEach((u, i) => { if (!u.own) out.push(i); }); return out; };
+function ensureOpen(layer) {
+  const made = [];
+  let open = openIdeas(layer).length;
+  while (open < OPEN_IDEAS[layer]) { made.push(forgeNew(layer)); open++; }
+  return made;
+}
+const cheapestOpen = layer => { const o = openIdeas(layer); return o.length ? o[0] : -1; };
+const openAffordable = layer => openIdeas(layer).some(i => S[PROC[layer].cur].log10() >= procCost(layer, i));
 const procCost = (layer, n) => PROC[layer].costLog(n);
 let PROC_AGG = {};
 function procAgg(layer) {
   const cnt = S.proc[layer], c = PROC_AGG[layer];
   if (c && c.cnt === cnt && c.S === S) return c.a;
   const a = { qmult: 0, res: 0, clock: 0, flick: 0, qexp: 0, shard: 0, ess: 0, idle: 0, pulse: 0, tier: {} };
-  for (let n = 0; n < cnt; n++) {
-    const u = procUpg(layer, n);
+  for (const u of S.forge[layer]) {
+    if (!u.own) continue;
     if (u.kind === 'tier') a.tier[u.tier] = (a.tier[u.tier] || 0) + u.v; else a[u.kind] += u.v;
   }
   PROC_AGG[layer] = { cnt, a, S };
@@ -780,14 +827,18 @@ function procAgg(layer) {
 }
 const procSum = k => procAgg('q')[k] + procAgg('s')[k] + procAgg('e')[k];
 const procTier = i => (procAgg('q').tier[i] || 0) + (procAgg('s').tier[i] || 0) + (procAgg('e').tier[i] || 0);
-function buyProc(layer) {
-  const P = PROC[layer], n = S.proc[layer], cost = procCost(layer, n);
+function buyProc(layer, i) {
+  ensureOpen(layer);
+  if (i === undefined) i = cheapestOpen(layer);
+  const P = PROC[layer], u = S.forge[layer][i];
+  if (!u || u.own) return false;
+  const cost = procCost(layer, i);
   if (S[P.cur].log10() < cost) return false;
-  procUpg(layer, n);
   S[P.cur] = S[P.cur].sub(D.fromLog(cost)).max0();
-  S.proc[layer]++;
-  const next = procUpg(layer, n + 1); // the Architect writes the next idea right away
-  if (S.forge[layer].length === n + 2 && n + 1 > S.ai.announced[layer]) { S.ai.announced[layer] = n + 1; aiSay(next.reason + ' “' + next.name + '”: ' + forgeDesc(next)); }
+  u.own = true; S.proc[layer]++;
+  for (const nu of ensureOpen(layer)) { // the Architect writes a new idea right away
+    if (nu.n > S.ai.announced[layer]) { S.ai.announced[layer] = nu.n; aiSay(nu.reason + ' “' + nu.name + '”: ' + forgeDesc(nu)); }
+  }
   return true;
 }
 const streamVisible = l => l === 'q' ? true : l === 's' ? shardsVisible() : ascVisible();
@@ -828,7 +879,7 @@ function aiTick() {
     if (top === 1) aiSay('I am the Architect. Everything here is mine to imagine, and I will keep imagining as long as you keep playing.');
     if (top >= 8) aiSay(rnd(TIER_LINES)(genDef(top).name, genDef(top - 1).name));
   }
-  if (S.stats.bestQ.log10() >= 12 && !S.ai.said.streamQ) { S.ai.said.streamQ = true; procUpg('q', 0); aiSay('I have started writing upgrades for you. Look in Upgrades. There will always be another.'); }
+  if (S.stats.bestQ.log10() >= 12 && !S.ai.said.streamQ) { S.ai.said.streamQ = true; ensureOpen('q'); aiSay('I have started writing upgrades for you. Look in Upgrades. There will always be another.'); }
 }
 const byId = arr => Object.fromEntries(arr.map(u => [u.id, u]));
 const QBY = byId(QUPG), SBY = byId(SUPG), EBY = byId(EUPG);
@@ -854,7 +905,7 @@ function newState() {
     eRep: { amp: 0, expo: 0, magnet: 0 },
     chal: { active: -1, comps: CHALS.map(() => 0) },
     auto: {
-      gens: GEN_FIRST.map(() => true), genHigh: true, clock: true, qupg: true,
+      gens: GEN_FIRST.map(() => true), genHigh: true, clock: true, qupg: true, qb: [true, true, true],
       collapse: { on: false, mode: 'gain', val: '1' },
       ascend: { on: false, val: '1' },
     },
@@ -886,7 +937,8 @@ const momentum = () => Math.min(100, 1 + S.stats.tCollapse / 20);
 const latticeExp = () => hasS('s18') ? 0.7 : hasS('s13') ? 0.55 : 0.4;
 const shardsVisible = () => S.reached.collapse || S.collapses > 0 || S.ascensions > 0;
 const ascVisible = () => S.reached.limit || S.ascensions > 0;
-const autoVisible = () => !!(S.sUpg.s4 || S.sUpg.s6 || S.sUpg.s9 || S.eUpg.e8);
+const AUTOBUYERS = ['ab0', 'ab1', 'ab2', 'ab3', 'ab4', 'ab5', 'ab6', 'ab7', 'ab8', 'abC', 'abL', 'abH', 'abK'];
+const autoVisible = () => AUTOBUYERS.some(id => S.sUpg[id]) || !!S.sUpg.s9 || !!S.eUpg.e8;
 const tierBought = i => S.gens[i] ? S.gens[i].bought : 0;
 const genUnlocked = i => !(inChal(1) && i > 3) && (i === 0 || tierBought(i - 1) > 0 || tierBought(i) > 0);
 
@@ -1066,7 +1118,8 @@ function buyClock(mode) {
   return n;
 }
 function maxAll() {
-  let n = buyClock('max');
+  let n = tierBought(0) === 0 ? buyGen(0, 'max') : 0; // never spend the first Quanta on Clock Speed
+  n += buyClock('max');
   for (let i = S.gens.length - 1; i >= 0; i--) n += buyGen(i, 'max');
   return n;
 }
@@ -1143,7 +1196,7 @@ function resetQLayer() {
   S.q = D.fromNum(hasS('s11') ? 1e6 : 10);
   S.gens = [newGen()];
   S.clock = 0;
-  if (!hasS('s2')) { S.qUpg = {}; S.proc.q = 0; S.minor.q = {}; MINOR_VER++; }
+  if (!hasS('s2')) { S.qUpg = {}; S.proc.q = 0; for (const u of S.forge.q) u.own = false; S.minor.q = {}; MINOR_VER++; }
   S.stats.tCollapse = 0;
   S.run = { clockBought: false, abil: 0, best: S.q.log10() };
 }
@@ -1172,9 +1225,9 @@ function doAscend(quiet = false) {
   // Shard upgrades are permanent; Remembrance also keeps repeatable levels
   if (!hasE('e1')) S.sRep = { forge: 0, tune: 0, prism: 0 };
   S.qUpg = {};
-  if (!hasE('e5')) S.proc.s = 0;
+  if (!hasE('e5')) { S.proc.s = 0; for (const u of S.forge.s) u.own = false; }
   resetQLayer();
-  S.qUpg = {}; S.proc.q = 0; S.minor.q = {}; MINOR_VER++;
+  S.qUpg = {}; S.proc.q = 0; for (const u of S.forge.q) u.own = false; S.minor.q = {}; MINOR_VER++;
   S.stats.tAscend = 0;
   aiEvent('ascend', gain);
   if (!quiet) { flash('rgba(255,210,122,.55)'); sfx('ascend'); if (S.ascensions === 1) toast('You Ascended. Spend Essence in the Ascension tab.', 'es'); }
@@ -1203,14 +1256,11 @@ function completeChal() {
 
 /* ---------------- Automation ---------------- */
 function runAuto() {
-  if (S.sUpg.s4 && S.auto.clock) buyClock('max');
+  if (S.sUpg.abC && S.auto.clock) buyClock('max');
   for (let i = S.gens.length - 1; i >= 0; i--) {
-    const ok = i < 4 ? S.sUpg.s4 : S.sUpg.s6;
-    if (ok && (i < 8 ? S.auto.gens[i] : S.auto.genHigh)) buyGen(i, 'max');
+    if (S.sUpg[i < 8 ? 'ab' + i : 'ab8'] && (i < 8 ? S.auto.gens[i] : S.auto.genHigh)) buyGen(i, 'max');
   }
-  if (S.sUpg.s6 && S.auto.qupg) {
-    webAutoBuy('q');
-  }
+  ['abL', 'abH', 'abK'].forEach((id, b) => { if (S.sUpg[id] && S.auto.qb[b]) webAutoBuy('q', 20, b); });
   if (S.sUpg.s9 && S.auto.collapse.on && S.chal.active < 0 && canCollapse()) {
     const a = S.auto.collapse, v = D.fromStr(a.val || '0');
     let go = false;
@@ -1658,10 +1708,10 @@ function buildHeader() {
 /* ---------------- Nav ---------------- */
 const TABS = [
   ['gen', 'Generators', () => true, () => false],
-  ['upg', 'Upgrades', () => true, () => QUPG.some(u => !S.qUpg[u.id] && lq() >= u.cost) || (streamVisible('q') && lq() >= procCost('q', S.proc.q))],
-  ['shard', 'Shards', shardsVisible, () => SUPG.some(u => !S.sUpg[u.id] && S.shards.gte(u.cost)) || (streamVisible('s') && S.shards.log10() >= procCost('s', S.proc.s))],
+  ['upg', 'Upgrades', () => true, () => QUPG.some(u => !S.qUpg[u.id] && lq() >= u.cost) || openAffordable('q')],
+  ['shard', 'Shards', shardsVisible, () => SUPG.some(u => !S.sUpg[u.id] && S.shards.gte(u.cost)) || (shardsVisible() && openAffordable('s'))],
   ['auto', 'Automation', autoVisible, () => false],
-  ['asc', 'Ascension', ascVisible, () => EUPG.some(u => !S.eUpg[u.id] && S.essence.gte(u.cost)) || (streamVisible('e') && S.essence.log10() >= procCost('e', S.proc.e))],
+  ['asc', 'Ascension', ascVisible, () => EUPG.some(u => !S.eUpg[u.id] && S.essence.gte(u.cost)) || (streamVisible('e') && openAffordable('e'))],
   ['chal', 'Challenges', () => hasE('e3'), () => false],
   ['arch', 'Architect', () => tutorialDone(), () => S.ai.total > S.ai.seen],
   ['ach', 'Achievements', () => true, () => false],
@@ -1871,7 +1921,7 @@ const WEB_DEF = {
     ring: { kind: 'qmult', v: L10(1.15), text: 'Quanta production ×1.15' },
     branches: [
       { name: 'Radiance', sub: 'raw power', angle: -150, start: 's3', links: [['s3', 's7'], ['s3', 's12'], ['s3', 's13'], ['s7', ['s19', 's20']], [['s19', 's20'], 's17'], ['s12', 's14'], ['s14', 's16'], ['s16', 's28'], ['s13', 's18']], minor: { kind: 'qmult', v: L10(1.25), text: 'Quanta production ×1.25' } },
-      { name: 'Clockwork', sub: 'speed and automation', angle: -30, start: 's2', links: [['s2', 's4'], ['s2', 's8'], ['s4', 's11'], ['s4', 's6'], ['s6', 's9'], ['s8', ['s21', 's22']], [['s21', 's22'], 's27'], ['s27', 's15']], minor: { kind: 'clock', v: 0.001, text: 'Clock Speed base +0.001' } },
+      { name: 'Clockwork', sub: 'speed and automation', angle: -30, start: 's2', links: [['s2', 'ab0'], ['s2', 's8'], ['ab0', 'ab1'], ['ab1', 'abC'], ['ab1', 'ab2'], ['ab2', 'ab3'], ['ab3', 's11'], ['ab3', 'ab4'], ['ab4', 'abL'], ['abL', 'abH'], ['abH', 'abK'], ['ab4', 'ab5'], ['ab5', 'ab6'], ['ab6', 'ab7'], ['ab7', 'ab8'], ['ab7', 's9'], ['s8', ['s21', 's22']], [['s21', 's22'], 's27'], ['s27', 's15']], minor: { kind: 'clock', v: 0.001, text: 'Clock Speed base +0.001' } },
       { name: 'Echoes', sub: 'Shards and abilities', angle: 90, start: 's5', links: [['s5', 's25'], ['s5', ['s23', 's24']], ['s25', 's26'], ['s26', 's31'], ['s26', 's30'], [['s23', 's24'], 's10'], ['s10', 's29']], minor: { kind: 'shard', v: L10(1.05), text: 'Shard gain ×1.05' } },
     ] },
 };
@@ -1963,24 +2013,6 @@ function webStatic(layer) {
     };
     place(br.start, 0, th0 - span / 2, th0 + span / 2, W.root, th0);
   });
-  // neighbouring branches link by arcs that bow outward around the centre; their bonus loops sit outside the arcs
-  const nb = W.branches.length;
-  for (let b = 0; b < nb; b++) {
-    const b2 = (b + 1) % nb;
-    let a1 = W.branches[b].angle, a2 = W.branches[b2].angle; if (a2 < a1) a2 += 360;
-    const mid = (a1 + a2) / 2 * Math.PI / 180, A0 = ids(W.branches[b].start), B0 = ids(W.branches[b2].start);
-    for (const x of A0) for (const y of B0) link(x, y, true);
-    loop(`r:${layer}:${b}`, A0, B0, [polar(mid - 0.2, R(0) * 1.75), polar(mid + 0.2, R(0) * 1.75)], () => ({ br: -1, eff: W.ring }));
-    // a second arc further out, between the depth-2 nodes that face each other across the gap
-    const facing = (bb, dirSign) => { const c = placed.filter(x => x.b === bb && x.depth === 2); if (!c.length) return null; return c.reduce((m, x) => (dirSign > 0 ? x.ang > m.ang : x.ang < m.ang) ? x : m).g; };
-    const A = facing(b, 1), B = facing(b2, -1);
-    if (A && B) {
-      for (const x of A) for (const y of B) link(x, y, true);
-      const rr = R(2) * 1.55;
-      loop(`b:${layer}:${b}`, A, B, [polar(mid - 0.14, rr), polar(mid, rr * 1.05), polar(mid + 0.14, rr)],
-        k => k < 2 ? { br: b, eff: W.branches[b].minor } : k > 2 ? { br: b2, eff: W.branches[b2].minor } : { br: -1, eff: W.ring });
-    }
-  }
   const adj = {};
   for (const id in nodes) adj[id] = [];
   for (const [x, y] of edges) { adj[x].push(y); adj[y].push(x); }
@@ -2021,7 +2053,7 @@ function webNode(layer, id) {
   return webStatic(layer).nodes[id] || null;
 }
 function webOwned(layer, n) {
-  if (n.type === 'arch') return n.arch < S.proc[layer];
+  if (n.type === 'arch') return ideaOwned(layer, n.arch);
   if (n.type === 'minor') return !!S.minor[layer][n.id];
   return WEB_DEF[layer].owned(n.upg);
 }
@@ -2029,8 +2061,8 @@ const webForked = (layer, n) => layer === 's' && n.type === 'notable' && sForkTa
 function webAvail(layer, n) {
   if (webOwned(layer, n) || webForked(layer, n)) return false;
   if (n.type === 'root') return true;
-  if (n.type === 'arch') { const p = webNode(layer, n.parent || WEB_DEF[layer].root); return n.arch === S.proc[layer] && !!p && webOwned(layer, p); }
-  if (n.connector !== undefined) { if (n.connector > S.proc[layer]) return false; const p = webNode(layer, n.parent || WEB_DEF[layer].root), a = webNode(layer, 'a' + n.connector); return (!!p && webOwned(layer, p)) || (!!a && webOwned(layer, a)); }
+  if (n.type === 'arch') { const p = webNode(layer, n.parent || WEB_DEF[layer].root); return !!p && webOwned(layer, p); }
+  if (n.connector !== undefined) { if (!S.forge[layer][n.connector]) return false; const p = webNode(layer, n.parent || WEB_DEF[layer].root), a = webNode(layer, 'a' + n.connector); return (!!p && webOwned(layer, p)) || (!!a && webOwned(layer, a)); }
   const st = webStatic(layer);
   for (const nb of st.adj[n.id]) if (webOwned(layer, st.nodes[nb])) return true;
   return false;
@@ -2041,25 +2073,24 @@ function webBuy(layer, id) {
   if (!n || !webAvail(layer, n)) return false;
   const W = WEB_DEF[layer], cost = webCostLog(layer, n);
   if (S[W.cur].log10() < cost) return false;
-  if (n.type === 'arch') return buyProc(layer);
+  if (n.type === 'arch') return buyProc(layer, n.arch);
   if (n.type === 'minor') { S[W.cur] = S[W.cur].sub(D.fromLog(cost)).max0(); S.minor[layer][n.id] = true; MINOR_VER++; return true; }
   return layer === 'q' ? buyQ(n.upg) : buyS(n.upg);
 }
 function webFrontier(layer) {
   const st = webStatic(layer), out = [];
   for (const id in st.nodes) { const n = st.nodes[id]; if (webAvail(layer, n)) out.push(n); }
-  for (let i = 0; i <= S.proc[layer]; i++) { const x = webNode(layer, 'c' + i); if (x && webAvail(layer, x)) out.push(x); }
-  { const x = webNode(layer, 'a' + S.proc[layer]); if (x && webAvail(layer, x)) out.push(x); }
+  for (let i = 0; i < S.forge[layer].length; i++) for (const id of ['c' + i, 'a' + i]) { const x = webNode(layer, id); if (x && webAvail(layer, x)) out.push(x); }
   return out;
 }
 // buy the cheapest affordable nodes next to what you own (used by the Quanta upgrade autobuyer)
-function webAutoBuy(layer, max = 40) {
+function webAutoBuy(layer, max = 40, branch) {
   const cur = WEB_DEF[layer].cur;
   let bought = 0;
-  if (S.forge[layer].length <= S.proc[layer]) procUpg(layer, S.proc[layer]);
+  ensureOpen(layer);
   for (let g = 0; g < max; g++) {
     let best = null, bc = Infinity;
-    for (const n of webFrontier(layer)) { const c = webCostLog(layer, n); if (c < bc) { bc = c; best = n; } }
+    for (const n of webFrontier(layer)) { if (branch !== undefined && n.br !== branch && n.type !== 'root') continue; const c = webCostLog(layer, n); if (c < bc) { bc = c; best = n; } }
     if (!best || S[cur].log10() < bc || !webBuy(layer, best)) break;
     bought++;
   }
@@ -2070,7 +2101,10 @@ function pickParentWeb(layer, b) {
   const st = webStatic(layer), cands = [];
   for (const id in st.nodes) { const n = st.nodes[id]; if (n.br === b && isBig(n) && webOwned(layer, n)) cands.push(id); }
   const list = S.forge[layer];
-  for (let i = 0; i < list.length && i < S.proc[layer]; i++) if (list[i].branch === b) cands.push('a' + i);
+  for (let i = 0; i < list.length; i++) if (list[i].branch === b && list[i].own) cands.push('a' + i);
+  const busy = new Set(list.filter(u => !u.own).map(u => u.parent));
+  const free = cands.filter(c => !busy.has(c));
+  if (free.length) return Math.random() < 0.5 ? free[free.length - 1] : rnd(free);
   if (!cands.length) return W.root;
   return Math.random() < 0.6 ? cands[cands.length - 1] : rnd(cands);
 }
@@ -2078,8 +2112,8 @@ function pickParentWeb(layer, b) {
 const WEB_CACHE = {}, WEB_POS = { q: {}, s: {} };
 function webGraph(layer) {
   const st = webStatic(layer), W = WEB_DEF[layer];
-  if (S.forge[layer].length <= S.proc[layer]) procUpg(layer, S.proc[layer]);
-  const nArch = Math.min(S.forge[layer].length, S.proc[layer] + 1), c = WEB_CACHE[layer];
+  ensureOpen(layer);
+  const nArch = S.forge[layer].length, c = WEB_CACHE[layer];
   if (c && c.nArch === nArch && c.S === S) return c;
   const pos = WEB_POS[layer];
   if (!c || c.S !== S) for (const k in pos) if (/^a\d+$/.test(k)) delete pos[k];
@@ -2193,9 +2227,21 @@ function buildWebView(T, layer, tabId) {
     if (sx < 60 || sx > Wd - 300 || sy < 60 || sy > Hd - 60) animateTo({ k: view.k, x: (Wd - 270) / 2 - p[0] * view.k, y: Hd / 2 - p[1] * view.k });
   }
   let drag = null;
-  svg.addEventListener('pointerdown', e => { if (e.button !== 0 || e.target.closest('.tn')) return; anim = null; drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, moved: 0 }; svg.setPointerCapture(e.pointerId); wrap.classList.add('dragging'); });
-  svg.addEventListener('pointermove', e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.moved = Math.max(drag.moved, Math.abs(dx) + Math.abs(dy)); view.x = drag.vx + dx; view.y = drag.vy + dy; apply(); });
-  const endDrag = () => { if (drag && drag.moved < 4) sel = null; drag = null; wrap.classList.remove('dragging'); };
+  const touches = new Map(); let pinch = null;
+  svg.addEventListener('pointerdown', e => {
+    touches.set(e.pointerId, [e.clientX, e.clientY]);
+    if (touches.size === 2) { const [p, q] = [...touches.values()]; pinch = { d: Math.hypot(p[0] - q[0], p[1] - q[1]) || 1, k: view.k, x: view.x, y: view.y, mx: (p[0] + q[0]) / 2, my: (p[1] + q[1]) / 2 }; drag = null; anim = null; return; }
+    if (e.button !== 0 || e.target.closest('.tn')) return; anim = null; drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, moved: 0 }; svg.setPointerCapture(e.pointerId); wrap.classList.add('dragging');
+  });
+  svg.addEventListener('pointermove', e => {
+    if (touches.has(e.pointerId)) touches.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pinch && touches.size >= 2) {
+      const [p, q] = [...touches.values()], r = svg.getBoundingClientRect(), k2 = Math.max(0.12, Math.min(2.5, pinch.k * (Math.hypot(p[0] - q[0], p[1] - q[1]) / pinch.d)));
+      const cx = pinch.mx - r.left, cy = pinch.my - r.top, mx = (p[0] + q[0]) / 2 - pinch.mx, my = (p[1] + q[1]) / 2 - pinch.my;
+      view.k = k2; view.x = cx - (cx - pinch.x) * (k2 / pinch.k) + mx; view.y = cy - (cy - pinch.y) * (k2 / pinch.k) + my; apply(); return;
+    }
+    if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.moved = Math.max(drag.moved, Math.abs(dx) + Math.abs(dy)); view.x = drag.vx + dx; view.y = drag.vy + dy; apply(); });
+  const endDrag = e => { if (e && touches.has(e.pointerId)) touches.delete(e.pointerId); if (touches.size < 2) pinch = null; if (drag && drag.moved < 4) sel = null; drag = null; wrap.classList.remove('dragging'); };
   svg.addEventListener('pointerup', endDrag); svg.addEventListener('pointercancel', endDrag);
   svg.addEventListener('wheel', e => { e.preventDefault(); const r = svg.getBoundingClientRect(); zoomBy(e.deltaY < 0 ? 1.12 : 1 / 1.12, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
   const buyPath = id => { const path = webPath(layer, id); if (!path || !path.length) return 0; let n = 0; for (const pid of path) { if (!webBuy(layer, pid)) break; n++; } return n; };
@@ -2238,7 +2284,7 @@ function buildWebView(T, layer, tabId) {
       body.append(shape);
       if (n.type !== 'minor') { body.append(sv('circle', { class: 'tcore', r: n.type === 'root' ? 9 : 5 })); const lbl = sv('text', { class: 'tl', y: r + 16 }); lbl.textContent = webInfo(layer, n).name; body.append(lbl); }
       g.append(body);
-      if (grown && ((n.type === 'arch' && n.arch === G.nArch - 1) || n.connector === G.nArch - 1)) g.classList.add('fresh');
+      if (grown >= 0 && ((n.type === 'arch' && n.arch >= grown) || (n.connector !== undefined && n.connector >= grown))) g.classList.add('fresh');
       g.addEventListener('click', e => { e.stopPropagation(); sel = id; });
       g.addEventListener('dblclick', e => { e.stopPropagation(); sel = id; sfx(buyPath(id) ? 'upgrade' : 'fail'); });
       g.addEventListener('pointerenter', () => { hover = id; });
@@ -2251,7 +2297,7 @@ function buildWebView(T, layer, tabId) {
   let distKey = '', dist = {};
   up(() => {
     const G = webGraph(layer);
-    if (builtG !== G) { const grown = builtG && builtG.S === S && G.nArch > builtG.nArch; if (!builtG || builtG.S !== S) shown = {}; rebuild(grown); if (grown) reveal('a' + (G.nArch - 1)); builtG = G; }
+    if (builtG !== G) { const grown = builtG && builtG.S === S && G.nArch > builtG.nArch ? builtG.nArch : -1; if (!builtG || builtG.S !== S) shown = {}; rebuild(grown); if (grown >= 0) reveal('a' + (G.nArch - 1)); builtG = G; }
     // hop distance from what you own (drives the fog of the unexplored web)
     const ownedIds = []; for (const id in G.nodes) if (webOwned(layer, G.nodes[id])) ownedIds.push(id);
     const key = ownedIds.join(',') + '|' + G.nArch;
@@ -2318,7 +2364,7 @@ function buildStream(T, layer, kind, title, tabId) {
     shown = n; shownS = S; shownNote = note;
     for (const el of owned) el.remove();
     owned.length = 0;
-    const list = S.forge[layer].slice(0, n).reverse(), cap = showAll ? list.length : 24;
+    const list = S.forge[layer].filter(x => x.own).reverse(), cap = showAll ? list.length : 24;
     for (const u of list.slice(0, cap)) {
       const el = h('div', { class: 'card bought ' + kind }, h('div', { class: 'n' }, u.name), h('div', { class: 'd' }, forgeDesc(u)), h('div', { class: 'why' }, '“' + u.reason + '”'), h('div', { class: 'c' }, 'Owned'));
       grid.append(el); owned.push(el);
@@ -2328,7 +2374,7 @@ function buildStream(T, layer, kind, title, tabId) {
   }, tabId);
   up(() => {
     const vis = streamVisible(layer); show(wrap, vis); if (!vis) return;
-    const n = S.proc[layer], u = procUpg(layer, n), cost = procCost(layer, n), can = S[P.cur].log10() >= cost;
+    ensureOpen(layer); const n = cheapestOpen(layer), u = S.forge[layer][n], cost = procCost(layer, n), can = S[P.cur].log10() >= cost;
     setT(n1, u.name); setT(d1, forgeDesc(u)); setT(r1, '“' + u.reason + '”'); setT(c1, 'Cost: ' + fmt(D.fromLog(cost)) + ' ' + P.curName);
     setC(cur, 'can', can); setDis(bmax, !can);
     setT(sub, 'Written by the Architect, there is always another' + (layer === 'q' && !hasS('s2') ? ' · lost on Collapse until you own Memory' : ''));
@@ -2368,7 +2414,7 @@ function buildGuideTab() {
     [() => true, 'Upgrades', 'One-time boosts paid in Quanta. A dot on a tab means something there is affordable. <b>Max all</b> (key M) buys as many generators and Clock Speed levels as you can afford.'],
     [() => S.ai.log.length > 0, 'The Architect', 'The game\'s own AI. It writes endless upgrades for every layer (Quanta, Shards, Essence) and names every new generator tier. Each new upgrade is invented when you buy the previous one, shaped by how you play: it builds for your favourite and newest generators, rewards clicking if you click a lot, and rewards idling if you leave the game running.'],
     [shardsVisible, 'Collapse and Shards', 'At 1e25 Quanta you can Collapse: Quanta, generators and Clock Speed reset, and you get Shards. Shards buy upgrades in the <b>Shard tree</b>: start at Fracture, then grow three branches. Radiance is raw power, Clockwork is speed and automation, Echoes is the Shard economy and the active abilities <b>Surge</b> and <b>Time Fold</b>. At each fork you choose one of two paths. <b>Reshape the tree</b> refunds every Shard so you can try a different build. More Quanta at the moment you Collapse means more Shards.'],
-    [autoVisible, 'Automation', 'The Clockwork branch of the Shard tree unlocks autobuyers for generators, Clock Speed and upgrades, and later Auto-Collapse. Until then, everything is in your hands. Configure them in the Automation tab.'],
+    [autoVisible, 'Automation', 'The Clockwork branch of the Shard web has one autobuyer per generator (Automata I buys Flickers, II buys Sparks, and so on), one for Clock Speed, one each for the Light, Harmony and Cascade branches of the Upgrade web, and later Auto-Collapse. Configure them in the Automation tab.'],
     [ascVisible, 'The Limit and Ascension', 'Quanta stops at 1e308, the Limit. There you can Ascend: Quanta, generators, Shards and Shard repeatables reset, but Shard upgrades stay and you gain Essence. Spend your first Essence on <b>Unbounded</b> to break the Limit for good. Past it, every order of magnitude is a little harder to reach (dampening), but the Architect starts gathering <b>Inspiration</b>: Quanta production ×10 every 30 seconds, forever, so you never stop moving.'],
     [() => hasE('e3'), 'Challenges', 'Runs with a handicap. Reach the goal to complete one; every Challenge can be completed again and again with a higher goal and a stronger reward.'],
     [() => SECRETS.some(s => S.ach[s.id]), 'Secrets', 'Some achievements are hidden. Each one shows only a hint until you earn it, and each unlocks something special: a <b>Relic</b> (a permanent upgrade in the Upgrades tab) or an <b>Anomaly</b> (a generator in the Generators tab that never resets). Pay attention to the hints, and to odd things you might try.'],
@@ -2450,10 +2496,10 @@ function buildAutoTab() {
   };
   const b1 = h('div', { class: 'auto-box' }, h('h2', { style: 'margin-top:0' }, 'Autobuyers'));
   const g = h('div', { class: 'auto-grid' });
-  GEN_FIRST.forEach((G, i) => g.append(chk(G.name, () => S.auto.gens[i], v => S.auto.gens[i] = v, () => i < 4 ? !!S.sUpg.s4 : !!S.sUpg.s6)));
-  g.append(chk('Tier 9 and above', () => S.auto.genHigh, v => S.auto.genHigh = v, () => !!S.sUpg.s6));
-  g.append(chk('Clock Speed', () => S.auto.clock, v => S.auto.clock = v, () => !!S.sUpg.s4));
-  g.append(chk('Quanta upgrades', () => S.auto.qupg, v => S.auto.qupg = v, () => !!S.sUpg.s6));
+  GEN_FIRST.forEach((G, i) => g.append(chk(G.name, () => S.auto.gens[i], v => S.auto.gens[i] = v, () => !!S.sUpg['ab' + i])));
+  g.append(chk('Tier 9 and above', () => S.auto.genHigh, v => S.auto.genHigh = v, () => !!S.sUpg.ab8));
+  g.append(chk('Clock Speed', () => S.auto.clock, v => S.auto.clock = v, () => !!S.sUpg.abC));
+  ['Light', 'Harmony', 'Cascade'].forEach((nm, b) => g.append(chk(nm + ' upgrades', () => S.auto.qb[b], v => S.auto.qb[b] = v, () => !!S.sUpg[['abL', 'abH', 'abK'][b]])));
   b1.append(g, h('div', { class: 'muted' }, 'Autobuyers buy the maximum every tick.'));
   T.append(b1);
 
@@ -2590,8 +2636,9 @@ function buildStatsGraph(T) {
       tip.style.display = 'block'; tip.style.left = Math.min(Wd - 170, x + 12) + 'px';
     } else tip.style.display = 'none';
   }
-  cv.addEventListener('mousemove', e => { hx = e.offsetX; draw(); });
-  cv.addEventListener('mouseleave', () => { hx = null; draw(); });
+  cv.addEventListener('pointermove', e => { hx = e.offsetX; draw(); });
+  cv.addEventListener('pointerdown', e => { hx = e.offsetX; draw(); });
+  cv.addEventListener('pointerleave', () => { hx = null; draw(); });
   up(() => { const k = S.hist.t.length + '|' + S.settings.ui.theme + '|' + box.clientWidth + '|' + JSON.stringify(on); if (k !== key) { key = k; draw(); } }, 'stats');
 }
 function buildStatsTab() {
@@ -2755,11 +2802,18 @@ function init() {
   }
   S.last = Date.now();
   S.ai.lastInput = S.stats.time;
+  // older saves: ideas were bought in order; Automata I/II became individual autobuyers
+  for (const l of ['q', 's', 'e']) S.forge[l].forEach((u, i) => { if (u.own === undefined) u.own = i < S.proc[l]; });
+  if (S.sUpg.s4) { for (const id of ['ab0', 'ab1', 'ab2', 'ab3', 'abC']) S.sUpg[id] = true; delete S.sUpg.s4; }
+  if (S.sUpg.s6) { for (const id of ['ab4', 'ab5', 'ab6', 'ab7', 'ab8', 'abL', 'abH', 'abK']) S.sUpg[id] = true; delete S.sUpg.s6; }
   applyUI();
   if (!S.introSeen) playIntro();
   setTab(TABS.some(t => t[0] === S.settings.tab) ? S.settings.tab : 'gen');
   setInterval(frame, 50);
   window.addEventListener('beforeunload', save);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) save(); }); // phones often close apps without unloading
+  // work offline once visited (only on the real site; not on local test servers or the Android app)
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { });
   startStars();
 }
 

@@ -41,7 +41,7 @@ The story unfolds in full-screen talks with the Architect at the big moments of 
 - **A sky that comes alive.** Behind the game is a view from the Earth. The night fills in as you climb the generator ladder: embers from a campfire, hills, the Moon, shooting stars, the Milky Way, mountains. The further you get into the Essence web, the closer the day comes, until the very last upgrade: Bright Blue Sky.
 - **Make it yours.** Six color themes, adjustable UI size, compact layout, and toggles for the starfield, animations, generator colors and pop-ups.
 - **Steady pacing.** Progress is meant to unfold over hours, not explode in minutes.
-- **Plays while you're away.** Offline progress at 20% speed, autosave and save export/import.
+- **Plays while you're away.** Offline progress at 10% speed, autosave and save export/import.
 - **Plenty to work toward.** 72 achievements reaching far past the Limit, 22 secrets, four number notations, a narrated tutorial, an in-game Guide and a progress graph in Statistics.
 - **Feels good to click.** Mechanical click-clack button sounds and action sounds, all synthesized in the browser (adjustable or off in Options).
 

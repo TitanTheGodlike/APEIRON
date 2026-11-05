@@ -564,7 +564,7 @@ const CFG = {
   inspireSec: 60,     // Inspiration: x10 Quanta production for every this many seconds spent past the Limit in this Ascension
   damp: 0.82,         // past the Limit every order of magnitude is harder: the part above 1e308 is raised to this power
   clock0: 1.7,        // log10 first Clock Speed cost (50)
-  offlineRate: 0.2,   // time away (game closed, or a paused phone app) counts at 20% speed
+  offlineRate: 0.1,   // time away (game closed, or a paused phone app) counts at 10% speed
   keeperCd: 5,        // seconds between purchases of each Upgrade-web keeper (Lightkeeper, Harmonist, Cascader)
   clockScale: 12,     // Clock cost growth doubles every 12 levels
   genScale: 60,       // generator cost growth doubles every 60 bought
@@ -1850,7 +1850,7 @@ const SAVE_KEY = 'apeiron.save.v1';
 // Big updates bump SAVE_VER and add a line here. A save from before one gets a one-time notice offering a fresh start.
 const SAVE_VER = 5;
 const BIG_UPDATES = [
-  { v: 2, what: 'over 400 upgrades across the three webs, cards from the Architect, a much slower opening, a Shard web that starts with unlocks, upgrades that come one at a time, Ascension that resets the Shard web, and offline progress at 20% speed' },
+  { v: 2, what: 'over 400 upgrades across the three webs, cards from the Architect, a much slower opening, a Shard web that starts with unlocks, upgrades that come one at a time, Ascension that resets the Shard web, and slower offline progress' },
   { v: 3, what: 'the story: full-screen chapters with the Architect at the big moments (hear them again in the Architect tab, under Story), and Overgrowth that branches into many more lines' },
   { v: 4, what: 'Wonders, a fourth branch of the Essence web full of unlocks (Boons each Ascension, the Nova ability, Reflex, Heartbeat, bigger hands of cards, Afterglow, Reliquary), Anomalies bought again after every Ascension like Relics, and upgrade keepers that buy every 5 seconds' },
   { v: 5, what: 'Inspiration (from Apeiron) now only builds while your Quanta is past the Limit and starts over with every Ascension, so a new world climbs to the Limit again instead of racing through in minutes; and a new dawn in the sky after every Ascension' },
@@ -3797,7 +3797,7 @@ function buildGuideTab() {
     [ascVisible, 'Wonders', 'The fourth branch of the Essence web unlocks new things to do. <b>Observatory</b>: with every Ascension you choose a <b>Boon</b> that lasts until the next one (Twin Stars lets you keep two, Wide Sky adds a choice and makes them stronger). <b>Nova</b> is a third ability (key N): Quanta production to the power 1.04 for 20 seconds. <b>Reflex</b> fires your abilities as soon as they are ready, <b>Heartbeat</b> presses Pulse every 3 seconds, <b>Full House</b> and <b>Second Hand</b> improve your cards, <b>Afterglow</b> starts every Collapse with your first ten generators, <b>Reliquary</b> keeps Relics and Anomalies through Ascension, at the far end, very dear, <b>Wind in Your Face</b> sets a wind blowing through the whole game (Quanta production exponent +0.03, abilities recharge twice as fast), and the very last upgrade, <b>Bright Blue Sky</b>, ends the long night. Watch the sky behind the game: the night fills in as you climb the generator ladder, and the further you get into the Essence web, the closer the day comes.'],
     [() => SECRETS.some(s => S.ach[s.id]), 'Secrets', 'Some achievements are hidden. Each one shows only a hint until you earn it, and each unlocks something special: a <b>Relic</b> (an upgrade in the Upgrades tab that you buy again after every Ascension) or an <b>Anomaly</b> (a generator in the Generators tab that ignores Collapse; you buy it again after every Ascension, until Reliquary). Pay attention to the hints, and to odd things you might try.'],
     [() => true, 'Appearance', 'Options → Appearance lets you change the color theme, the UI size, and turn the starfield, animations, rainbow generator colors and pop-up notifications on or off.'],
-    [() => true, 'Saving','The game saves itself every 10 seconds in this browser and keeps progressing while you are away, at 20% speed. After a big update, an older save gets a one-time notice offering a fresh start; your save keeps working either way. Use Options → Export to make a backup.'],
+    [() => true, 'Saving','The game saves itself every 10 seconds in this browser and keeps progressing while you are away, at 10% speed. After a big update, an older save gets a one-time notice offering a fresh start; your save keeps working either way. Use Options → Export to make a backup.'],
   ];
   for (const [vis, title, body] of sections) {
     const el = h('div', {}, h('h2', {}, title), h('div', { class: 'info', html: body }));

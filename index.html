@@ -2563,20 +2563,22 @@ function growWebs() {
   // the hand-written kind upgrades (kx) join the list first
   for (const layer of ['q', 's', 'e']) for (const u of LISTS[layer]) if (u.kind) { KIND_UPG[layer].push(u); if (!u.desc) u.desc = growDesc(u); u.eff = kindEff(u); }
   const names = new Set([].concat(QUPG, SUPG, EUPG).map(u => u.name));
-  for (const layer of ['q', 's', 'e']) {
-    const W = WEB_DEF[layer], cfg = GROW[layer], rng = mulberry(hashStr('grow:' + layer));
+  // one pass of growth over a web: count upgrades per branch, seeded, numbered on from k0
+  const pass = (layer, count, seed, k0, pickAnchors) => {
+    const W = WEB_DEF[layer], cfg = GROW[layer], rng = mulberry(hashStr(seed + layer));
     const pick = a => a[Math.floor(rng() * a.length)];
     const costLog = id => W.costLog(id);
     let maxC = 0; for (const br of W.branches) for (const l of br.links) for (const id of [].concat(l[0], l[1])) maxC = Math.max(maxC, costLog(id));
-    let k = 0;
+    let k = k0;
     W.branches.forEach((br, b) => {
       const ids = []; for (const l of br.links) for (const id of [].concat(l[0], l[1])) if (!ids.includes(id)) ids.push(id);
-      if (layer === 's' && b === 1) { ids.splice(ids.indexOf('sB'), 1); ids.splice(ids.indexOf('s2'), 1); ids.unshift('s2'); } // Wholesale came later: same anchors as before
-      const anchors = ids.slice(), wts = cfg.kinds[b], made = [];
+      if (!pickAnchors && layer === 's' && b === 1) { ids.splice(ids.indexOf('sB'), 1); ids.splice(ids.indexOf('s2'), 1); ids.unshift('s2'); } // Wholesale came later: same anchors as before
+      const anchors = (pickAnchors ? pickAnchors(ids, br) : ids).slice(), wts = cfg.kinds[b], made = [];
+      if (!anchors.length) return;
       for (let i = anchors.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [anchors[i], anchors[j]] = [anchors[j], anchors[i]]; }
       let a = 0;
-      while (made.length < cfg.n) {
-        const anchor = anchors[a++ % anchors.length], len = Math.min(cfg.n - made.length, 1 + Math.floor(rng() * 3));
+      while (made.length < count) {
+        const anchor = anchors[a++ % anchors.length], len = Math.min(count - made.length, 1 + Math.floor(rng() * 3));
         let prev = anchor, c = costLog(anchor);
         for (let j = 0; j < len; j++) {
           // the next price: a little above the one before (Quanta costs are already logs)
@@ -2613,8 +2615,18 @@ function growWebs() {
         }
       }
     });
-  }
+    return k;
+  };
+  for (const layer of ['q', 's', 'e']) pass(layer, GROW[layer].n, 'grow:', 0, null);
+  // a second, later pass fills out the thin Shard web: short twigs on the written upgrades with the fewest
+  // branches. It has its own seed and numbering, so every upgrade from the first pass stays exactly the same.
+  pass('s', GROW_MORE_S, 'grow2:', GROW.s.n * 3, (ids, br) => {
+    const kids = {};
+    for (const [a, b] of br.links) if (!GROWN.has([].concat(b)[0])) for (const x of [].concat(a)) kids[x] = (kids[x] || 0) + 1;
+    return ids.filter(id => !GROWN.has(id) && (kids[id] || 0) <= 1);
+  });
 }
+const GROW_MORE_S = 18; // extra Shard upgrades per branch
 function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 growWebs();
 /* Endless growth: past the written webs, the outer tips keep growing. Owning the newest node of a tip sprouts

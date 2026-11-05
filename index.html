@@ -995,7 +995,7 @@ function forgeNew(layer) {
   list.push(u);
   return u;
 }
-const pct = v => Math.round(v * 100) + '%';
+const pct = v => (v < 0.1 ? Math.round(v * 200) / 2 : Math.round(v * 100)) + '%'; // 2.5%, 12%
 function forgeDesc(u) {
   switch (u.kind) {
     case 'qmult': return 'Quanta production ' + fmtMult(u.v) + '.';
@@ -2318,12 +2318,12 @@ const GROW = {
 };
 // strength of a grown upgrade of each kind; s runs from 1 (cheapest) to 2 (dearest in its web)
 const GROW_VAL = {
-  q: { tier: s => L10(1.5 + 0.5 * s), pulse: s => L10(2 * s), idle: s => L10(1.2 + 0.2 * s), lucky: s => 0.01 * s, pulsecd: s => 0.025 * s, flick: s => 0.04 * s, qm: s => L10(1.15 + 0.15 * s),
-    res: s => 0.002 * s, resonate: () => 1, thrift: s => 0.02 * s, pc: s => L10(1 + 0.004 * s), clock: () => 0.001, hi: s => L10(1 + 0.04 * s), synergy: s => 0.06 * s, shard: s => L10(1 + 0.1 * s), head: s => 0.5 * s },
-  s: { tier: s => L10(2 * s), synergy: s => 0.1 * s, hi: s => L10(1 + 0.06 * s), resonate: () => 1, qm: s => L10(1.5 * s), thrift: s => 0.025 * s, head: s => s, insight: s => 0.3 * s, idle: s => L10(1 + 0.5 * s),
-    pulsecd: s => 0.03 * s, pc: s => L10(1 + 0.005 * s), shard: s => L10(1 + 0.12 * s), surge: s => Math.round(3 * s), fold: s => 0.03 * s, lucky: s => 0.012 * s, pulse: s => L10(3 * s) },
-  e: { tier: s => L10(10 * s), synergy: s => 0.15 * s, hi: s => L10(1 + 0.1 * s), qexp: s => 0.002 * s, qm: s => L10(100 * s), head: s => 1.5 * s, insight: s => 0.5 * s, thrift: s => 0.03 * s,
-    shard: s => L10(1 + 0.5 * s), ess: s => L10(1 + 0.02 * s), res: s => 0.004 * s, surge: s => Math.round(5 * s), fold: s => 0.05 * s },
+  q: { tier: s => L10(1.5 + 0.5 * s), pulse: s => L10(2 * s), idle: s => L10(1.2 + 0.2 * s), lucky: s => 0.01 * s, pulsecd: s => 0.02 * s, flick: s => 0.02 * s, qm: s => L10(1.15 + 0.15 * s),
+    res: s => 0.002 * s, resonate: () => 1, thrift: s => 0.015 * s, pc: s => L10(1 + 0.002 * s), clock: () => 0.001, hi: s => L10(1 + 0.04 * s), synergy: s => 0.03 * s, shard: s => L10(1 + 0.1 * s), head: s => 0.5 * s },
+  s: { tier: s => L10(2 * s), synergy: s => 0.04 * s, hi: s => L10(1 + 0.06 * s), resonate: () => 1, qm: s => L10(1.5 * s), thrift: s => 0.015 * s, head: s => s, insight: s => 0.3 * s, idle: s => L10(1 + 0.5 * s),
+    pulsecd: s => 0.02 * s, pc: s => L10(1 + 0.0025 * s), shard: s => L10(1 + 0.12 * s), surge: s => Math.round(3 * s), fold: s => 0.02 * s, lucky: s => 0.01 * s, pulse: s => L10(3 * s) },
+  e: { tier: s => L10(10 * s), synergy: s => 0.06 * s, hi: s => L10(1 + 0.1 * s), qexp: s => 0.001 * s, qm: s => L10(100 * s), head: s => 1.5 * s, insight: s => 0.5 * s, thrift: s => 0.02 * s,
+    shard: s => L10(1 + 0.5 * s), ess: s => L10(1 + 0.01 * s), res: s => 0.003 * s, surge: s => Math.round(5 * s), fold: s => 0.03 * s },
 };
 const GROW_NAMES = Object.assign({}, NAME_BITS, {
   qm: NAME_BITS.qmult,
@@ -2332,6 +2332,7 @@ const GROW_NAMES = Object.assign({}, NAME_BITS, {
 });
 const GROWN = new Set(), KIND_UPG = { q: [], s: [], e: [] }, GROW_P = { q: 0.18, s: 0.1, e: 0.18 }; // strength of the grown upgrades per web (the Shard web feeds the Collapse loop)
 const roundSig = (x, d = 2) => +x.toPrecision(d);
+const GROW_FULL = new Set(['resonate', 'surge', 'thrift', 'lucky', 'pulsecd', 'fold', 'res', 'clock', 'pc', 'ess', 'qexp', 'synergy', 'flick']); // grown kinds not scaled by GROW_P
 function growDesc(u) {
   const G = t => plural(genDef(t).name), x = v => niceX(v);
   switch (u.kind) {
@@ -2380,9 +2381,9 @@ function growWebs() {
           let tot = 0; for (const kd in wts) tot += wts[kd];
           let r = rng() * tot, kind = 'qm'; for (const kd in wts) { r -= wts[kd]; if (r <= 0) { kind = kd; break; } }
           const id = 'g' + layer + (++k), u = { id, name: '', cost, grown: true };
-          const val = kind === 'resonate' || kind === 'surge' ? GROW_VAL[layer][kind](s) : GROW_VAL[layer][kind](s) * GROW_P[layer];
+          const val = GROW_FULL.has(kind) ? GROW_VAL[layer][kind](s) : GROW_VAL[layer][kind](s) * GROW_P[layer];
           if (FIELDS.includes(kind)) {
-            u[kind] = FLOG[kind] ? L10(roundSig(Math.pow(10, val), val < L10(1.1) ? 4 : 3)) : +val.toFixed(4);
+            u[kind] = FLOG[kind] ? L10(roundSig(Math.pow(10, val), val < L10(1.1) ? 4 : 3)) : +val.toFixed(3);
           } else {
             u.kind = kind; u.v = ['tier', 'pulse', 'idle', 'head', 'insight'].includes(kind) ? L10(roundSig(Math.pow(10, val), val < L10(1.1) ? 3 : 2)) : +val.toFixed(3);
             // which generator it is about: around the tiers you have when you can afford it

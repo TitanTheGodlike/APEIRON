@@ -19,6 +19,8 @@ You answer a signal no one was meant to hear. On the other end is **the Architec
 
 Start with a single Flicker and a handful of **Quanta**, the first light. Every generator makes the one below it: Sparks make Flickers, Embers make Sparks, and so on up a ladder with no top. When your world grows too heavy, **Collapse** it into Shards and rebuild stronger. Reach 1e308 and you hit **the Limit**, the edge where the old makers gave up. **Ascend**, break it, and find out what lies beyond.
 
+The story unfolds in full-screen talks with the Architect at the big moments of a playthrough: what the makers wrote on the inside of the world, why every world stopped at the Limit, and who the signal was really for. Some chapters ask you a question. Hear any chapter again in the Architect tab.
+
 ![Generators, with the Architect talking in the corner](screenshots/generators.jpg)
 
 ![The Upgrade web: Light, Harmony and Cascade](screenshots/upgrade-web.jpg)

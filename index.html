@@ -23,6 +23,11 @@
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;min-height:100vh;padding-bottom:64px;overflow-x:hidden}
 #stars{position:fixed;inset:0;z-index:-2;pointer-events:none}
+#wind{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;display:none}
+#wind.on{display:block;animation:gust 13s ease-in-out infinite}
+#wind i{position:absolute;left:0;height:1px;border-radius:1px;background:linear-gradient(90deg,transparent,rgba(225,238,255,.6),transparent);animation:blow linear infinite;will-change:transform}
+@keyframes blow{from{transform:translateX(-40vw)}to{transform:translateX(140vw)}}
+@keyframes gust{0%,100%{opacity:.3}40%{opacity:1}55%{opacity:.75}70%{opacity:.95}}
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:
   radial-gradient(900px 500px at 15% -10%,var(--neb1),transparent 70%),
   radial-gradient(800px 500px at 100% 20%,var(--neb2),transparent 70%),
@@ -359,7 +364,7 @@ body[data-theme=mono] .tier,body[data-theme=mono] .bar10 i{filter:saturate(0)}
 </style>
 </head>
 <body>
-<canvas id="stars"></canvas>
+<canvas id="stars"></canvas><div id="wind"></div>
 <div id="topbar"><header id="hdr"></header>
 <nav id="nav"></nav></div>
 <main id="main"></main>
@@ -772,6 +777,7 @@ const EUPG = [
   { id: 'e48', name: 'Reliquary', cost: 5000, desc: 'Relics and Anomalies stay through Ascension: no more buying them again.' },
   { id: 'e51', name: 'Supernova', cost: 3e4, desc: 'Nova raises Quanta production to the power 1.06 instead of 1.04, and recharges in 10 minutes.' },
   { id: 'e50', name: 'Wide Sky', cost: 5e5, desc: 'Boons: one more to choose from, and every Boon is half again as strong.' },
+  { id: 'e52', name: 'Wind in Your Face', cost: 1e20, desc: 'A wind starts blowing through Apeiron, and you lean into it: Quanta production exponent +0.03, and every ability recharges twice as fast. You can see it, too.' },
 ];
 // every field upgrade, per field, with its web; plus plain descriptions for the ones written with fx()
 const FU = {};
@@ -1368,6 +1374,7 @@ function qExponent() {
   if (hasS('s16')) x += 0.025;
   if (hasE('e9')) x += 0.02;
   if (hasE('e17')) x += 0.01;
+  if (hasE('e52')) x += 0.03; // Wind in Your Face
   x += 0.005 * S.eRep.expo + 0.01 * S.chal.comps[6] + procSum('qexp');
   if (inChal(6)) x *= 0.8;
   return x;
@@ -1516,7 +1523,7 @@ function useAbility(k) {
   const a = ABIL[k];
   if (!abilOn(k) || !abilReady(k)) return false;
   const now = S.stats.time;
-  S.abil[k].ready = now + a.cd() * (boonHas('abilcd') ? 0.5 : 1);
+  S.abil[k].ready = now + a.cd() * (boonHas('abilcd') ? 0.5 : 1) * (hasE('e52') ? 0.5 : 1);
   if (k === 'surge') S.abil.surge.until = now + a.dur();
   if (k === 'nova') S.abil.nova.until = now + a.dur();
   if (k === 'fold') { const p = qpsLog(); if (p > -Infinity) { S.q = S.q.add(D.fromLog(p + L10(600))); capQ(); } }
@@ -1529,6 +1536,7 @@ function buyE(id) {
   S.essence = S.essence.sub(u.cost).max0(); S.eUpg[id] = true; UPG_VER++;
   if (id === 'e6') { toast('Apeiron: the Limit is broken. Quanta can grow forever.', 'es'); aiEvent('unbound'); }
   if (id === 'e41') dealBoons(); // the first hand of Boons comes right away
+  if (id === 'e52') aiSay('Do you feel that? Wind. I did not know I could make wind. Lean into it.');
   return true;
 }
 const repCostLog = (def, L, n = 1) => quadSumLog(L10(def.c0), L10(def.r), def.q, L, n);
@@ -2422,6 +2430,18 @@ function storyTick(now) {
 }
 
 /* ---------------- Starfield ---------------- */
+// Wind in Your Face: streaks of wind, made once, shown while you own it and Animations are on
+function startWind() {
+  const w = $('wind');
+  for (let i = 0; i < 22; i++) {
+    const s = document.createElement('i');
+    s.style.top = (Math.random() * 100).toFixed(1) + '%'; s.style.width = (8 + Math.random() * 22).toFixed(1) + 'vw';
+    s.style.opacity = (0.3 + Math.random() * 0.7).toFixed(2);
+    s.style.animationDuration = (1.1 + Math.random() * 2.2).toFixed(2) + 's'; s.style.animationDelay = (-Math.random() * 4).toFixed(2) + 's';
+    w.appendChild(s);
+  }
+  up(() => setC(w, 'on', hasE('e52') && !(S.settings.ui && S.settings.ui.motion === false)));
+}
 function startStars() {
   const c = $('stars'), g = c.getContext('2d');
   let W = 0, H = 0, stars = [], last = 0;
@@ -2776,7 +2796,7 @@ const WEB_DEF = {
       { name: 'Starlight', sub: 'raw power', angle: -135, span: 85, start: 'e2', links: [['e2', 'e19'], ['e19', 'e9'], ['e2', 'e10'], ['e9', 'e16'], ['e9', 'e20'], ['e10', 'e11'], ['e19', 'e22'], ['e11', 'e18'], ['e10', 'e23'], ['e16', 'e17'], ['e20', 'e21'], ['e17', 'e24']], minor: { kind: 'qmult', v: L10(1.96), text: 'Quanta production ×1.96' } },
       { name: 'Memory', sub: 'what you keep, and automation', angle: -45, span: 100, start: 'e1', links: [['e1', 'e25'], ['e1', 'e35'], ['e25', 'e5'], ['e25', 'e7'], ['e25', 'e8'], ['e25', 'e36'], ['e8', 'e37'], ['e37', 'e38'], ['e38', 'e39'], ['e7', 'e29'], ['e7', 'e15'], ['e8', 'e26'], ['e15', 'e27'], ['e27', 'e28'], ['e35', 'e40']], minor: { kind: 'shard', v: L10(1.092), text: 'Shard gain ×1.092' } },
       { name: 'Trials', sub: 'Shards, Essence and Challenges', angle: 45, span: 85, start: 'e3', links: [['e3', 'e4'], ['e3', 'e14'], ['e3', 'e30'], ['e4', 'e13'], ['e13', 'e12'], ['e13', 'e33'], ['e14', 'e31'], ['e12', 'e32'], ['e32', 'e34']], minor: { kind: 'ess', v: L10(1.026), text: 'Essence gain ×1.026' } },
-      { name: 'Wonders', sub: 'new things to do', angle: 135, span: 85, start: 'e41', links: [['e41', 'e45'], ['e41', 'e43'], ['e41', 'e46'], ['e41', 'e42'], ['e45', 'e49'], ['e43', 'e44'], ['e43', 'e51'], ['e46', 'e47'], ['e49', 'e48'], ['e42', 'e50']], minor: { kind: 'ess', v: L10(1.02), text: 'Essence gain ×1.02' } },
+      { name: 'Wonders', sub: 'new things to do', angle: 135, span: 85, start: 'e41', links: [['e41', 'e45'], ['e41', 'e43'], ['e41', 'e46'], ['e41', 'e42'], ['e45', 'e49'], ['e43', 'e44'], ['e43', 'e51'], ['e46', 'e47'], ['e49', 'e48'], ['e42', 'e50'], ['e50', 'e52']], minor: { kind: 'ess', v: L10(1.02), text: 'Essence gain ×1.02' } },
     ] },
 };
 // the branch an idea belongs on, by what it does (t = its generator tier; -1 is Clock Speed)
@@ -2851,7 +2871,7 @@ function growWebs() {
     const W = WEB_DEF[layer], cfg = GROW[layer], rng = mulberry(hashStr(seed + layer));
     const pick = a => a[Math.floor(rng() * a.length)];
     const costLog = id => W.costLog(id);
-    let maxC = 0; for (const br of W.branches) for (const l of br.links) for (const id of [].concat(l[0], l[1])) maxC = Math.max(maxC, costLog(id));
+    let maxC = 0; W.branches.forEach((br, b) => { if (cfg.kinds[b]) for (const l of br.links) for (const id of [].concat(l[0], l[1])) maxC = Math.max(maxC, costLog(id)); });
     let k = k0;
     W.branches.forEach((br, b) => {
       if (!cfg.kinds[b]) return; // Wonders (Essence web) is unlocks only: nothing grows on it
@@ -3568,7 +3588,7 @@ function buildGuideTab() {
     [ascVisible, 'The Limit and Ascension', 'Quanta stops at 1e308, the Limit. There you can Ascend for Essence. At first an Ascension resets everything but Essence: Quanta, generators, the Upgrade web, Shards, the whole Shard web and its repeatables. The <b>Memory</b> branch of the Essence web lets you keep more: Muscle Memory keeps your automation, Perfect Recall the Shard web, Deep Memory the Upgrade web. Essence buys nodes in the <b>Essence web</b>; its root, <b>Apeiron</b>, breaks the Limit for good, so buy it first. Past it, every order of magnitude is a little harder to reach (dampening), but the Architect starts gathering <b>Inspiration</b>: Quanta production ×10 every minute, forever, so you never stop moving. Overgrowth, in the Memory branch, makes the outer tips of all three webs keep growing, so there is always another upgrade.'],
     [cardsOn, 'Cards', 'Once you buy Fracture, the root of the Shard web, the Architect deals you three cards every ten minutes of play (see the <b>Cards</b> tab). Keep one. Cards are Common, Rare, Epic or Legendary, and each rolls a little stronger or weaker. They give Quanta, speed up every generator, boost your top tier, Pulse, Lucky Pulses, Resonance or idle play for a while, add Shards or Essence to your next prestige, hand you production on the spot, or flip a coin for a big boost.'],
     [() => hasE('e3'), 'Challenges', 'Runs with a handicap. Reach the goal to complete one; every Challenge can be completed again and again with a higher goal and a stronger reward.'],
-    [ascVisible, 'Wonders', 'The fourth branch of the Essence web unlocks new things to do. <b>Observatory</b>: with every Ascension you choose a <b>Boon</b> that lasts until the next one (Twin Stars lets you keep two, Wide Sky adds a choice and makes them stronger). <b>Nova</b> is a third ability (key N): Quanta production to the power 1.04 for 20 seconds. <b>Reflex</b> fires your abilities as soon as they are ready, <b>Heartbeat</b> presses Pulse every 3 seconds, <b>Full House</b> and <b>Second Hand</b> improve your cards, <b>Afterglow</b> starts every Collapse with your first ten generators, and <b>Reliquary</b> keeps Relics and Anomalies through Ascension.'],
+    [ascVisible, 'Wonders', 'The fourth branch of the Essence web unlocks new things to do. <b>Observatory</b>: with every Ascension you choose a <b>Boon</b> that lasts until the next one (Twin Stars lets you keep two, Wide Sky adds a choice and makes them stronger). <b>Nova</b> is a third ability (key N): Quanta production to the power 1.04 for 20 seconds. <b>Reflex</b> fires your abilities as soon as they are ready, <b>Heartbeat</b> presses Pulse every 3 seconds, <b>Full House</b> and <b>Second Hand</b> improve your cards, <b>Afterglow</b> starts every Collapse with your first ten generators, <b>Reliquary</b> keeps Relics and Anomalies through Ascension, and at the far end, very dear, <b>Wind in Your Face</b> sets a wind blowing through the whole game: Quanta production exponent +0.03 and abilities that recharge twice as fast.'],
     [() => SECRETS.some(s => S.ach[s.id]), 'Secrets', 'Some achievements are hidden. Each one shows only a hint until you earn it, and each unlocks something special: a <b>Relic</b> (an upgrade in the Upgrades tab that you buy again after every Ascension) or an <b>Anomaly</b> (a generator in the Generators tab that ignores Collapse; you buy it again after every Ascension, until Reliquary). Pay attention to the hints, and to odd things you might try.'],
     [() => true, 'Appearance', 'Options → Appearance lets you change the color theme, the UI size, and turn the starfield, animations, rainbow generator colors and pop-up notifications on or off.'],
     [() => true, 'Saving','The game saves itself every 10 seconds in this browser and keeps progressing while you are away, at 20% speed. After a big update, an older save gets a one-time notice offering a fresh start; your save keeps working either way. Use Options → Export to make a backup.'],
@@ -4083,7 +4103,7 @@ function init() {
   document.addEventListener('visibilitychange', () => { if (document.hidden) save(); }); // phones often close apps without unloading
   // work offline once visited (only on the real site; not on local test servers or the Android app)
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { });
-  startStars();
+  startStars(); startWind();
 }
 
 // Debug / testing hooks

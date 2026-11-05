@@ -183,6 +183,7 @@ label.chk input{accent-color:var(--q)}
 #modal textarea{width:100%;height:150px;background:#070a1a;color:var(--ink);border:1px solid var(--edge2);border-radius:3px;font:12px/1.4 var(--mono);padding:8px;resize:vertical}
 #modal .mbtns{display:flex;gap:8px;justify-content:flex-end}
 .muted{color:var(--faint);font-size:12px}
+.heavy-note{font-size:12.5px;color:#c6b6ff;margin:-2px 0 8px;padding:5px 10px;border-left:3px solid var(--sh);background:rgba(var(--shr),.07);border-radius:3px}
 /* cards: the hand, what is working, rarity colours */
 .hand{display:flex;flex-wrap:wrap;gap:14px;margin:4px 0 10px}
 .pcard{--rc:#aab2de;width:180px;min-height:250px;padding:12px 12px 14px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;border:2px solid var(--rc);border-radius:12px;background:linear-gradient(170deg,rgba(255,255,255,.07),rgba(9,11,30,.96) 45%),rgba(9,11,30,.95);box-shadow:0 0 18px color-mix(in srgb,var(--rc) 35%,transparent),inset 0 0 22px rgba(0,0,0,.5);animation:dealIn .45s cubic-bezier(.2,1.4,.4,1) both;transition:transform .15s,box-shadow .15s;white-space:normal;cursor:pointer}
@@ -508,6 +509,7 @@ function quadMax(lm, c0, s, q, k) {
    ===================================================================== */
 const CFG = {
   cascadeLog: 0,      // log10 of how fast tier N makes tier N-1
+  heavy: 1.2,         // the first world is heavy: tiers make each other 10^1.2 slower until you Collapse (halves with every Collapse)
   collapseReq: 25,    // log10 Quanta needed to Collapse
   shardDiv: 36,       // shards = 10^((logQ - req)/div) * mult (36 since the webs grew to ~430 upgrades)
   limit: 308,         // The Limit
@@ -1303,10 +1305,13 @@ function qpsLog(gl = globalMultLog()) {
   const L = raw > 0 ? raw * qExponent() : raw;
   return dampen(L);
 }
+// slows the first run to about half an hour; each lifetime Collapse halves it, so it fades out over the next few
+const heavyLog = () => S.stats.totalCollapses >= 20 ? 0 : CFG.heavy * Math.pow(0.5, S.stats.totalCollapses);
+const cascadeLog = () => CFG.cascadeLog - heavyLog();
 function genRateLog(i, gl = globalMultLog()) { // per second, of tier i-1 (or Quanta for i=0)
   if (i === 0) return qpsLog(gl);
   const a = S.gens[i].amt; if (a.m <= 0) return -Infinity;
-  return a.log10() + tierMultLog(i, gl) + CFG.cascadeLog;
+  return a.log10() + tierMultLog(i, gl) + cascadeLog();
 }
 
 function shardMultLog() {
@@ -2174,6 +2179,8 @@ function buildGenTab() {
   const ma = h('button', { onclick: act(maxAll), title: 'Buy as much of everything as you can afford (key M).' }, 'Max all  (M)');
   UI.el.maxAll = ma;
   T.append(h('div', { class: 'toolbar' }, pb, h('div', { class: 'seg', title: 'How much each Buy button buys.' }, modes), ma, ...abilityButtons(), h('span', { class: 'muted' }, 'Each tier makes the tier below it. Every 10 bought multiplies a generator by its Resonance.')));
+  const heavy = h('div', { class: 'heavy-note' }); T.append(heavy);
+  up(() => { const hl = heavyLog(); show(heavy, hl > 0.01); if (hl > 0.01) setH(heavy, `The first world is heavy: every tier makes the one below it <b>÷${fmt(D.fromLog(hl))}</b>. Each Collapse halves the weight.`); }, 'gen');
   up(() => {
     setT(pb, 'Pulse  +' + fmt(pulseGain()));
     if (pb.classList.contains('cooling') && pulseReady()) { pb.classList.remove('cooling'); pb.classList.remove('ready-flash'); void pb.offsetWidth; pb.classList.add('ready-flash'); }
@@ -2897,7 +2904,7 @@ function buildGuideTab() {
   const T = UI.tabs.guide;
   const sections = [
     [() => true, 'Quanta and Pulse', 'Quanta is the main number. <b>Pulse</b> gives you Quanta by hand: 1 per click, more with some upgrades, and it needs 1.5 seconds to recharge between clicks. It is only useful in the first minute; after that your generators produce far more on their own.'],
-    [() => true, 'Generators', 'Flickers make Quanta every second. Every other generator makes the one below it: Sparks make Flickers, Embers make Sparks, and so on. So a higher tier boosts everything underneath it. There is no last tier: whenever you buy the highest one, a new one appears above it.'],
+    [() => true, 'Generators', 'Flickers make Quanta every second. Every other generator makes the one below it: Sparks make Flickers, Embers make Sparks, and so on. So a higher tier boosts everything underneath it. There is no last tier: whenever you buy the highest one, a new one appears above it. Your first world is heavy: until you Collapse, every tier makes the one below it much more slowly, and each Collapse halves that weight.'],
     [() => true, 'Resonance', 'Every 10 of a generator you buy multiplies that generator by its Resonance (about ×1.8 at first). Some upgrades make a generator resonate sooner, every 9 bought or fewer. The thin bar under each multiplier shows how close you are to the next 10.'],
     [() => true, 'Clock Speed', 'Multiplies every generator at once. It gets more expensive quickly, but it is always worth buying.'],
     [() => true, 'Upgrades', 'One-time boosts paid in Quanta. A dot on a tab means something there is affordable. <b>Max all</b> (key M) buys as many generators and Clock Speed levels as you can afford.'],

@@ -804,6 +804,32 @@ const ACH = [
   ['a45', 'Card Sharp', 'Keep 50 cards.', () => S.cards.drawn >= 50],
   ['a46', 'Full Table', 'Have 4 cards working at once.', () => S.cards.active.length >= 4],
   ['a43', 'Legend', 'Keep a Legendary card.', null],
+  ['a71', 'High Roller', 'Keep 3 Legendary cards.', () => S.cards.by[3] >= 3],
+  ['a72', 'Deck Master', 'Keep 200 cards.', () => S.cards.drawn >= 200],
+  ['a47', 'Sixty Rungs', 'Buy a 60th-tier generator.', () => tierBought(59) > 0],
+  ['a48', 'Hundredth Rung', 'Buy a 100th-tier generator.', () => tierBought(99) > 0],
+  ['a49', 'Unwritten', 'Reach 1e100,000 Quanta.', () => lq() >= 1e5],
+  ['a50', 'Apeiron', 'Reach 1e1,000,000 Quanta.', () => lq() >= 1e6],
+  ['a51', 'Clockwork Heart', 'Reach Clock Speed level 500.', () => S.clock >= 500],
+  ['a52', 'Ever Onward', 'Reach Clock Speed level 1,000.', () => S.clock >= 1000],
+  ['a53', 'Centurion', 'Collapse 100 times.', () => S.stats.totalCollapses >= 100],
+  ['a54', 'Endless Ritual', 'Collapse 10,000 times.', () => S.stats.totalCollapses >= 1e4],
+  ['a55', 'Crystal Cave', 'Hold 1e25 Shards.', () => S.shards.log10() >= 25],
+  ['a56', 'Shard Sea', 'Hold 1e50 Shards.', () => S.shards.log10() >= 50],
+  ['a57', 'Crystal Sky', 'Hold 1e100 Shards.', () => S.shards.log10() >= 100],
+  ['a58', 'Hundredfold Ascent', 'Ascend 100 times.', () => S.ascensions >= 100],
+  ['a59', 'Thousand Ascents', 'Ascend 1,000 times.', () => S.ascensions >= 1000],
+  ['a60', 'Essence Lake', 'Hold 1e15 Essence.', () => S.essence.log10() >= 15],
+  ['a61', 'Essence Ocean', 'Hold 1e30 Essence.', () => S.essence.log10() >= 30],
+  ['a62', 'Trial Lord', 'Reach 100 total Challenge completions.', () => totalComps() >= 100],
+  ['a63', 'Seasoned', 'Complete every Challenge at least 5 times.', () => S.chal.comps.every(c => c >= 5)],
+  ['a64', 'Idea Hoard', 'Own 250 endless upgrades at once.', () => S.proc.q + S.proc.s + S.proc.e >= 250],
+  ['a65', 'Library of Babel', 'Own 500 endless upgrades at once.', () => S.proc.q + S.proc.s + S.proc.e >= 500],
+  ['a66', 'Web Walker', 'Own 300 web upgrades at once.', () => Object.keys(S.qUpg).length + Object.keys(S.sUpg).length + Object.keys(S.eUpg).length >= 300],
+  ['a67', 'Every Star', 'Own every Essence upgrade.', () => EUPG.every(u => S.eUpg[u.id])],
+  ['a68', 'A Long Day', 'Play for 24 hours.', () => S.stats.time >= 86400],
+  ['a69', 'Hammer', 'Pulse 1,000 times.', () => S.stats.pulses >= 1000],
+  ['a70', 'Anvil', 'Pulse 10,000 times.', () => S.stats.pulses >= 1e4],
 ];
 /* =====================================================================
    THE ARCHITECT — the game's own AI. It never runs out of ideas: every time you
@@ -928,7 +954,7 @@ function sayNext() {
   if (text === undefined) { SAY.busy = false; box.classList.remove('on'); document.body.style.removeProperty('--sayh'); return; }
   SAY.busy = true; SAY.full = text; box.classList.add('on'); txt.textContent = '';
   let i = 0;
-  const hold = () => { SAY.typing = false; box.classList.remove('typing'); orb.classList.remove('talk'); SAY.timer = setTimeout(() => { box.classList.remove('on'); SAY.timer = setTimeout(sayNext, 320); }, 2600 + text.length * 30); };
+  const hold = () => { SAY.typing = false; box.classList.remove('typing'); orb.classList.remove('talk'); SAY.timer = setTimeout(() => { box.classList.remove('on'); if (++S.secret.heard >= 100) grantSecret('x21'); SAY.timer = setTimeout(sayNext, 320); }, 2600 + text.length * 30); };
   const step = () => {
     i = Math.min(text.length, i + 2); txt.textContent = text.slice(0, i);
     document.body.style.setProperty('--sayh', (box.offsetHeight + 8) + 'px');
@@ -941,7 +967,7 @@ function sayNext() {
 }
 document.addEventListener('click', e => {
   if (!e.target.closest || !e.target.closest('#say')) return;
-  if (SAY.typing) { clearTimeout(SAY.timer); $('say').querySelector('.say-t').textContent = SAY.full; SAY.typing = false; $('say').classList.remove('typing'); $('say').querySelector('.orb').classList.remove('talk'); SAY.timer = setTimeout(() => { $('say').classList.remove('on'); SAY.timer = setTimeout(sayNext, 320); }, 2200 + SAY.full.length * 25); }
+  if (SAY.typing) { if (++S.secret.skips >= 20) grantSecret('x22'); clearTimeout(SAY.timer); $('say').querySelector('.say-t').textContent = SAY.full; SAY.typing = false; $('say').classList.remove('typing'); $('say').querySelector('.orb').classList.remove('talk'); SAY.timer = setTimeout(() => { $('say').classList.remove('on'); SAY.timer = setTimeout(sayNext, 320); }, 2200 + SAY.full.length * 25); }
   else sayNext();
 });
 function playStyle() {
@@ -1045,7 +1071,7 @@ function ensureOpen(layer) {
 }
 const cheapestOpen = layer => { const o = openIdeas(layer); return o.length ? o[0] : -1; };
 const openAffordable = layer => openIdeas(layer).some(i => S[PROC[layer].cur].log10() >= procCost(layer, i));
-const procCost = (layer, n) => Math.max(0, PROC[layer].costLog(n) - procAgg(layer).insight - cardSum('ideas'));
+const procCost = (layer, n) => Math.max(0, PROC[layer].costLog(n) - procAgg(layer).insight - cardSum('ideas') - (hasR('ascetic') ? 3 : 0));
 let PROC_AGG = {}, UPG_VER = 0;
 const UPG_KEY = { q: 'qUpg', s: 'sUpg', e: 'eUpg' };
 // everything of one web that works like an idea: the Architect's owned ideas plus the owned grown upgrades
@@ -1081,7 +1107,7 @@ function procSyn(i) {
 }
 const cdMult = k => Math.max(CD_FLOOR, Math.pow(10, procSum(k)));
 const headStartLog = () => Math.min(HEAD_CAP, (hasS('s11') ? 6 : 1) + procSum('head'));
-const luckyChance = () => Math.min(0.9, Math.min(LUCKY_MAX, procSum('lucky')) + cardSum('lucky'));
+const luckyChance = () => Math.min(0.9, Math.min(LUCKY_MAX, procSum('lucky')) + cardSum('lucky') + (hasR('loadeddie') ? 0.05 : 0));
 function buyProc(layer, i) {
   ensureOpen(layer);
   if (i === undefined) i = cheapestOpen(layer);
@@ -1090,7 +1116,7 @@ function buyProc(layer, i) {
   const cost = procCost(layer, i);
   if (S[P.cur].log10() < cost) return false;
   S[P.cur] = S[P.cur].sub(D.fromLog(cost)).max0();
-  u.own = true; S.proc[layer]++;
+  u.own = true; S.proc[layer]++; S.secret.ideasAsc++;
   if (u.kind === 'windfall') { const p = qpsLog(); if (p > -Infinity) { u.gave = p + L10(u.v); S.q = S.q.add(D.fromLog(u.gave)); capQ(); } }
   if (u.kind === 'hoard') { const g = S.totalShards.mul(D.fromNum(u.v)).floor(); u.gave = g.log10(); S.shards = S.shards.add(g); S.totalShards = S.totalShards.add(g); }
   for (const nu of ensureOpen(layer)) { // the Architect writes a new idea right away
@@ -1172,7 +1198,7 @@ function newState() {
     ach: {},
     settings: { notation: 'sci', buyMode: 'max', autosave: true, offline: true, tab: 'gen', sound: true, volume: 0.6, sfx: true, sfxVol: 0.5,
       ui: { theme: 'nebula', stars: true, motion: true, compact: false, tint: true, toasts: true, scale: 1 } },
-    relics: {}, anom: { echo: 0, hourglass: 0, prism: 0 }, secret: { orb: 0, guide: 0 },
+    relics: {}, anom: { echo: 0, hourglass: 0, prism: 0 }, secret: { orb: 0, guide: 0, heads: 0, tails: 0, reshapes: [], heard: 0, skips: 0, themes: [], ideasAsc: 0 },
     abil: { surge: { ready: 0, until: 0 }, fold: { ready: 0 } },
     minor: { q: {}, s: {}, e: {} },
     hist: { every: 30, next: 0, t: [], q: [], best: [], sh: [], es: [] },
@@ -1218,6 +1244,7 @@ function clockBase() {
   if (!isolated()) b += 0.005 * S.sRep.tune;
   if (hasE('e10')) b += 0.02;
   if (hasR('moonlit')) b += 0.02;
+  if (hasR('patina')) b += 0.01;
   if (hasS('s27')) b += 0.03;
   b += minorSum('clock');
   b += 0.002 * anomN('hourglass');
@@ -1247,6 +1274,9 @@ function globalMultLog() {
   if (hasR('selftaught')) L += L10(3);
   L += minorSum('qmult') + cardSum('qmult') + (isIdle() ? cardSum('idle') : 0);
   if (hasR('lucky7')) L += L10(77);
+  if (hasR('spectrum')) L += L10(20);
+  if (hasR('cheatcode')) L += L10(300);
+  if (hasR('dreamer') && isIdle()) L += 3;
   L += fSum('qm');
   if (hasQ('q20')) L += L10(S.gens.length);
   if (hasS('s15')) L += 3;
@@ -1330,7 +1360,7 @@ function shardMultLog() {
   if (hasE('e13')) L += 1;
   if (hasE('e18')) L += L10(5);
   if (hasS('s31')) L += L10(1 + S.run.abil);
-  return L + cardSum('shard');
+  return L + cardSum('shard') + (hasR('draftsman') ? L10(3) : 0);
 }
 const collapseReqLog = () => hasS('s23') ? 30 : CFG.collapseReq;
 const runBestLog = () => Math.max(lq(), S.run.best === undefined ? -Infinity : S.run.best);
@@ -1347,7 +1377,7 @@ function nextShardAtLog() {
   const cur = shardGain(), target = cur.add(1).log10() - shardMultLog();
   return Math.max(collapseReqLog(), CFG.collapseReq + unsoftcap(target, 40) * CFG.shardDiv);
 }
-function essMultLog() { return (hasE('e12') ? 2 * L10(L10(S.ascensions + 10)) : 0) + (hasE('e14') ? L10(1.5) : 0) + procSum('ess') + minorSum('ess') + fSum('ess') + cardSum('ess'); }
+function essMultLog() { return (hasE('e12') ? 2 * L10(L10(S.ascensions + 10)) : 0) + (hasE('e14') ? L10(1.5) : 0) + procSum('ess') + minorSum('ess') + fSum('ess') + cardSum('ess') + (hasR('attentive') ? L10(2) : 0); }
 const canAscend = () => lq() >= CFG.limit - 1e-9;
 function essenceGain() {
   if (!canAscend()) return D.Z;
@@ -1397,7 +1427,7 @@ function pulseGain() {
   let g = D.fromNum(1);
   if (hasQ('q1')) g = g.add(D.fromLog(qpsLog()));
   if (S.relics.metronome) g = g.add(D.fromLog(qpsLog() + L10(2)));
-  return g.mul(D.fromLog(procSum('pulse') + cardSum('pulse')));
+  return g.mul(D.fromLog(procSum('pulse') + cardSum('pulse') + (hasR('abridged') ? 2 : 0)));
 }
 function pulse() {
   if (!pulseReady()) return false;
@@ -1430,6 +1460,7 @@ function reshapeTree() {
   if (refund.m === 0) return false;
   for (const id in S.minor.s) if (st.nodes[id]) delete S.minor.s[id];
   S.sUpg = {}; MINOR_VER++; S.shards = S.shards.add(refund);
+  { const R = S.secret.reshapes; R.push(S.stats.time); while (R.length > 3) R.shift(); if (R.length === 3 && R[2] - R[0] <= 600) grantSecret('x18'); }
   resetQLayer();
   flash('rgba(196,155,255,.5)');
   return true;
@@ -1505,7 +1536,7 @@ function doAscend(quiet = false) {
   if (keepQ) { S.qUpg = qKeep.u; S.minor.q = qKeep.m; S.forge.q.forEach((u, i) => { u.own = qKeep.own[i]; }); S.proc.q = qKeep.n; }
   else { S.qUpg = {}; S.proc.q = 0; for (const u of S.forge.q) u.own = false; S.minor.q = {}; }
   MINOR_VER++;
-  S.stats.tAscend = 0;
+  S.stats.tAscend = 0; S.secret.ideasAsc = 0;
   S.cards.active = S.cards.active.filter(c => c.until >= 0); // Ascension uses up every until-the-next card
   aiEvent('ascend', gain);
   if (!quiet) { flash('rgba(255,210,122,.55)'); sfx('ascend'); if (S.ascensions === 1) toast('You Ascended. Spend Essence in the Ascension tab.', 'es'); }
@@ -1640,7 +1671,7 @@ function dealCards() {
     for (const x of pool) { r -= CARD_KINDS[x].w; if (r <= 0) { k = x; break; } }
     used.add(k);
     let rr = Math.random() * 100, ri = 0; for (; ri < RARITY.length - 1; ri++) { rr -= RARITY[ri].w; if (rr <= 0) break; }
-    const d = CARD_KINDS[k], p = RARITY[ri].p * (0.85 + 0.3 * Math.random()); // each card rolls a little up or down
+    const d = CARD_KINDS[k], p = RARITY[ri].p * (0.85 + 0.3 * Math.random()) * (hasR('markeddeck') ? 1.25 : 1); // each card rolls a little up or down
     hand.push({ k, r: ri, v: d.val(p, s), dur: d.dur === undefined ? 0 : d.dur, name: rnd(d.names), id: ++S.cards.seq });
   }
   S.cards.hand = hand;
@@ -1653,8 +1684,8 @@ function keepCard(i) {
   if (c.k === 'time') { const p = qpsLog(); if (p > -Infinity) { S.q = S.q.add(D.fromLog(p + L10(c.v))); capQ(); } }
   else if (c.k === 'abil') { S.abil.surge.ready = 0; S.abil.fold.ready = 0; }
   else if (c.k === 'gamble') {
-    if (Math.random() < 0.5) { S.cards.active.push({ k: 'qmult', v: c.v, dur: 600, until: t + 600, name: c.name + ' (heads)', r: c.r }); aiSay('Heads. Enjoy it.'); }
-    else aiSay(rnd(['Tails. The deck owes you one.', 'Tails. Nothing this time.']));
+    if (Math.random() < (hasR('consolation') ? 2 / 3 : 0.5)) { S.cards.active.push({ k: 'qmult', v: c.v, dur: 600, until: t + 600, name: c.name + ' (heads)', r: c.r }); aiSay('Heads. Enjoy it.'); S.secret.heads++; S.secret.tails = 0; if (S.secret.heads >= 3) grantSecret('x16'); }
+    else { aiSay(rnd(['Tails. The deck owes you one.', 'Tails. Nothing this time.'])); S.secret.tails++; S.secret.heads = 0; if (S.secret.tails >= 3) grantSecret('x15'); }
   }
   else S.cards.active.push({ k: c.k, v: c.v, dur: c.dur, until: c.dur < 0 ? -1 : t + c.dur, name: c.name, r: c.r });
   if (c.r === 3) grant('a43');
@@ -1713,6 +1744,17 @@ const RELICS = [
   { id: 'annotated', name: 'Annotated Lattice', cost: 15, desc: 'Quanta production ×(1 + achievements earned).', eff: () => '×' + fmt(1 + Object.keys(S.ach).length) },
   { id: 'heavy', name: 'Heavy Collapse', cost: 30, desc: 'Shard gain ×4.' },
   { id: 'secondwind', name: 'Second Wind', cost: 40, desc: 'Quanta production ×1,000.' },
+  { id: 'spectrum', name: 'Six-Colour Glass', cost: 14, desc: 'Quanta production ×20.' },
+  { id: 'abridged', name: 'Abridged Edition', cost: 12, desc: 'Pulse ×100.' },
+  { id: 'loadeddie', name: 'Loaded Die', cost: 16, desc: 'Lucky Pulse chance +5%.' },
+  { id: 'markeddeck', name: 'Marked Deck', cost: 18, desc: 'Every card you are dealt rolls 25% stronger.' },
+  { id: 'consolation', name: 'Two-Headed Coin', cost: 22, desc: 'Coin-flip cards land heads two times in three.' },
+  { id: 'cheatcode', name: 'Old Code', cost: 28, desc: 'Quanta production ×300.' },
+  { id: 'dreamer', name: 'Dreamer’s Lamp', cost: 35, desc: 'While you have not touched the game for a minute, Quanta production ×1,000.' },
+  { id: 'draftsman', name: 'Draftsman’s Pencil', cost: 45, desc: 'Shard gain ×3.' },
+  { id: 'patina', name: 'Patina', cost: 50, desc: 'Clock Speed base +0.01.' },
+  { id: 'ascetic', name: 'Empty Bowl', cost: 60, desc: 'The Architect’s ideas cost ÷1,000 in every web.' },
+  { id: 'attentive', name: 'Open Ear', cost: 70, desc: 'Essence gain ×2.' },
 ];
 const ANOMALIES = [
   { id: 'echo', name: 'Echo of the Architect', base: 6, step: 7, q: 15, desc: 'Each one multiplies Quanta production by 2.', eff: n => fmtMult(n * L10(2)) + ' Quanta production' },
@@ -1731,6 +1773,17 @@ const SECRETS = [
   { id: 'x9', name: 'Rebel', hint: 'Who needs instructions?', desc: 'Skip the intro or the tutorial.', reward: ['relic', 'selftaught'] },
   { id: 'x10', name: 'Restless', hint: 'Look everywhere at once.', desc: 'Switch tabs 30 times within a minute.', reward: ['anom', 'prism'] },
   { id: 'x11', name: 'Insomniac', hint: 'Stay a while.', desc: 'Keep one session open for 3 hours.', reward: ['relic', 'secondwind'] },
+  { id: 'x12', name: 'Cheat Code', hint: 'Up, up, down, down…', desc: 'Enter the old code: ↑ ↑ ↓ ↓ ← → ← → B A.', reward: ['relic', 'cheatcode'] },
+  { id: 'x13', name: 'Spectrum', hint: 'Try on every colour.', desc: 'Use all six colour themes.', reward: ['relic', 'spectrum'] },
+  { id: 'x14', name: 'Full House', hint: 'One of each.', desc: 'Have a Common, a Rare, an Epic and a Legendary card working at the same time.', reward: ['relic', 'markeddeck'] },
+  { id: 'x15', name: 'Tails Again', hint: 'Some days the coin hates you.', desc: 'Lose three coin flips in a row.', reward: ['relic', 'consolation'] },
+  { id: 'x16', name: 'Hot Hand', hint: 'Ride your luck.', desc: 'Win three coin flips in a row.', reward: ['relic', 'loadeddie'] },
+  { id: 'x17', name: 'Off the Grid', hint: 'Go where the signal cannot reach.', desc: 'Come back after at least 8 hours away.', reward: ['relic', 'dreamer'] },
+  { id: 'x18', name: 'Second Thoughts', hint: 'Change your mind. Then change it again.', desc: 'Reshape the Shard tree three times within 10 minutes.', reward: ['relic', 'draftsman'] },
+  { id: 'x19', name: 'Ascetic', hint: 'Want nothing from it.', desc: 'Reach the Limit without buying a single one of the Architect’s ideas in that Ascension.', reward: ['relic', 'ascetic'] },
+  { id: 'x20', name: 'Old Hand', hint: 'Wear a groove in the world.', desc: 'Play for 100 hours.', reward: ['relic', 'patina'] },
+  { id: 'x21', name: 'Listener', hint: 'Hear it out.', desc: 'Let 100 of the Architect’s lines play to the end.', reward: ['relic', 'attentive'] },
+  { id: 'x22', name: 'Interrupter', hint: 'Not now.', desc: 'Cut the Architect off mid-sentence 20 times.', reward: ['relic', 'abridged'] },
 ];
 const RELBY = byId(RELICS), ANBY = byId(ANOMALIES), SECBY = byId(SECRETS);
 const hasR = id => !!S.relics[id];
@@ -1759,6 +1812,9 @@ function grantSecret(id) {
 }
 function checkSecrets() {
   if (tierBought(0) === 77) grantSecret('x7');
+  if (S.stats.time >= 100 * 3600) grantSecret('x20');
+  if (new Set(S.cards.active.map(c => c.r)).size === 4) grantSecret('x14');
+  if (canAscend() && !S.secret.ideasAsc) grantSecret('x19');
   if (SIMULATING) return;
   if (S.stats.time - S.ai.lastInput >= 600) grantSecret('x1');
   { const hr = new Date().getHours(); if (hr >= 3 && hr < 5) grantSecret('x5'); }
@@ -3228,7 +3284,7 @@ function buildOptTab() {
   T.append(h('h2', {}, 'Display'), h('div', { class: 'opt-row' }, h('span', {}, 'Notation'), sel));
   const ui = S => S.settings.ui;
   const uchk = (label, key) => { const cb = h('input', { type: 'checkbox', onchange: () => { ui(S)[key] = cb.checked; applyUI(); } }); up(() => { cb.checked = !!ui(S)[key]; }, 'opt'); return h('label', { class: 'chk' }, cb, label); };
-  const theme = h('select', { onchange: () => { ui(S).theme = theme.value; applyUI(); } },
+  const theme = h('select', { onchange: () => { ui(S).theme = theme.value; applyUI(); const T = S.secret.themes; if (!T.includes(theme.value)) T.push(theme.value); if (T.length >= 6) grantSecret('x13'); } },
     ...[['nebula', 'Nebula'], ['ember', 'Ember'], ['verdant', 'Verdant'], ['abyss', 'Abyss'], ['rose', 'Rose'], ['mono', 'Monochrome']].map(([v, l]) => h('option', { value: v }, l)));
   const scale = h('input', { type: 'range', min: '0.8', max: '1.3', step: '0.05', oninput: () => { ui(S).scale = +scale.value; applyUI(); } });
   const scaleLbl = h('span', { class: 'muted' });
@@ -3289,11 +3345,15 @@ function render(force) {
 }
 
 /* ---------------- Input ---------------- */
+const KONAMI = ['arrowup', 'arrowup', 'arrowdown', 'arrowdown', 'arrowleft', 'arrowright', 'arrowleft', 'arrowright', 'b', 'a'];
+let konamiAt = 0;
 document.addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   const tg = e.target.tagName; if (tg === 'INPUT' || tg === 'TEXTAREA' || tg === 'SELECT') return;
   if ($('modal').classList.contains('open')) { if (e.key === 'Escape') closeModal(); return; }
   const k = e.key.toLowerCase();
+  if (k === KONAMI[konamiAt]) { if (++konamiAt === KONAMI.length) { konamiAt = 0; grantSecret('x12'); return; } if (konamiAt > 8) return; }
+  else konamiAt = k === KONAMI[0] ? 1 : 0;
   if (!e.repeat && ['m', 'p', 't', 'c', 'a', 's', 'f'].includes(k)) sfx('click');
   if (k === 'm') sfx(maxAll() ? 'buy' : 'fail');
   else if (k === 'p') sfx(pulse() ? 'pulse' : 'fail');
@@ -3346,6 +3406,7 @@ function init() {
     if (S.ascensions > a0) parts.push(`Essence: ${fmt(e0.floor(), 0)} → <b class="hl-es">${fmt(S.essence.floor(), 0)}</b> (${S.ascensions - a0} ascensions)`);
     modal('Welcome back', h('div', { html: `You were away for <b>${fmtTime(away)}</b>.<br><br>` + parts.join('<br>') }), [['Continue', () => true]]);
   }
+  if (away >= 8 * 3600) grantSecret('x17');
   S.last = Date.now();
   S.ai.lastInput = S.stats.time;
   // older saves: ideas were bought in order; Automata I/II became individual autobuyers

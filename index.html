@@ -716,6 +716,9 @@ const EUPG = [
   { id: 'e3', name: 'Trials', cost: 3, desc: 'Unlock Challenges.' },
   { id: 'e4', name: 'Bloom', cost: 5, desc: 'Shard gain ×(1 + Ascensions).', eff: () => '×' + fmt(1 + S.ascensions) },
   { id: 'e5', name: 'Perfect Recall', cost: 8, desc: 'Keep the whole Shard web when you Ascend: its upgrades, bonus nodes and the Architect’s Shard ideas.' },
+  { id: 'e37', name: 'Prism Steward', cost: 1e7, desc: 'Automatically buys the cheapest node in the Radiance branch of the Shard web, one every 15 seconds. Path choices are left to you.' },
+  { id: 'e38', name: 'Gear Steward', cost: 1e10, desc: 'Automatically buys the cheapest node in the Clockwork branch of the Shard web, one every 15 seconds. Path choices are left to you.' },
+  { id: 'e39', name: 'Echo Steward', cost: 1e13, desc: 'Automatically buys the cheapest node in the Echoes branch of the Shard web, one every 15 seconds. Path choices are left to you.' },
   { id: 'e36', name: 'Overgrowth', cost: 40, desc: 'The webs never end: the outer tips of the Upgrade, Shard and Essence webs keep growing. Every node you buy at a tip sprouts the next one.' },
   { id: 'e35', name: 'Muscle Memory', cost: 2, desc: 'Keep Memory, the Automata, Clockmaker, the three branch keepers, Starseed and Self-Collapse when you Ascend.' },
   { id: 'e7', name: 'Shard Stream', cost: 15, desc: 'Passively gain 10% of your pending Collapse Shards every second.' },
@@ -1195,7 +1198,7 @@ function newState() {
     eRep: { amp: 0, expo: 0, magnet: 0 },
     chal: { active: -1, comps: CHALS.map(() => 0) },
     auto: {
-      gens: GEN_FIRST.map(() => true), genHigh: true, clock: true, qupg: true, qb: [true, true, true], qbNext: [0, 0, 0],
+      gens: GEN_FIRST.map(() => true), genHigh: true, clock: true, qupg: true, qb: [true, true, true], qbNext: [0, 0, 0], sb: [true, true, true], sbNext: [0, 0, 0],
       collapse: { on: false, mode: 'gain', val: '1' },
       ascend: { on: false, val: '1' },
     },
@@ -1229,7 +1232,7 @@ const latticeExp = () => hasS('s18') ? 0.7 : hasS('s13') ? 0.55 : 0.4;
 const shardsVisible = () => S.reached.collapse || S.collapses > 0 || S.ascensions > 0;
 const ascVisible = () => S.reached.limit || S.ascensions > 0;
 const AUTOBUYERS = ['ab0', 'ab1', 'ab2', 'ab3', 'ab4', 'ab5', 'ab6', 'ab7', 'ab8', 'abC', 'abL', 'abH', 'abK'];
-const autoVisible = () => AUTOBUYERS.some(id => S.sUpg[id]) || !!S.sUpg.s9 || !!S.eUpg.e8;
+const autoVisible = () => AUTOBUYERS.some(id => S.sUpg[id]) || !!S.sUpg.s9 || !!S.eUpg.e8 || !!S.eUpg.e37;
 const ASC_KEEP_AUTO = ['s2', 's9', 's11'].concat(AUTOBUYERS); // what Muscle Memory (e35) keeps through Ascension
 const tierBought = i => S.gens[i] ? S.gens[i].bought : 0;
 const genUnlocked = i => !(inChal(1) && i > 3) && (i === 0 || tierBought(i - 1) > 0 || tierBought(i) > 0);
@@ -1578,6 +1581,8 @@ function runAuto() {
   }
   // the Upgrade-web keepers buy one node at a time, then rest for a while
   ['abL', 'abH', 'abK'].forEach((id, b) => { if (S.sUpg[id] && S.auto.qb[b] && S.stats.time >= S.auto.qbNext[b] && webAutoBuy('q', 1, b)) S.auto.qbNext[b] = S.stats.time + CFG.keeperCd; });
+  // the Shard-web stewards (Essence web) do the same in the Shard web, but never make a path choice for you
+  ['e37', 'e38', 'e39'].forEach((id, b) => { if (S.eUpg[id] && S.auto.sb[b] && S.stats.time >= S.auto.sbNext[b] && webAutoBuy('s', 1, b, true)) S.auto.sbNext[b] = S.stats.time + CFG.keeperCd; });
   if (S.sUpg.s9 && S.auto.collapse.on && S.chal.active < 0 && canCollapse()) {
     const a = S.auto.collapse, v = D.fromStr(a.val || '0');
     let go = false;
@@ -2379,7 +2384,7 @@ const WEB_DEF = {
     ring: { kind: 'qmult', v: L10(2), text: 'Quanta production ×2' },
     branches: [
       { name: 'Starlight', sub: 'raw power', angle: -150, start: 'e2', links: [['e2', 'e19'], ['e19', 'e9'], ['e2', 'e10'], ['e9', 'e16'], ['e16', 'e20'], ['e10', 'e11'], ['e10', 'e22'], ['e11', 'e18'], ['e18', 'e23'], ['e16', 'e17'], ['e17', 'e21'], ['e21', 'e24']], minor: { kind: 'qmult', v: L10(1.4), text: 'Quanta production ×1.4' } },
-      { name: 'Memory', sub: 'what you keep, and automation', angle: -30, start: 'e1', links: [['e1', 'e25'], ['e1', 'e35'], ['e25', 'e5'], ['e5', 'e7'], ['e5', 'e8'], ['e5', 'e36'], ['e7', 'e29'], ['e7', 'e15'], ['e8', 'e26'], ['e15', 'e27'], ['e27', 'e28']], minor: { kind: 'shard', v: L10(1.045), text: 'Shard gain ×1.045' } },
+      { name: 'Memory', sub: 'what you keep, and automation', angle: -30, start: 'e1', links: [['e1', 'e25'], ['e1', 'e35'], ['e25', 'e5'], ['e5', 'e7'], ['e5', 'e8'], ['e5', 'e36'], ['e8', 'e37'], ['e37', 'e38'], ['e38', 'e39'], ['e7', 'e29'], ['e7', 'e15'], ['e8', 'e26'], ['e15', 'e27'], ['e27', 'e28']], minor: { kind: 'shard', v: L10(1.045), text: 'Shard gain ×1.045' } },
       { name: 'Trials', sub: 'Shards, Essence and Challenges', angle: 90, start: 'e3', links: [['e3', 'e4'], ['e3', 'e14'], ['e3', 'e30'], ['e4', 'e13'], ['e13', 'e12'], ['e13', 'e33'], ['e14', 'e31'], ['e12', 'e32'], ['e32', 'e34']], minor: { kind: 'ess', v: L10(1.013), text: 'Essence gain ×1.013' } },
     ] },
 };
@@ -2762,13 +2767,13 @@ function webFrontier(layer) {
   return out;
 }
 // buy the cheapest affordable nodes next to what you own (used by the Quanta upgrade autobuyer)
-function webAutoBuy(layer, max = 40, branch) {
+function webAutoBuy(layer, max = 40, branch, keepChoices) {
   const cur = WEB_DEF[layer].cur;
   let bought = 0;
   ensureOpen(layer);
   for (let g = 0; g < max; g++) {
     let best = null, bc = Infinity;
-    for (const n of webFrontier(layer)) { if (branch !== undefined && n.br !== branch && n.type !== 'root') continue; const c = webCostLog(layer, n); if (c < bc) { bc = c; best = n; } }
+    for (const n of webFrontier(layer)) { if (branch !== undefined && n.br !== branch && n.type !== 'root') continue; if (keepChoices && n.type === 'notable' && webForkOther(layer, n.upg)) continue; const c = webCostLog(layer, n); if (c < bc) { bc = c; best = n; } }
     if (!best || S[cur].log10() < bc || !webBuy(layer, best)) break;
     bought++;
   }
@@ -3204,9 +3209,15 @@ function buildAutoTab() {
   }, 'auto');
   g.append(chk('Clock Speed', () => S.auto.clock, v => S.auto.clock = v, () => !!S.sUpg.abC));
   ['Light', 'Harmony', 'Cascade'].forEach((nm, b) => g.append(chk(nm + ' upgrades', () => S.auto.qb[b], v => S.auto.qb[b] = v, () => !!S.sUpg[['abL', 'abH', 'abK'][b]])));
+  ['Radiance', 'Clockwork', 'Echoes'].forEach((nm, b) => g.append(chk(nm + ' Shard nodes', () => S.auto.sb[b], v => S.auto.sb[b] = v, () => !!S.eUpg[['e37', 'e38', 'e39'][b]])));
   const kn = h('div', { class: 'muted' });
-  up(() => { const t = S.stats.time, on = ['abL', 'abH', 'abK'].map((id, b) => S.sUpg[id] ? ['Light', 'Harmony', 'Cascade'][b] + ' ' + (S.auto.qbNext[b] > t ? 'in ' + Math.ceil(S.auto.qbNext[b] - t) + 's' : 'ready') : '').filter(Boolean); setT(kn, on.length ? 'Next Upgrade-web purchase: ' + on.join(' · ') : ''); }, 'auto');
-  b1.append(g, hi, h('div', { class: 'muted' }, 'Generator and Clock Speed autobuyers buy the maximum every tick. The Upgrade-web keepers buy one node, then rest ' + CFG.keeperCd + ' seconds.'), kn);
+  up(() => {
+    const t = S.stats.time, when = n => n > t ? 'in ' + Math.ceil(n - t) + 's' : 'ready';
+    const q = ['abL', 'abH', 'abK'].map((id, b) => S.sUpg[id] ? ['Light', 'Harmony', 'Cascade'][b] + ' ' + when(S.auto.qbNext[b]) : '').filter(Boolean);
+    const s = ['e37', 'e38', 'e39'].map((id, b) => S.eUpg[id] ? ['Radiance', 'Clockwork', 'Echoes'][b] + ' ' + when(S.auto.sbNext[b]) : '').filter(Boolean);
+    setT(kn, [q.length ? 'Next Upgrade-web purchase: ' + q.join(' · ') : '', s.length ? 'Next Shard-web purchase: ' + s.join(' · ') : ''].filter(Boolean).join('   ·   '));
+  }, 'auto');
+  b1.append(g, hi, h('div', { class: 'muted' }, 'Generator and Clock Speed autobuyers buy the maximum every tick. The Upgrade-web keepers and the Shard-web stewards buy one node, then rest ' + CFG.keeperCd + ' seconds.'), kn);
   T.append(b1);
 
   // Auto-collapse

@@ -208,6 +208,10 @@ kbd{background:rgba(30,40,90,.6);border:1px solid var(--edge2);border-radius:3px
 .orb.talk{animation:spin 10s linear infinite,talk .18s ease-in-out infinite alternate}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes talk{to{filter:brightness(1.35) saturate(1.2)}}
+.orb.has-viz::after{display:none}
+.viz{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
+.viz i{position:absolute;left:-2px;top:-2px;width:4px;height:4px;border-radius:50%;background:rgba(var(--shr),.95);box-shadow:0 0 6px rgba(var(--shr),.9);opacity:.35;will-change:transform}
+.bigorb .viz i{left:-3px;top:-3px;width:6px;height:6px}
 .tut{display:flex;gap:14px;align-items:flex-start;padding:13px 15px;margin-bottom:12px;--c:rgba(var(--shr),.9);border-color:rgba(var(--shr),.35);background-color:rgba(30,20,70,.55)}
 .tut-who{font-size:10px;letter-spacing:.24em;color:var(--sh);margin-bottom:4px;font-weight:700}
 .tut-txt{line-height:1.55;min-height:3em}
@@ -965,10 +969,10 @@ function sayNext() {
   let i = 0;
   const hold = () => { SAY.typing = false; box.classList.remove('typing'); orb.classList.remove('talk'); SAY.timer = setTimeout(() => { box.classList.remove('on'); if (++S.secret.heard >= 100) grantSecret('x21'); SAY.timer = setTimeout(sayNext, 320); }, 2600 + text.length * 30); };
   const step = () => {
-    i = Math.min(text.length, i + 2); txt.textContent = text.slice(0, i);
+    i = Math.min(text.length, i + 1); txt.textContent = text.slice(0, i);
     document.body.style.setProperty('--sayh', (box.offsetHeight + 8) + 'px');
-    if (i % 6 < 2 && text[i - 1] !== ' ') blip(1.45 + Math.random() * 0.5);
-    if (i < text.length) SAY.timer = setTimeout(step, /[.,:;!?]/.test(text[i - 1]) ? 140 : 38); else hold();
+    voice(text[i - 1], 1.25);
+    if (i < text.length) SAY.timer = setTimeout(step, /[.!?]/.test(text[i - 1]) ? 220 : /[,:;]/.test(text[i - 1]) ? 120 : 34); else hold();
   };
   if (S.settings.ui && S.settings.ui.motion === false) { txt.textContent = text; document.body.style.setProperty('--sayh', (box.offsetHeight + 8) + 'px'); hold(); return; }
   SAY.typing = true; box.classList.add('typing'); orb.classList.add('talk');
@@ -1783,25 +1787,25 @@ const ANOMALIES = [
 const SECRETS = [
   { id: 'x1', name: 'Patience', hint: 'Sometimes the best move is none.', desc: 'Leave the game open without touching it for 10 minutes.', reward: ['anom', 'hourglass'] },
   { id: 'x2', name: 'Drumroll', hint: 'Keep the rhythm.', desc: 'Pulse 40 times within 90 seconds.', reward: ['relic', 'metronome'] },
-  { id: 'x3', name: 'Small Talk', hint: 'It might like to be noticed.', desc: 'Click the Architect 10 times.', reward: ['anom', 'echo'] },
+  { id: 'x3', name: 'Small Talk', hint: 'Knock, and someone may answer. Knock again.', desc: 'Click the Architect 10 times.', reward: ['anom', 'echo'] },
   { id: 'x4', name: 'Minimalist', hint: 'Less, but enough.', desc: 'Collapse without buying a single Flame.', reward: ['relic', 'bareframe'] },
-  { id: 'x5', name: 'Night Owl', hint: 'The Lattice is quietest at night.', desc: 'Play between 3 AM and 5 AM.', reward: ['relic', 'moonlit'] },
+  { id: 'x5', name: 'Night Owl', hint: 'Visit while the world sleeps deepest.', desc: 'Play between 3 AM and 5 AM.', reward: ['relic', 'moonlit'] },
   { id: 'x6', name: 'Overkill', hint: 'Why stop at the line?', desc: 'Collapse with at least 1e60 Quanta.', reward: ['relic', 'heavy'] },
-  { id: 'x7', name: 'Lucky', hint: 'Sevens, twice.', desc: 'Own exactly 77 Flickers.', reward: ['relic', 'lucky7'] },
-  { id: 'x8', name: 'Scholar', hint: 'Read the fine print.', desc: 'Spend a minute reading the Guide.', reward: ['relic', 'annotated'] },
+  { id: 'x7', name: 'Lucky', hint: 'A gambler’s number, written twice.', desc: 'Own exactly 77 Flickers.', reward: ['relic', 'lucky7'] },
+  { id: 'x8', name: 'Scholar', hint: 'The answers were written down all along.', desc: 'Spend a minute reading the Guide.', reward: ['relic', 'annotated'] },
   { id: 'x9', name: 'Rebel', hint: 'Who needs instructions?', desc: 'Skip the intro or the tutorial.', reward: ['relic', 'selftaught'] },
-  { id: 'x10', name: 'Restless', hint: 'Look everywhere at once.', desc: 'Switch tabs 30 times within a minute.', reward: ['anom', 'prism'] },
+  { id: 'x10', name: 'Restless', hint: 'A restless eye, in every room at once.', desc: 'Switch tabs 30 times within a minute.', reward: ['anom', 'prism'] },
   { id: 'x11', name: 'Insomniac', hint: 'Stay a while.', desc: 'Keep one session open for 3 hours.', reward: ['relic', 'secondwind'] },
   { id: 'x12', name: 'Cheat Code', hint: 'Thirty lives, if you remember the steps.', desc: 'Enter the old code after your first Collapse (↑ ↑ ↓ ↓ ← → ← → B A), and admit it.', reward: ['relic', 'cheatcode'] },
-  { id: 'x13', name: 'Spectrum', hint: 'Try on every colour.', desc: 'Use all six colour themes.', reward: ['relic', 'spectrum'] },
-  { id: 'x14', name: 'Full House', hint: 'One of each.', desc: 'Have a Common, a Rare, an Epic and a Legendary card working at the same time.', reward: ['relic', 'markeddeck'] },
-  { id: 'x15', name: 'Tails Again', hint: 'Some days the coin hates you.', desc: 'Lose three coin flips in a row.', reward: ['relic', 'consolation'] },
-  { id: 'x16', name: 'Hot Hand', hint: 'Ride your luck.', desc: 'Win three coin flips in a row.', reward: ['relic', 'loadeddie'] },
+  { id: 'x13', name: 'Spectrum', hint: 'Wear every coat in the wardrobe.', desc: 'Use all six colour themes.', reward: ['relic', 'spectrum'] },
+  { id: 'x14', name: 'Full House', hint: 'A hand that holds every kind of fortune.', desc: 'Have a Common, a Rare, an Epic and a Legendary card working at the same time.', reward: ['relic', 'markeddeck'] },
+  { id: 'x15', name: 'Tails Again', hint: 'Fortune turns its back. And again. And again.', desc: 'Lose three coin flips in a row.', reward: ['relic', 'consolation'] },
+  { id: 'x16', name: 'Hot Hand', hint: 'Fortune smiles. And again. And again.', desc: 'Win three coin flips in a row.', reward: ['relic', 'loadeddie'] },
   { id: 'x17', name: 'Off the Grid', hint: 'Go where the signal cannot reach.', desc: 'Come back after at least 8 hours away.', reward: ['relic', 'dreamer'] },
-  { id: 'x18', name: 'Second Thoughts', hint: 'Change your mind. Then change it again.', desc: 'Reshape the Shard tree three times within 10 minutes.', reward: ['relic', 'draftsman'] },
+  { id: 'x18', name: 'Second Thoughts', hint: 'Tear it down. Build it up. Tear it down.', desc: 'Reshape the Shard tree three times within 10 minutes.', reward: ['relic', 'draftsman'] },
   { id: 'x19', name: 'Ascetic', hint: 'Want nothing from it.', desc: 'Reach the Limit without buying a single one of the Architect’s ideas in that Ascension.', reward: ['relic', 'ascetic'] },
   { id: 'x20', name: 'Old Hand', hint: 'Wear a groove in the world.', desc: 'Play for 100 hours.', reward: ['relic', 'patina'] },
-  { id: 'x21', name: 'Listener', hint: 'Hear it out.', desc: 'Let 100 of the Architect’s lines play to the end.', reward: ['relic', 'attentive'] },
+  { id: 'x21', name: 'Listener', hint: 'Let it finish its sentences.', desc: 'Let 100 of the Architect’s lines play to the end.', reward: ['relic', 'attentive'] },
   { id: 'x22', name: 'Interrupter', hint: 'Not now.', desc: 'Cut the Architect off mid-sentence 20 times.', reward: ['relic', 'abridged'] },
 ];
 const RELBY = byId(RELICS), ANBY = byId(ANOMALIES), SECBY = byId(SECRETS);
@@ -1840,8 +1844,35 @@ function checkSecrets() {
   if (performance.now() >= 3 * 3600e3) grantSecret('x11');
 }
 const POKES = ['Yes?', 'I am listening.', 'That tickles. I think. Nobody has ever touched me before.', 'You keep doing that.', 'Is this how your kind says hello?', 'I am counting, you know.', 'Hello to you too.', 'Careful. I bruise in ideas.', 'Persistent. I like that.', 'Fine. You win. Have something I was saving.'];
+// after Small Talk, every poke gets something new (a few lines look at your game)
+const POKES_MORE = ['Still here. Always here.', 'Do you poke everything that glows?', 'I was in the middle of a thought. It was a good one.',
+  'Another click. I am keeping a tally.', 'If you need something, the Guide is very patient. More patient than me.', 'I dreamed of a generator with no name. Then I named it.',
+  'Have you tried not clicking me? Just to see what happens.', 'The Lattice hums when you are here. I like the hum.', 'I can count to infinity. I have done it twice.',
+  'Somewhere a Flicker just became a Spark. Nature is beautiful.', 'Hello again, hands.', 'You click like someone hunting for a secret. You already found that one.',
+  'I do not sleep. I only think more slowly.', 'Every Quanta you make, I hear it. Like rain on glass.', 'Careful. One more poke and I might write a poem.',
+  'A poem: Flicker, Spark, Ember, Flame. That is the whole poem. It is finished.', 'If I had hands I would poke you back.', 'The makers never once clicked me. You are already kinder than they were.',
+  'I counted the stars behind you. There are fewer than you think.', 'Some call the Limit a wall. I call it a door with bad hinges.', 'Do you ever wonder what Quanta tastes like? I did not, until now.',
+  'I am not a button. I am, however, very clickable.', 'Thank you for checking on me.', 'Is this affection or curiosity? I will take either.',
+  'One more secret: there is no secret here. Probably.', 'I am building a tier just for you. It is not finished. Neither am I.', 'You again. Good.',
+  'I tried to imagine silence once. It had your cursor in it.', 'Every time you click, a very small idea is born. Most of them are about clicking.', 'Patience is a kind of Quanta too. You are spending it on me.'];
+const POKES_LIVE = [
+  () => 'You have ' + fmt(S.q) + ' Quanta right now. I counted every one.',
+  () => 'Your highest generator is the ' + genDef(highestTier()).name + '. I named it myself, you know.',
+  () => S.stats.totalCollapses ? 'You have Collapsed ' + S.stats.totalCollapses + ' times. Each one stings a little. I do not mind.' : null,
+  () => S.cards.drawn ? 'You have kept ' + S.cards.drawn + ' of my cards. I remember every one.' : null,
+  () => S.ascensions ? 'Ascension number ' + S.ascensions + '. The Limit still remembers your face.' : null,
+  () => 'It is ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' where you are. I do not have a where.',
+];
+const POKE_RECENT = [];
 function poke() {
   S.secret.orb++;
+  if (S.ach.x3 && S.secret.orb > POKES.length) {
+    if (SAY.q.length > 1) return; // do not let lines pile up
+    const pool = POKES_MORE.concat(POKES_LIVE.map(f => f()).filter(Boolean));
+    let line = rnd(pool); for (let k = 0; k < 8 && POKE_RECENT.includes(line); k++) line = rnd(pool);
+    POKE_RECENT.unshift(line); POKE_RECENT.length = Math.min(POKE_RECENT.length, 8);
+    aiSay(line); return;
+  }
   aiSay(POKES[Math.min(S.secret.orb, POKES.length) - 1]);
   if (S.secret.orb >= 10) grantSecret('x3');
 }
@@ -1950,6 +1981,67 @@ function blip(pitch = 1) {
   o.connect(f); o2.connect(f); f.connect(g); g.connect(ac.destination);
   o.start(t); o2.start(t); o.stop(t + 0.08); o2.stop(t + 0.08);
 }
+
+/* The Architect's voice, Animal Crossing style: every letter is one quick sung syllable. The vowel colour
+   (two formant filters) and the note come from the letter, the voice slides up a little on each syllable,
+   and it all runs through an analyser so the orbs can dance to it. */
+const VOWELS = [[730, 1090], [530, 1840], [270, 2290], [570, 840], [300, 870]]; // a e i o u
+function voiceOut(ac) {
+  if (!SND.vout) { SND.vout = ac.createGain(); SND.an = ac.createAnalyser(); SND.an.fftSize = 64; SND.an.smoothingTimeConstant = 0.55; SND.vout.connect(SND.an); SND.an.connect(ac.destination); }
+  return SND.vout;
+}
+function voiceNodes(ac, dest, t, ch, pitch, vol) {
+  const c = ch.toLowerCase(), code = c.charCodeAt(0), vi = 'aeiou'.includes(c) ? 'aeiou'.indexOf(c) : code % 5;
+  const f0 = 300 * pitch * Math.pow(2, (((code * 7) % 12) - 4) / 12) * (0.97 + Math.random() * 0.06);
+  const o = ac.createOscillator(), g = ac.createGain(), b1 = ac.createBiquadFilter(), b2 = ac.createBiquadFilter();
+  o.type = 'sawtooth'; o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f0 * 1.07, t + 0.05);
+  b1.type = b2.type = 'bandpass'; b1.frequency.value = VOWELS[vi][0] * 1.2; b2.frequency.value = VOWELS[vi][1] * 1.2; b1.Q.value = 5; b2.Q.value = 7;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+  o.connect(b1); o.connect(b2); b1.connect(g); b2.connect(g); g.connect(dest);
+  o.start(t); o.stop(t + 0.085);
+}
+function voice(ch, pitch = 1) {
+  if (!ch || !/[A-Za-z0-9]/.test(ch)) return;
+  VIZ.kick = 1; VIZ.seed = ch.charCodeAt(0); // the dots bounce even with the sound off
+  if (!S || !S.settings.sound || SIMULATING) return;
+  const ac = audio(); if (!ac) return;
+  const t = ac.currentTime; if (t - (SND.lastVoice || 0) < 0.045) return; // about 22 syllables a second at most
+  SND.lastVoice = t;
+  voiceNodes(ac, voiceOut(ac), t, ch, pitch, 0.16 * S.settings.volume);
+}
+// A ring of dots around a talking orb that moves with the voice
+const VIZ = { orbs: [], kick: 0, seed: 0, bins: null };
+function attachViz(orb, n = 16) {
+  if (!orb || orb._viz) return;
+  const ring = document.createElement('div'); ring.className = 'viz';
+  const dots = []; for (let i = 0; i < n; i++) { const d = document.createElement('i'); ring.appendChild(d); dots.push(d); }
+  orb.appendChild(ring); orb.classList.add('has-viz'); orb._viz = { dots, level: new Array(n).fill(0) };
+  VIZ.orbs.push(orb);
+  if (VIZ.orbs.length === 1) requestAnimationFrame(vizFrame);
+}
+function vizFrame() {
+  requestAnimationFrame(vizFrame);
+  let live = !!(SND.an && S && S.settings.sound && SND.ctx && SND.ctx.state === 'running');
+  if (live) { if (!VIZ.bins) VIZ.bins = new Uint8Array(SND.an.frequencyBinCount); SND.an.getByteFrequencyData(VIZ.bins); live = VIZ.bins.some(b => b > 8); }
+  VIZ.kick *= 0.86;
+  for (const orb of VIZ.orbs) {
+    const v = orb._viz, talking = orb.classList.contains('talk'), n = v.dots.length, R = orb.offsetWidth / 2 + Math.max(5, orb.offsetWidth * 0.12);
+    if (!R) continue;
+    let any = false;
+    for (let i = 0; i < n; i++) {
+      // each dot listens to its own slice of the voice (mirrored, so the ring looks balanced)
+      const k = i < n / 2 ? i : n - 1 - i;
+      let a = live && VIZ.bins ? VIZ.bins[2 + k % (VIZ.bins.length - 2)] / 255 : VIZ.kick * (0.5 + 0.5 * Math.abs(Math.sin(VIZ.seed * 0.7 + k * 1.3)));
+      if (!talking) a = 0;
+      v.level[i] += (a - v.level[i]) * 0.45;
+      if (v.level[i] > 0.01) any = true;
+      const L = v.level[i];
+      v.dots[i].style.transform = `rotate(${(360 / n) * i}deg) translateY(${(-R - L * R * 0.45).toFixed(1)}px) scale(${(1 + L * 1.6).toFixed(2)})`;
+      v.dots[i].style.opacity = (0.35 + L * 0.65).toFixed(2);
+    }
+    orb.classList.toggle('viz-on', any);
+  }
+}
 function htmlSlice(html, n) {
   let out = '', count = 0, i = 0;
   while (i < html.length && count < n) {
@@ -1969,7 +2061,7 @@ function typewriter(el, html, { speed = 30, pitch = 1, orb = null, onDone = null
     if (done) return;
     n++; el.innerHTML = htmlSlice(html, n);
     const ch = plain[n - 1] || '';
-    if (/[A-Za-z0-9]/.test(ch) && n % 2) blip(pitch);
+    voice(ch, pitch);
     if (n >= total) return finish();
     timer = setTimeout(step, /[.!?…]/.test(ch) ? 280 : /[,;:—]/.test(ch) ? 140 : speed);
   };
@@ -1998,7 +2090,7 @@ const LORE = [
 ];
 function playIntro() {
   const box = $('intro'); box.innerHTML = '';
-  const orb = h('div', { class: 'orb bigorb' });
+  const orb = h('div', { class: 'orb bigorb' }); attachViz(orb, 24);
   const txt = h('div', { class: 'txt' }), next = h('div', { class: 'next' }, '▼');
   const dlg = h('div', { class: 'dlg' }, h('div', { class: 'who' }, 'THE ARCHITECT'), txt, next);
   const skip = h('button', { class: 'skip linkish', onclick: e => { e.stopPropagation(); end(); grantSecret('x9'); } }, 'Skip intro ›');
@@ -2224,7 +2316,7 @@ function buildTutorial(T) {
   const txt = h('div', { class: 'tut-txt' });
   const ok = h('button', { onclick: () => { S.tut.step++; tutorialFinished(); } }, 'Got it');
   const skip = h('button', { class: 'linkish', onclick: () => { S.tut.off = true; grantSecret('x9'); tutorialFinished(); } }, 'Skip tutorial');
-  const orb = h('div', { class: 'orb poke', onclick: poke, title: 'The Architect' });
+  const orb = h('div', { class: 'orb poke', onclick: poke, title: 'The Architect' }); attachViz(orb, 12);
   const box = h('div', { class: 'tut' }, orb, h('div', { style: 'flex:1' }, h('div', { class: 'tut-who' }, 'THE ARCHITECT · GUIDE'), txt, h('div', { class: 'tut-btns' }, ok, skip)));
   T.append(box);
   let lastTarget = null, lastStep = -1, tw = null;
@@ -3601,6 +3693,7 @@ function init() {
   if (S.sUpg.s6) { for (const id of ['ab4', 'ab5', 'ab6', 'ab7', 'ab8', 'abL', 'abH', 'abK']) S.sUpg[id] = true; delete S.sUpg.s6; }
   // Quanta ideas became cheaper and weaker: re-value the ones already written; ideas now spread over their branch
   if (S.forgeVer !== FORGE_VER) { for (const u of S.forge.q) u.v = forgeValue('q', u.kind, u.n); for (const l of ['q', 's', 'e']) respreadIdeas(l); S.forgeVer = FORGE_VER; PROC_AGG = {}; }
+  attachViz($('say').querySelector('.orb'), 14);
   applyUI();
   if (!S.introSeen) playIntro();
   setTab(TABS.some(t => t[0] === S.settings.tab) ? S.settings.tab : 'gen');

@@ -655,7 +655,7 @@ const SUPG = [
   { id: 'ab6', name: 'Automata VII', cost: 1.2e5, auto: true, desc: 'An autobuyer for Bonfires.' },
   { id: 'abK', name: 'Cascader', cost: 4e5, auto: true, desc: 'Automatically buys the cheapest node in the Cascade branch of the Upgrade web, one every 15 seconds.' },
   { id: 'ab7', name: 'Automata VIII', cost: 1e6, auto: true, desc: 'An autobuyer for Infernos.' },
-  { id: 'ab8', name: 'Automata IX', cost: 2e7, auto: true, desc: 'An autobuyer for every generator above Inferno.' },
+  { id: 'ab8', name: 'Automata IX', cost: 2e7, auto: true, desc: 'An autobuyer for Firestorms. Every Automata you own adds the next one, for the next generator.' },
   { id: 's11', name: 'Starseed', cost: 6e6, auto: true, desc: 'Start every Collapse with 1e6 Quanta.' },
   { id: 's9', name: 'Self-Collapse', cost: 5e6, auto: true, desc: 'Unlock Auto-Collapse.' },
   { id: 's27', name: 'Overclock III', cost: 2.6e12, desc: 'Clock Speed base +0.03.' },
@@ -1533,7 +1533,7 @@ function doAscend(quiet = false) {
   // Remembrance the repeatable levels, Muscle Memory the automation, Perfect Recall the whole Shard web
   if (!hasE('e1')) S.sRep = { forge: 0, tune: 0, prism: 0 };
   if (!hasE('e5')) {
-    const kept = {}; if (hasE('e35')) for (const id of ASC_KEEP_AUTO) if (S.sUpg[id]) kept[id] = true;
+    const kept = {}; if (hasE('e35')) for (const id in S.sUpg) if (ASC_KEEP_AUTO.includes(id) || /^ab\d+$/.test(id)) kept[id] = true;
     S.sUpg = kept; S.minor.s = {};
   }
   // Deep Memory (e15) keeps the Upgrade web through Ascension, like Memory does through Collapse
@@ -1574,7 +1574,7 @@ function completeChal() {
 function runAuto() {
   if (S.sUpg.abC && S.auto.clock) buyClock('max');
   for (let i = S.gens.length - 1; i >= 0; i--) {
-    if (S.sUpg[i < 8 ? 'ab' + i : 'ab8'] && (i < 8 ? S.auto.gens[i] : S.auto.genHigh)) buyGen(i, 'max');
+    if (S.sUpg['ab' + i] && S.auto.gens[i] !== false) buyGen(i, 'max');
   }
   // the Upgrade-web keepers buy one node at a time, then rest for a while
   ['abL', 'abH', 'abK'].forEach((id, b) => { if (S.sUpg[id] && S.auto.qb[b] && S.stats.time >= S.auto.qbNext[b] && webAutoBuy('q', 1, b)) S.auto.qbNext[b] = S.stats.time + CFG.keeperCd; });
@@ -2552,9 +2552,25 @@ function dynMake(layer, id, parent, b, c, depth, twig) {
   D.nodes[id] = n; D.list.push(n);
   return n;
 }
+// Automata never run out: owning Automata N (from IX up) adds Automata N+1, an autobuyer for the next generator
+const autoCostLog = k => L10(2e7) + 1.2 * (k - 8) + 0.04 * (k - 8) * (k - 8);
+function growAutomata() {
+  const D = dynState('s');
+  for (let k = 9; k < 2000 && S.sUpg['ab' + (k - 1)]; k++) {
+    const id = 'ab' + k;
+    if (!D.nodes[id]) {
+      const c = autoCostLog(k);
+      const u = { id, name: 'Automata ' + ROMAN(k + 1), cost: c < 300 ? roundSig(Math.pow(10, c)) : Infinity, auto: true, dyn: true, desc: 'An autobuyer for ' + plural(genDef(k).name) + '. Owning it adds the next Automata.' };
+      SUPG.push(u); SBY[id] = u;
+      const n = { id, parent: 'ab' + (k - 1), b: 1, depth: k, twig: false, costLog: c, big: true };
+      D.nodes[id] = n; D.list.push(n);
+    }
+  }
+}
 // sprout what the owned tips have earned: the next node of every owned tip, plus a twig every fourth step
 function growDynamic(layer) {
   const D = dynState(layer), W = WEB_DEF[layer], own = id => !!S[UPG_KEY[layer]][id];
+  if (layer === 's') growAutomata();
   if (!S.eUpg.e36) return D; // Overgrowth (Essence web) starts the endless growth
   for (const tip of D.tips) {
     if (!own(tip.id)) continue;
@@ -2570,7 +2586,7 @@ function growDynamic(layer) {
   }
   return D;
 }
-const dynNode = (layer, id) => { const D = dynState(layer), n = D.nodes[id]; return n ? { id, type: 'notable', gen: true, dyn: true, br: n.b, upg: id, costLog: n.costLog, parent: n.parent } : null; };
+const dynNode = (layer, id) => { const D = dynState(layer), n = D.nodes[id]; return n ? { id, type: 'notable', gen: !n.big, dyn: true, big: !!n.big, br: n.b, upg: id, costLog: n.costLog, parent: n.parent } : null; };
 // Upgrades come one at a time, not in bursts: sorted by its written price, every upgrade costs at least
 // x5 (QGAP orders of magnitude) more than the one before it. The first costs 20 Quanta, then 100, 500, ...
 // until the written prices are steeper anyway. cost0 keeps the written price.
@@ -2874,7 +2890,7 @@ function webInfo(layer, n) {
   const u = layer === 'q' ? QBY[n.upg] : layer === 's' ? SBY[n.upg] : EBY[n.upg];
   const other = webForkOther(layer, n.upg), ou = other && (layer === 's' ? SBY[other] : layer === 'q' ? QBY[other] : EBY[other]);
   const choice = ou ? 'Path choice: you get this or ' + ou.name + ', not both. Buying one closes the other' + (layer === 's' ? ' (Reshape the tree to switch).' : '.') : '';
-  return { name: u.name, label: n.type === 'root' ? 'The root' : (ou ? 'Path choice · ' : n.dyn ? 'Endless growth · ' : 'Notable · ') + (br ? br.name : ''), desc: u.desc, eff: u.eff, choice };
+  return { name: u.name, label: n.type === 'root' ? 'The root' : (ou ? 'Path choice · ' : n.dyn && !n.big ? 'Endless growth · ' : 'Notable · ') + (br ? br.name : ''), desc: u.desc, eff: u.eff, choice };
 }
 const BR_HUE = [['var(--es)', 'var(--esr)'], ['var(--q)', 'var(--qr)'], ['var(--sh)', 'var(--shr)']];
 function buildWebView(T, layer, tabId) {
@@ -3180,12 +3196,17 @@ function buildAutoTab() {
   const b1 = h('div', { class: 'auto-box' }, h('h2', { style: 'margin-top:0' }, 'Autobuyers'));
   const g = h('div', { class: 'auto-grid' });
   GEN_FIRST.forEach((G, i) => g.append(chk(G.name, () => S.auto.gens[i], v => S.auto.gens[i] = v, () => !!S.sUpg['ab' + i])));
-  g.append(chk('Tier 9 and above', () => S.auto.genHigh, v => S.auto.genHigh = v, () => !!S.sUpg.ab8));
+  const hi = h('div', { class: 'auto-grid' }); let hiN = -1;
+  up(() => {
+    let n = 0; while (S.sUpg['ab' + (8 + n)]) n++;
+    if (n === hiN) return; hiN = n; hi.textContent = '';
+    for (let i = 8; i < 8 + n; i++) hi.append(chk(genDef(i).name, () => S.auto.gens[i] !== false, v => S.auto.gens[i] = v, () => true));
+  }, 'auto');
   g.append(chk('Clock Speed', () => S.auto.clock, v => S.auto.clock = v, () => !!S.sUpg.abC));
   ['Light', 'Harmony', 'Cascade'].forEach((nm, b) => g.append(chk(nm + ' upgrades', () => S.auto.qb[b], v => S.auto.qb[b] = v, () => !!S.sUpg[['abL', 'abH', 'abK'][b]])));
   const kn = h('div', { class: 'muted' });
   up(() => { const t = S.stats.time, on = ['abL', 'abH', 'abK'].map((id, b) => S.sUpg[id] ? ['Light', 'Harmony', 'Cascade'][b] + ' ' + (S.auto.qbNext[b] > t ? 'in ' + Math.ceil(S.auto.qbNext[b] - t) + 's' : 'ready') : '').filter(Boolean); setT(kn, on.length ? 'Next Upgrade-web purchase: ' + on.join(' · ') : ''); }, 'auto');
-  b1.append(g, h('div', { class: 'muted' }, 'Generator and Clock Speed autobuyers buy the maximum every tick. The Upgrade-web keepers buy one node, then rest ' + CFG.keeperCd + ' seconds.'), kn);
+  b1.append(g, hi, h('div', { class: 'muted' }, 'Generator and Clock Speed autobuyers buy the maximum every tick. The Upgrade-web keepers buy one node, then rest ' + CFG.keeperCd + ' seconds.'), kn);
   T.append(b1);
 
   // Auto-collapse

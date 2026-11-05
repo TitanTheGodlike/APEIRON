@@ -1275,7 +1275,7 @@ function globalMultLog() {
   L += minorSum('qmult') + cardSum('qmult') + (isIdle() ? cardSum('idle') : 0);
   if (hasR('lucky7')) L += L10(77);
   if (hasR('spectrum')) L += L10(20);
-  if (hasR('cheatcode')) L += L10(300);
+  if (hasR('cheatcode')) L += L10(30);
   if (hasR('dreamer') && isIdle()) L += 3;
   L += fSum('qm');
   if (hasQ('q20')) L += L10(S.gens.length);
@@ -1749,7 +1749,7 @@ const RELICS = [
   { id: 'loadeddie', name: 'Loaded Die', cost: 16, desc: 'Lucky Pulse chance +5%.' },
   { id: 'markeddeck', name: 'Marked Deck', cost: 18, desc: 'Every card you are dealt rolls 25% stronger.' },
   { id: 'consolation', name: 'Two-Headed Coin', cost: 22, desc: 'Coin-flip cards land heads two times in three.' },
-  { id: 'cheatcode', name: 'Old Code', cost: 28, desc: 'Quanta production ×300.' },
+  { id: 'cheatcode', name: 'Old Code', cost: 28, desc: 'Quanta production ×30.' },
   { id: 'dreamer', name: 'Dreamer’s Lamp', cost: 35, desc: 'While you have not touched the game for a minute, Quanta production ×1,000.' },
   { id: 'draftsman', name: 'Draftsman’s Pencil', cost: 45, desc: 'Shard gain ×3.' },
   { id: 'patina', name: 'Patina', cost: 50, desc: 'Clock Speed base +0.01.' },
@@ -1773,7 +1773,7 @@ const SECRETS = [
   { id: 'x9', name: 'Rebel', hint: 'Who needs instructions?', desc: 'Skip the intro or the tutorial.', reward: ['relic', 'selftaught'] },
   { id: 'x10', name: 'Restless', hint: 'Look everywhere at once.', desc: 'Switch tabs 30 times within a minute.', reward: ['anom', 'prism'] },
   { id: 'x11', name: 'Insomniac', hint: 'Stay a while.', desc: 'Keep one session open for 3 hours.', reward: ['relic', 'secondwind'] },
-  { id: 'x12', name: 'Cheat Code', hint: 'Thirty lives, if you remember the steps.', desc: 'Enter the old code: ↑ ↑ ↓ ↓ ← → ← → B A.', reward: ['relic', 'cheatcode'] },
+  { id: 'x12', name: 'Cheat Code', hint: 'Thirty lives, if you remember the steps.', desc: 'Enter the old code after your first Collapse: ↑ ↑ ↓ ↓ ← → ← → B A.', reward: ['relic', 'cheatcode'] },
   { id: 'x13', name: 'Spectrum', hint: 'Try on every colour.', desc: 'Use all six colour themes.', reward: ['relic', 'spectrum'] },
   { id: 'x14', name: 'Full House', hint: 'One of each.', desc: 'Have a Common, a Rare, an Epic and a Legendary card working at the same time.', reward: ['relic', 'markeddeck'] },
   { id: 'x15', name: 'Tails Again', hint: 'Some days the coin hates you.', desc: 'Lose three coin flips in a row.', reward: ['relic', 'consolation'] },
@@ -3347,6 +3347,7 @@ function render(force) {
 /* ---------------- Input ---------------- */
 // the old code: the Architect notices, and wants an explanation
 function cheatCodeEntered() {
+  if (!S.stats.totalCollapses && !S.ascensions) return; // the world is too young to have back doors: nothing happens before the first Collapse
   if (S.ach.x12) { aiSay(rnd(['Again? I told you, there are no codes in my world.', 'I heard that. Ten keys, in order.', 'Still knocking on that door?'])); return; }
   blip(1.2); setTimeout(() => blip(0.9), 140);
   const after = () => { aiSay('There are no cheat codes in my world. But I like that you went looking for one. Keep this. Tell no one.'); grantSecret('x12'); };

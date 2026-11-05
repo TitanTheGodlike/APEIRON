@@ -15,7 +15,7 @@
   --q:#7fe3ff; --sh:#c49bff; --es:#ffd27a; --ok:#6ef2b4; --bad:#ff7b8b;
   --qr:127,227,255; --shr:196,155,255; --esr:255,210,122;
   --neb1:rgba(90,70,200,.22); --neb2:rgba(40,140,200,.14); --neb3:rgba(160,80,220,.12);
-  --glass:rgba(12,16,36,.74); --glass2:rgba(20,26,58,.82);
+  --glass:rgba(12,16,36,.82); --glass2:rgba(20,26,58,.82);
   --edge:rgba(130,160,255,.16); --edge2:rgba(130,160,255,.34); --c:rgba(150,190,255,.55);
   --mono:"Cascadia Code","Cascadia Mono",Consolas,ui-monospace,monospace;
 }
@@ -72,7 +72,7 @@ img,canvas{-webkit-user-drag:none}
     linear-gradient(var(--c) 0 0) bottom left/12px 1.5px no-repeat,linear-gradient(var(--c) 0 0) bottom left/1.5px 12px no-repeat,
     linear-gradient(var(--c) 0 0) bottom right/12px 1.5px no-repeat,linear-gradient(var(--c) 0 0) bottom right/1.5px 12px no-repeat,
     var(--glass);
-  border:1px solid var(--edge);border-radius:3px;backdrop-filter:blur(6px)}
+  border:1px solid var(--edge);border-radius:3px}
 #topbar{position:sticky;top:0;z-index:10}
 header{background:linear-gradient(180deg,rgba(6,8,20,.94),rgba(6,8,20,.82));backdrop-filter:blur(10px);border-bottom:1px solid var(--edge);padding:10px 20px;display:flex;align-items:center;gap:28px;flex-wrap:wrap;box-shadow:0 1px 0 rgba(var(--qr),.08),0 8px 30px rgba(0,0,0,.35)}
 .title{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.32em;font-size:13px;color:#cfd6ff;text-shadow:0 0 12px rgba(160,180,255,.5)}
@@ -2510,7 +2510,7 @@ const skyLayers = () => SKY_LAYERS || (SKY_LAYERS = [ // far to near: when it ap
 ]);
 const SKY_FIRE_X = 0.17;
 function paintSky(c, t, tier) {
-  const d = Math.min(2, window.devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+  const d = 1, W = innerWidth, H = innerHeight; // soft gradients: full resolution is wasted
   c.width = Math.floor(W * d); c.height = Math.floor(H * d); c.style.width = W + 'px'; c.style.height = H + 'px';
   const g = c.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0); g.clearRect(0, 0, W, H);
   const top = skyCol(t, 1), mid = skyCol(t, 2), hor = skyCol(t, 3), night = 1 - skySmooth(0.35, 0.7, t);
@@ -2583,16 +2583,16 @@ function startSky() {
   const fireY = () => (1 - skyLayers()[3].y(SKY_FIRE_X)) * 100 - 0.4; // the campfire sits on the nearest hill (vh from the bottom)
   el.fire.style.left = SKY_FIRE_X * 100 + 'vw';
   const embers = [];
-  for (let i = 0; i < 28; i++) {
+  for (let i = 0; i < 18; i++) {
     const e = document.createElement('i'), s = (2 + Math.random() * 2.5).toFixed(1) + 'px';
     e.style.left = (SKY_FIRE_X * 100 + (Math.random() - 0.5) * 2.4).toFixed(2) + 'vw'; e.style.width = s; e.style.height = s;
     e.style.setProperty('--dx', ((Math.random() - 0.3) * 18).toFixed(1) + 'vw');
     e.style.animationDuration = (8 + Math.random() * 9).toFixed(1) + 's'; e.style.animationDelay = (-Math.random() * 17).toFixed(1) + 's';
     el.embers.appendChild(e); embers.push(e);
   }
-  for (let i = 0; i < 90; i++) {
+  for (let i = 0; i < 40; i++) {
     const g = document.createElement('i');
-    g.style.left = (i / 90 * 100 + Math.random()).toFixed(2) + '%'; g.style.height = (1.6 + Math.random() * 3.4).toFixed(2) + 'vh';
+    g.style.left = (i / 40 * 100 + Math.random() * 1.5).toFixed(2) + '%'; g.style.height = (1.6 + Math.random() * 3.4).toFixed(2) + 'vh';
     g.style.animationDuration = (1.6 + Math.random() * 1.6).toFixed(2) + 's'; g.style.animationDelay = (-Math.random() * 3).toFixed(2) + 's';
     el.grass.appendChild(g);
   }
@@ -2602,20 +2602,21 @@ function startSky() {
     const on = !(S.settings.ui && S.settings.ui.sky === false), t = on ? skyDay() : 0, tier = S.ai.tierSeen;
     const key = [on, t.toFixed(3), tier, hasE('e52'), size].join('|');
     if (key === last) return; last = key;
+    cv.style.display = t > 0 || tier >= 6 ? '' : 'none'; // nothing to paint before Bonfire or the first light
     const ground = paintSky(cv, t, tier);
     sky.style.setProperty('--hill', rgbaOf(ground));
     const night = 1 - skySmooth(0.35, 0.7, t), fireOn = tier >= 2 ? 1 - skySmooth(0.4, 0.75, t) : 0;
-    el.fire.style.bottom = fireY().toFixed(2) + 'vh'; el.fire.style.opacity = tier >= 6 ? fireOn : 0;
-    el.embers.style.opacity = fireOn;
+    el.fire.style.bottom = fireY().toFixed(2) + 'vh'; el.fire.style.opacity = tier >= 6 ? fireOn : 0; el.fire.style.display = tier >= 6 && fireOn > 0 ? '' : 'none';
+    el.embers.style.opacity = fireOn; el.embers.style.display = fireOn > 0 ? '' : 'none';
     for (const e of embers) e.style.bottom = (tier >= 6 ? fireY() : -2).toFixed(2) + 'vh';
-    const n = tier < 2 ? 0 : tier < 3 ? 6 : tier < 5 ? 11 : tier < 7 ? 17 : tier < 8 ? 22 : 28; // more embers with every fire
+    const n = tier < 2 ? 0 : tier < 3 ? 5 : tier < 5 ? 8 : tier < 7 ? 11 : tier < 8 ? 14 : 18; // more embers with every fire
     embers.forEach((e, i) => { e.style.display = i < n ? '' : 'none'; });
-    el.shoot.style.opacity = tier >= 13 ? night : 0;
-    el.grass.style.opacity = hasE('e52') ? 1 : 0; // Wind in Your Face: grass in the wind
+    el.shoot.style.opacity = tier >= 13 ? night : 0; el.shoot.style.display = tier >= 13 && night > 0 ? '' : 'none';
+    el.grass.style.opacity = hasE('e52') ? 1 : 0; el.grass.style.display = hasE('e52') ? '' : 'none'; // Wind in Your Face: grass in the wind
     $('stars').style.opacity = (1 - skySmooth(0.3, 0.8, t)).toFixed(3);
     // daylight: more solid panels and shadowed loose text
     const dayL = skySmooth(0.3, 1, t);
-    if (dayL > 0) document.body.style.setProperty('--glass', `rgba(12,16,36,${(0.74 + 0.18 * dayL).toFixed(3)})`); else document.body.style.removeProperty('--glass');
+    if (dayL > 0) document.body.style.setProperty('--glass', `rgba(12,16,36,${(0.82 + 0.1 * dayL).toFixed(3)})`); else document.body.style.removeProperty('--glass');
     setC(document.body, 'daysky', dayL > 0.35);
   });
 }

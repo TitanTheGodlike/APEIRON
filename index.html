@@ -1992,10 +1992,10 @@ function voiceOut(ac) {
 }
 function voiceNodes(ac, dest, t, ch, pitch, vol) {
   const c = ch.toLowerCase(), code = c.charCodeAt(0), vi = 'aeiou'.includes(c) ? 'aeiou'.indexOf(c) : code % 5;
-  const f0 = 300 * pitch * Math.pow(2, (((code * 7) % 12) - 4) / 12) * (0.97 + Math.random() * 0.06);
+  const f0 = 220 * pitch * Math.pow(2, (((code * 7) % 12) - 4) / 12) * (0.97 + Math.random() * 0.06);
   const o = ac.createOscillator(), g = ac.createGain(), b1 = ac.createBiquadFilter(), b2 = ac.createBiquadFilter();
   o.type = 'sawtooth'; o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f0 * 1.07, t + 0.05);
-  b1.type = b2.type = 'bandpass'; b1.frequency.value = VOWELS[vi][0] * 1.2; b2.frequency.value = VOWELS[vi][1] * 1.2; b1.Q.value = 5; b2.Q.value = 7;
+  b1.type = b2.type = 'bandpass'; b1.frequency.value = VOWELS[vi][0]; b2.frequency.value = VOWELS[vi][1]; b1.Q.value = 5; b2.Q.value = 7;
   g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
   o.connect(b1); o.connect(b2); b1.connect(g); b2.connect(g); g.connect(dest);
   o.start(t); o.stop(t + 0.085);
@@ -2007,7 +2007,7 @@ function voice(ch, pitch = 1) {
   const ac = audio(); if (!ac) return;
   const t = ac.currentTime; if (t - (SND.lastVoice || 0) < 0.045) return; // about 22 syllables a second at most
   SND.lastVoice = t;
-  voiceNodes(ac, voiceOut(ac), t, ch, pitch, 0.16 * S.settings.volume);
+  voiceNodes(ac, voiceOut(ac), t, ch, pitch, 0.24 * S.settings.volume);
 }
 // A ring of dots around a talking orb that moves with the voice
 const VIZ = { orbs: [], kick: 0, seed: 0, bins: null };

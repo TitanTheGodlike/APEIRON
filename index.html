@@ -89,6 +89,8 @@ main{max-width:1140px;margin:0 auto;padding:18px 20px}
 .pulse.cooling::before{animation:charge var(--cdms,1500ms) linear forwards}
 .pulse.ready-flash{animation:readyPop .35s ease-out}
 @keyframes charge{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.lucky-pop{position:fixed;z-index:60;pointer-events:none;font-weight:700;font-size:15px;letter-spacing:.06em;color:var(--es);text-shadow:0 0 12px rgba(var(--esr),.8);animation:luckyUp 1s ease-out forwards;white-space:nowrap}
+@keyframes luckyUp{from{opacity:1;transform:translate(-50%,-40%) scale(.9)}20%{transform:translate(-50%,-90%) scale(1.15)}to{opacity:0;transform:translate(-50%,-230%) scale(1)}}
 @keyframes readyPop{40%{box-shadow:0 0 22px rgba(var(--qr),.55)}}
 .pulse{width:215px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;font-variant-numeric:tabular-nums}
 .row{--hue:195;--c:hsla(var(--hue),90%,72%,.6);display:grid;grid-template-columns:minmax(160px,1.25fr) minmax(160px,1.3fr) minmax(130px,1fr) minmax(200px,1.1fr);gap:12px;align-items:center;padding:9px 14px;margin-bottom:6px;transition:border-color .2s}
@@ -161,6 +163,15 @@ label.chk input{accent-color:var(--q)}
 .toast.sh{border-left-color:var(--sh)}.toast.es{border-left-color:var(--es)}.toast.bad{border-left-color:var(--bad)}
 .toast.ai{border-left-color:var(--sh);background:linear-gradient(90deg,rgba(60,40,120,.55),rgba(12,16,38,.94) 40%);color:#e4dcff}
 @keyframes tin{from{transform:translateX(24px);opacity:0}}
+/* the Architect speaks in a speech bubble beside its orb, bottom left; other notifications stay toasts */
+#say{position:fixed;left:16px;bottom:52px;z-index:31;display:flex;align-items:flex-end;gap:12px;max-width:min(440px,calc(100vw - 400px));opacity:0;transform:translateY(14px) scale(.96);transform-origin:left bottom;transition:opacity .3s,transform .3s;pointer-events:none}
+#say.on{opacity:1;transform:none;pointer-events:auto;cursor:pointer}
+#say .orb{width:34px;height:34px;margin-bottom:2px}
+.say-b{position:relative;background:linear-gradient(160deg,rgba(60,40,120,.94),rgba(12,16,38,.97));border:1px solid rgba(var(--shr),.55);border-radius:14px 14px 14px 4px;padding:8px 14px 10px;font-size:13.5px;line-height:1.45;color:#e4dcff;box-shadow:0 8px 26px rgba(0,0,0,.5),0 0 20px rgba(var(--shr),.2);backdrop-filter:blur(8px);min-width:120px}
+.say-b::before{content:'';position:absolute;left:-9px;bottom:9px;width:14px;height:14px;background:rgba(48,34,104,.97);border-left:1px solid rgba(var(--shr),.55);border-bottom:1px solid rgba(var(--shr),.55);transform:rotate(45deg)}
+.say-who{font-size:9.5px;letter-spacing:.22em;color:var(--sh);margin-bottom:2px}
+#say.typing .say-t::after{content:'▍';opacity:.75;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
 #flash{position:fixed;inset:0;pointer-events:none;z-index:40;opacity:0}
 #flash.go{animation:flash .9s ease-out}
 @keyframes flash{0%{opacity:.65}100%{opacity:0}}
@@ -227,7 +238,15 @@ kbd{background:rgba(30,40,90,.6);border:1px solid var(--edge2);border-radius:3px
 .tn.owned .tshape{fill:var(--bc);fill-opacity:.3;opacity:1;filter:drop-shadow(0 0 7px var(--bc))}
 .tn.owned .tcore{opacity:1}.tn.owned .tl{fill:#eef1ff}
 .tn.owned.minor .tshape{fill-opacity:.85}
+.tn.gen .tl{font-size:9.5px}
 .tn.forked{opacity:.25}.tn.forked .tl{text-decoration:line-through}
+.tfork{stroke:#ffd27a;stroke-width:2;stroke-dasharray:5 6;fill:none;opacity:.7;pointer-events:none}
+.tforkl{pointer-events:none}.tforkl rect{fill:rgba(9,11,30,.94);stroke:#ffd27a;stroke-width:1.5}
+.tforkl text{fill:#ffd27a;font-size:15px;font-weight:700;letter-spacing:.12em;text-anchor:middle;font-family:"Segoe UI",system-ui,sans-serif}
+.tforkl.open rect{animation:pulseNode 1.3s ease-in-out infinite}
+.tfork.done,.tforkl.done{opacity:.35}.tfork.fog,.tforkl.fog{opacity:.08}
+.nodepanel .pf{font-size:12px;color:#ffd27a}
+.tforkring{fill:none;stroke:#ffd27a;stroke-width:2.5;stroke-dasharray:5 4;opacity:.85}.tn.forked .tforkring{opacity:.35}
 .tn.sel .tshape{stroke:#fff;stroke-width:3;opacity:1}
 .tn.root .tshape{stroke-width:3}
 .tn.fresh .tbody{animation:grow 1s cubic-bezier(.2,1.6,.4,1) both,bob 5s ease-in-out 1s infinite}
@@ -299,7 +318,8 @@ body[data-theme=mono] .tier,body[data-theme=mono] .bar10 i{filter:saturate(0)}
   .cards{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
   .treeview{height:68vh}.treehint{display:none}
   .nodepanel{left:8px;right:8px;top:auto;bottom:8px;width:auto;max-height:46%;overflow:auto}
-  #toasts{left:10px;right:10px;bottom:46px}.toast{max-width:none}
+  #toasts{left:10px;right:10px;bottom:calc(46px + var(--sayh,0px))}.toast{max-width:none}
+  #say{left:10px;right:10px;bottom:46px;max-width:none}.say-b{flex:1}
   .chals{grid-template-columns:1fr}.auto-grid{grid-template-columns:1fr 1fr}
   #intro .dlg{font-size:16px;padding:18px 18px 30px}#intro .bigorb{width:110px;height:110px;margin-bottom:30px}
   button{min-height:34px}
@@ -314,6 +334,7 @@ body[data-theme=mono] .tier,body[data-theme=mono] .bar10 i{filter:saturate(0)}
 <main id="main"></main>
 <div class="progress"><div class="fill" id="pfill"></div><div class="txt" id="ptxt"></div></div>
 <div id="toasts"></div>
+<div id="say" title="Click to skip"><div class="orb"></div><div class="say-b"><div class="say-who">THE ARCHITECT</div><div class="say-t"></div></div></div>
 <div id="flash"></div>
 <div id="modal"><div class="box" id="mbox"></div></div>
 <div id="intro"></div>
@@ -472,31 +493,32 @@ function quadMax(lm, c0, s, q, k) {
 const CFG = {
   cascadeLog: 0,      // log10 of how fast tier N makes tier N-1
   collapseReq: 25,    // log10 Quanta needed to Collapse
-  shardDiv: 30,       // shards = 10^((logQ - req)/div) * mult
+  shardDiv: 36,       // shards = 10^((logQ - req)/div) * mult (36 since the webs grew to ~430 upgrades)
   limit: 308,         // The Limit
   ascDiv: 60,         // essence beyond the limit = 10^((logQ - 308)/div) * mult
-  clock0: 3,          // log10 first Clock Speed cost
+  clock0: 1.7,        // log10 first Clock Speed cost (50)
   clockScale: 12,     // Clock cost growth doubles every 12 levels
   genScale: 60,       // generator cost growth doubles every 60 bought
   clockBase: 1.1,
-  resBase: 1.8,
+  resBase: 1.75,
 };
 
 /* Generators never run out: the first eight are hand-tuned, every tier after that
    is generated (each costs more and scales faster than the one before). */
 const GEN_FIRST = [
-  { name: 'Flicker', base: 1, step: 0.40 },
-  { name: 'Spark', base: 2.5, step: 0.50 },
+  { name: 'Flicker', base: 1, step: 0.30 },
+  { name: 'Spark', base: 1.7, step: 0.40 },
   { name: 'Ember', base: 4.5, step: 0.60 },
-  { name: 'Flare', base: 7, step: 0.70 },
-  { name: 'Pulsar', base: 10, step: 0.90 },
-  { name: 'Quasar', base: 14, step: 1.10 },
-  { name: 'Nova', base: 19, step: 1.30 },
-  { name: 'Rift', base: 25, step: 1.50 },
+  { name: 'Flame', base: 7, step: 0.70 },
+  { name: 'Flare', base: 10, step: 0.90 },
+  { name: 'Blaze', base: 14, step: 1.10 },
+  { name: 'Bonfire', base: 19, step: 1.30 },
+  { name: 'Inferno', base: 25, step: 1.50 },
 ];
-const GEN_NAMES = ['Flicker', 'Spark', 'Ember', 'Flare', 'Pulsar', 'Quasar', 'Nova', 'Rift',
-  'Nebula', 'Vortex', 'Horizon', 'Aether', 'Paradox', 'Echo', 'Monolith', 'Axiom',
-  'Eclipse', 'Zenith', 'Abyss', 'Oracle', 'Tesseract', 'Chorus', 'Mirage', 'Genesis'];
+// the names climb slowly: small lights, then fires, then stars, then the sky itself
+const GEN_NAMES = ['Flicker', 'Spark', 'Ember', 'Flame', 'Flare', 'Blaze', 'Bonfire', 'Inferno',
+  'Firestorm', 'Sun', 'Giant', 'Pulsar', 'Quasar', 'Nova', 'Nebula', 'Galaxy',
+  'Rift', 'Vortex', 'Horizon', 'Aether', 'Eclipse', 'Paradox', 'Monolith', 'Genesis'];
 const ROMAN = n => { let s = '', v = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']]; for (const [a, r] of v) while (n >= a) { s += r; n -= a; } return s; };
 const GEN_CACHE = [];
 function genDef(i) {
@@ -510,25 +532,70 @@ function genDef(i) {
   return (GEN_CACHE[i] = d);
 }
 const newGen = () => ({ amt: D.Z, bought: 0 });
+const plural = n => /(s|x|z|ch|sh)$/.test(n) ? n + 'es' : /[^aeiou]y$/.test(n) ? n.slice(0, -1) + 'ies' : n + 's'; // Vortexes, Galaxies
 
+// Simple upgrades in every web carry their effect as a field: qm (Quanta ×), hi (every tier above Flicker ×),
+// shard (Shard gain ×), ess (Essence gain ×), pc (Flickers × per Clock Speed level), all stored as log10;
+// res and clock are added to Resonance and the Clock Speed base. fx() writes one from a plain multiplier.
+const FIELDS = ['qm', 'hi', 'shard', 'ess', 'pc', 'res', 'clock'], FLOG = { qm: 1, hi: 1, shard: 1, ess: 1, pc: 1 };
+const fx = (id, name, cost, k, x) => ({ id, name, cost, [k]: FLOG[k] ? L10(x) : x });
+// kx(): an upgrade that works like one of the Architect's ideas (tier = which generator, src = the one it bonds with)
+const KLOG = { tier: 1, pulse: 1, idle: 1, head: 1, insight: 1 };
+const kx = (id, name, cost, kind, x, tier, src) => { const u = { id, name, cost, kind, v: KLOG[kind] ? L10(x) : x }; if (tier !== undefined) u.tier = tier; if (src !== undefined) u.src = src; return u; };
 // cost = log10 of Quanta
 const QUPG = [
   { id: 'q1', name: 'Kindling', cost: 2, desc: 'Pulse also grants 1 second of Quanta production.' },
+  // Light: production
   { id: 'q2', name: 'Feedback Loop', cost: 3, desc: 'Flickers gain ×(1 + log₁₀ Quanta).', eff: () => '×' + fmt(1 + Math.max(0, lq())) },
-  { id: 'q3', name: 'Harmonics', cost: 5, desc: 'Resonance +0.15 (the multiplier gained for every 10 of a generator bought).' },
-  { id: 'q4', name: 'Overclock', cost: 7, desc: 'Clock Speed base +0.015.' },
+  { id: 'q17', name: 'Glow', cost: 6, qm: L10(2), desc: 'Quanta production ×2.' },
   { id: 'q5', name: 'Synergy', cost: 9, desc: 'Quanta production ×(1 + total generators bought / 100).', eff: () => '×' + fmt(1 + totalBought() / 100) },
-  { id: 'q6', name: 'Cascade', cost: 12, desc: 'Spark through Rift produce 4× faster.' },
-  { id: 'q7', name: 'Momentum', cost: 15, desc: 'Quanta production grows with time spent in this Collapse (+×1 every 20s, max ×100).', eff: () => '×' + fmt(momentum()) },
-  { id: 'q8', name: 'Starlight Echo', cost: 18, desc: 'Flickers ×1.1 per Clock Speed level.', eff: () => fmtMult(S.clock * L10(1.1)) },
-  { id: 'q9', name: 'Critical Mass', cost: 22, desc: 'Resonance +0.15.' },
-  { id: 'q10', name: 'Condense', cost: 25, desc: 'Shard gain ×2.' },
-  { id: 'q11', name: 'Event Horizon', cost: 32, desc: 'Clock Speed base +0.015.' },
-  { id: 'q12', name: 'Overflow', cost: 45, desc: 'Shard gain ×3.' },
-  { id: 'q13', name: 'Hyperflux', cost: 70, desc: 'Flickers ×(log₁₀ Quanta)³.', eff: () => '×' + fmt(Math.pow(Math.max(1, lq()), 3)) },
-  { id: 'q16', name: 'Lens Array', cost: 100, desc: 'Quanta production ×1,000.' },
-  { id: 'q14', name: 'Escape Velocity', cost: 120, desc: 'Shard gain ×5.' },
-  { id: 'q15', name: 'Brink', cost: 200, desc: 'Shard gain ×(log₁₀ Quanta / 100)³.', eff: () => '×' + fmt(Math.pow(Math.max(1, lq() / 100), 3)) },
+  { id: 'q18', name: 'Lantern', cost: 14, qm: L10(3), desc: 'Quanta production ×3.' },
+  { id: 'q7', name: 'Momentum', cost: 17, desc: 'Quanta production grows with time spent in this Collapse (+×1 every 20s, max ×30).', eff: () => '×' + fmt(momentum()) },
+  { id: 'q13', name: 'Hyperflux', cost: 40, desc: 'Flickers ×(log₁₀ Quanta)².', eff: () => '×' + fmt(Math.pow(Math.max(1, lq()), 2)) },
+  { id: 'q19', name: 'Prism Glass', cost: 55, qm: L10(5), desc: 'Quanta production ×5.' },
+  { id: 'q16', name: 'Lens Array', cost: 80, qm: 1, desc: 'Quanta production ×10.' },
+  { id: 'q20', name: 'Corona', cost: 130, desc: 'Quanta production ×(generator tiers unlocked).', eff: () => '×' + fmt(S.gens.length) },
+  { id: 'q21', name: 'Sunforge', cost: 220, qm: 2, desc: 'Quanta production ×100.' },
+  fx('q32', 'Candlewick', 4, 'qm', 1.22), kx('q33', 'Hearth', 10, 'tier', 2, 0), kx('q34', 'Kiln', 13, 'pulse', 3),
+  kx('q35', 'Beacon', 22, 'tier', 2, 1), fx('q37', 'Halo', 26, 'qm', 1.41), kx('q39', 'Daybreak', 28, 'tier', 2, 2),
+  kx('q36', 'Afterglow', 30, 'idle', 1.5), kx('q38', 'Gleam', 42, 'lucky', 0.03), kx('q40', 'Lighthouse', 60, 'pulsecd', 0.1),
+  kx('q42', 'Starglass', 68, 'tier', 2, 3), kx('q45', 'Incandescence', 75, 'idle', 1.5), kx('q41', 'Solstice', 95, 'flick', 0.05),
+  fx('q43', 'Photon Mill', 120, 'qm', 1.73), kx('q46', 'Aurora', 140, 'lucky', 0.03), kx('q44', 'Zenith', 170, 'tier', 3, 4),
+  kx('q48', 'High Noon', 190, 'pulse', 5), fx('q47', 'Dawnfire', 280, 'qm', 2.24), kx('q49', 'Second Sun', 400, 'tier', 10, 9),
+  fx('q50', 'Endless Day', 650, 'qm', 5.48),
+  // Harmony: resonance and clock
+  { id: 'q3', name: 'Harmonics', cost: 5, res: 0.07, desc: 'Resonance +0.07 (the multiplier gained for every 10 of a generator bought).' },
+  { id: 'q22', name: 'Tuning Fork', cost: 8, clock: 0.006, desc: 'Clock Speed base +0.006.' },
+  { id: 'q4', name: 'Overclock', cost: 11, clock: 0.008, desc: 'Clock Speed base +0.008.' },
+  { id: 'q9', name: 'Critical Mass', cost: 20, res: 0.08, desc: 'Resonance +0.08.' },
+  { id: 'q8', name: 'Starlight Echo', cost: 26, desc: 'Flickers ×1.07 per Clock Speed level.', eff: () => fmtMult(S.clock * L10(1.07)) },
+  { id: 'q23', name: 'Chorus', cost: 35, res: 0.03 },
+  { id: 'q11', name: 'Event Horizon', cost: 48, clock: 0.008, desc: 'Clock Speed base +0.008.' },
+  { id: 'q24', name: 'Overtone Bell', cost: 70, res: 0.03 },
+  { id: 'q25', name: 'Escapement', cost: 100, clock: 0.008, desc: 'Clock Speed base +0.008.' },
+  { id: 'q26', name: 'Grand Harmony', cost: 150, res: 0.03 },
+  fx('q51', 'Metronome', 6, 'res', 0.005), fx('q52', 'Pendulum', 12, 'pc', 1.005), kx('q53', 'Cadence', 15, 'resonate', 1, 0),
+  fx('q54', 'Tempo', 24, 'pc', 1.005), kx('q55', 'Refrain', 28, 'thrift', 0.05, 0), kx('q57', 'Counterpoint', 40, 'resonate', 1, 1),
+  kx('q58', 'Fugue', 45, 'thrift', 0.05, 1), fx('q56', 'Unison', 50, 'res', 0.005), fx('q59', 'Chime', 75, 'clock', 0.002),
+  kx('q64', 'Resonant Hall', 95, 'resonate', 1, 3), kx('q60', 'Octave', 110, 'resonate', 1, 2), fx('q61', 'Carillon', 140, 'pc', 1.007),
+  kx('q62', 'Crescendo', 200, 'thrift', 0.05, 2), fx('q63', 'Coda', 260, 'res', 0.005), fx('q65', 'Music of the Spheres', 450, 'res', 0.01),
+  fx('q66', 'Perfect Pitch', 700, 'pc', 1.01),
+  // Cascade: higher tiers and Shards
+  { id: 'q6', name: 'Cascade', cost: 12, hi: L10(2), desc: 'Every generator above Flicker ×2.' },
+  { id: 'q10', name: 'Condense', cost: 25, shard: L10(1.5), desc: 'Shard gain ×1.5.' },
+  { id: 'q27', name: 'Undertow', cost: 30, hi: L10(1.5), desc: 'Every generator above Flicker ×1.5.' },
+  { id: 'q28', name: 'Sediment', cost: 38, shard: L10(1.5), desc: 'Shard gain ×1.5.' },
+  { id: 'q12', name: 'Overflow', cost: 45, shard: L10(2.5), desc: 'Shard gain ×2.5.' },
+  { id: 'q29', name: 'Deep Current', cost: 60, hi: L10(1.5), desc: 'Every generator above Flicker ×1.5.' },
+  { id: 'q30', name: 'Riverbed', cost: 90, shard: L10(1.5), desc: 'Shard gain ×1.5.' },
+  { id: 'q14', name: 'Escape Velocity', cost: 110, shard: L10(3), desc: 'Shard gain ×3.' },
+  { id: 'q15', name: 'Brink', cost: 160, desc: 'Shard gain ×(log₁₀ Quanta / 100)^2.5.', eff: () => '×' + fmt(Math.pow(Math.max(1, runBestLog() / 100), 2.5)) },
+  { id: 'q31', name: 'Torrent', cost: 200, hi: L10(1.5), desc: 'Every generator above Flicker ×1.5.' },
+  fx('q67', 'Trickle', 16, 'shard', 1.1), kx('q68', 'Rapids', 20, 'synergy', 0.1, 0, 1), fx('q69', 'Silt', 32, 'shard', 1.1),
+  kx('q70', 'Eddy', 42, 'synergy', 0.1, 1, 2), kx('q71', 'Delta', 65, 'head', 10), fx('q72', 'Spillway', 80, 'shard', 1.14),
+  kx('q73', 'Whirlpool', 85, 'synergy', 0.1, 2, 3), fx('q75', 'Floodplain', 125, 'shard', 1.14), fx('q74', 'Undercurrent', 130, 'hi', 1.02),
+  kx('q76', 'Estuary', 175, 'synergy', 0.12, 3, 4), fx('q77', 'Maelstrom', 240, 'shard', 1.22), kx('q78', 'Tidal Bore', 270, 'tier', 3, 7),
+  fx('q79', 'Abyssal Flow', 420, 'shard', 1.41), fx('q80', 'Ocean of Tiers', 680, 'hi', 1.05),
 ];
 
 // cost = plain number of Shards; auto:true = still works inside Isolation
@@ -539,7 +606,7 @@ const SUPG = [
   // Radiance: raw power
   { id: 's3', name: 'Crystal Lattice', cost: 2, desc: 'Quanta production ×(1 + Shards earned this Ascension)^0.4.', eff: () => fmtMult(latticeExp() * S.totalShards.add(1).log10()) },
   { id: 's7', name: 'Deep Resonance', cost: 300, desc: 'Resonance +0.15.' },
-  { id: 's19', name: 'Focused Light', cost: 1.5e4, desc: 'Flicker, Spark, Ember and Flare ×10 each.' },
+  { id: 's19', name: 'Focused Light', cost: 1.5e4, desc: 'Flicker, Spark, Ember and Flame ×10 each.' },
   { id: 's20', name: 'Wide Light', cost: 1.5e4, desc: 'Quanta production ×(generator tiers unlocked)².', eff: () => '×' + fmt(Math.pow(S.gens.length, 2)) },
   { id: 's12', name: 'Fold', cost: 4e5, desc: 'Quanta production exponent +0.01.' },
   { id: 's13', name: 'Lattice II', cost: 2e7, desc: 'Crystal Lattice grows faster (^0.4 → ^0.55).' },
@@ -554,32 +621,42 @@ const SUPG = [
   { id: 's21', name: 'Patient Hands', cost: 2.5e4, desc: 'While you have not touched the game for a minute, Quanta production ×100.' },
   { id: 's22', name: 'Busy Hands', cost: 2.5e4, desc: 'Pulse recharges twice as fast, and for 3 seconds after each Pulse, Quanta production ×100.' },
   { id: 'ab0', name: 'Automata I', cost: 3, auto: true, desc: 'An autobuyer for Flickers.' },
-  { id: 'ab1', name: 'Automata II', cost: 8, auto: true, desc: 'An autobuyer for Sparks.' },
-  { id: 'abC', name: 'Clockmaker', cost: 15, auto: true, desc: 'An autobuyer for Clock Speed.' },
-  { id: 'ab2', name: 'Automata III', cost: 20, auto: true, desc: 'An autobuyer for Embers.' },
-  { id: 'ab3', name: 'Automata IV', cost: 60, auto: true, desc: 'An autobuyer for Flares.' },
-  { id: 'ab4', name: 'Automata V', cost: 200, auto: true, desc: 'An autobuyer for Pulsars.' },
-  { id: 'abL', name: 'Lightkeeper', cost: 400, auto: true, desc: 'Automatically buys nodes in the Light branch of the Upgrade web.' },
-  { id: 'ab5', name: 'Automata VI', cost: 700, auto: true, desc: 'An autobuyer for Quasars.' },
-  { id: 'abH', name: 'Harmonist', cost: 1500, auto: true, desc: 'Automatically buys nodes in the Harmony branch of the Upgrade web.' },
-  { id: 'ab6', name: 'Automata VII', cost: 2500, auto: true, desc: 'An autobuyer for Novas.' },
-  { id: 'abK', name: 'Cascader', cost: 5000, auto: true, desc: 'Automatically buys nodes in the Cascade branch of the Upgrade web.' },
-  { id: 'ab7', name: 'Automata VIII', cost: 1e4, auto: true, desc: 'An autobuyer for Rifts.' },
-  { id: 'ab8', name: 'Automata IX', cost: 5e4, auto: true, desc: 'An autobuyer for every generator above Rift.' },
+  { id: 'ab1', name: 'Automata II', cost: 15, auto: true, desc: 'An autobuyer for Sparks.' },
+  { id: 'abC', name: 'Clockmaker', cost: 50, auto: true, desc: 'An autobuyer for Clock Speed.' },
+  { id: 'ab2', name: 'Automata III', cost: 60, auto: true, desc: 'An autobuyer for Embers.' },
+  { id: 'ab3', name: 'Automata IV', cost: 300, auto: true, desc: 'An autobuyer for Flames.' },
+  { id: 'ab4', name: 'Automata V', cost: 2000, auto: true, desc: 'An autobuyer for Flares.' },
+  { id: 'abL', name: 'Lightkeeper', cost: 8000, auto: true, desc: 'Automatically buys nodes in the Light branch of the Upgrade web.' },
+  { id: 'ab5', name: 'Automata VI', cost: 1.5e4, auto: true, desc: 'An autobuyer for Blazes.' },
+  { id: 'abH', name: 'Harmonist', cost: 6e4, auto: true, desc: 'Automatically buys nodes in the Harmony branch of the Upgrade web.' },
+  { id: 'ab6', name: 'Automata VII', cost: 1.2e5, auto: true, desc: 'An autobuyer for Bonfires.' },
+  { id: 'abK', name: 'Cascader', cost: 4e5, auto: true, desc: 'Automatically buys nodes in the Cascade branch of the Upgrade web.' },
+  { id: 'ab7', name: 'Automata VIII', cost: 1e6, auto: true, desc: 'An autobuyer for Infernos.' },
+  { id: 'ab8', name: 'Automata IX', cost: 2e7, auto: true, desc: 'An autobuyer for every generator above Inferno.' },
   { id: 's11', name: 'Starseed', cost: 6e6, auto: true, desc: 'Start every Collapse with 1e6 Quanta.' },
-  { id: 's9', name: 'Self-Collapse', cost: 2e5, auto: true, desc: 'Unlock Auto-Collapse.' },
+  { id: 's9', name: 'Self-Collapse', cost: 5e6, auto: true, desc: 'Unlock Auto-Collapse.' },
   { id: 's27', name: 'Overclock III', cost: 2.6e12, desc: 'Clock Speed base +0.03.' },
   { id: 's15', name: 'Refraction', cost: 6e14, desc: 'Quanta production ×1,000.' },
   // Echoes: the Shard economy and active abilities
   { id: 's5', name: 'Shard Focus', cost: 5, desc: 'Shard gain ×2.' },
   { id: 's25', name: 'Surge', cost: 1000, desc: 'Unlock the Surge ability (key S): Quanta production ×1,000 for 30 seconds, recharges in 5 minutes.' },
   { id: 's23', name: 'Hoarder', cost: 5e4, desc: 'Shard gain ×5, but Collapsing needs 1e30 Quanta.' },
-  { id: 's24', name: 'Spender', cost: 5e4, desc: 'Quanta production ×1.5 for every Shard upgrade you own.', eff: () => fmtMult(Object.keys(S.sUpg).length * L10(1.5)) },
+  { id: 's24', name: 'Spender', cost: 5e4, desc: 'Quanta production ×1.3 for every Shard upgrade you own.', eff: () => fmtMult(Object.keys(S.sUpg).length * L10(1.3)) },
   { id: 's10', name: 'Echoing Shards', cost: 2e6, desc: 'Shard gain ×(log₁₀(Collapses + 10))².', eff: () => '×' + fmt(Math.pow(L10(S.collapses + 10), 2)) },
   { id: 's26', name: 'Time Fold', cost: 1e8, desc: 'Unlock the Time Fold ability (key F): instantly gain 10 minutes of Quanta production, recharges in 20 minutes.' },
   { id: 's31', name: 'Echo Chamber', cost: 5e9, desc: 'Shard gain ×(1 + abilities used this Collapse).', eff: () => '×' + fmt(1 + S.run.abil) },
   { id: 's29', name: 'Shard Bloom', cost: 8e11, desc: 'Shard gain ×3.' },
   { id: 's30', name: 'Long Surge', cost: 1.3e14, desc: 'Surge lasts 60 seconds and recharges in 3 minutes.' },
+  // more of the simple kind, spread through all three branches
+  fx('s32', 'Glint', 25, 'qm', 1.5), kx('s34', 'Facet', 3e7, 'tier', 3, 4), kx('s33', 'Brilliance', 5e7, 'synergy', 0.12, 4, 5),
+  fx('s36', 'Clear Lattice', 1e11, 'qm', 2), kx('s35', 'Gemfire', 2e11, 'tier', 4, 6), fx('s38', 'Choir of Light', 2e13, 'res', 0.01),
+  kx('s39', 'Crystal Sun', 3e18, 'tier', 8, 9), fx('s37', 'Supernova', 5e20, 'qm', 10),
+  kx('s40', 'Mainspring', 6000, 'head', 10), kx('s46', 'Orrery', 3e7, 'thrift', 0.06, 1), kx('s41', 'Escapement Wheel', 1e8, 'insight', 10),
+  kx('s44', 'Wound Spring', 2e9, 'head', 10), fx('s42', 'Cog Choir', 3e10, 'res', 0.005), kx('s45', 'Autonomy', 5e10, 'idle', 3),
+  kx('s43', 'Perpetual Motion', 1e17, 'thrift', 0.06, 2),
+  fx('s47', 'Splinter', 60, 'shard', 1.15), kx('s48', 'Resonant Shards', 3e5, 'surge', 10), fx('s49', 'Shardstorm', 3e8, 'shard', 1.15),
+  kx('s50', 'Afterimage', 1e10, 'fold', 0.1), kx('s52', 'Echo Well', 3e11, 'lucky', 0.05), fx('s51', 'Geode', 5e14, 'shard', 1.25),
+  kx('s53', 'Crystal Rain', 5e16, 'pulse', 10), fx('s54', 'Shard Sun', 1e19, 'qm', 4),
 ];
 const TREE = [
   { name: 'Radiance', sub: 'raw power', nodes: ['s3', 's7', ['s19', 's20'], 's12', 's13', 's14', 's17', 's16', 's18', 's28'] },
@@ -596,8 +673,8 @@ const sReqMet = id => SREQ[id].length === 0 || SREQ[id].some(r => S.sUpg[r]);
 const sForkTaken = id => !!(SFORK[id] && S.sUpg[SFORK[id]]);
 // Abilities: active skills from the Echoes branch (timers run on game time, so they recharge offline too)
 const ABIL = {
-  surge: { name: 'Surge', node: 's25', dur: () => hasS('s30') ? 60 : 30, cd: () => hasS('s30') ? 180 : 300 },
-  fold: { name: 'Time Fold', node: 's26', dur: () => 0, cd: () => 1200 },
+  surge: { name: 'Surge', node: 's25', dur: () => (hasS('s30') ? 60 : 30) + procSum('surge'), cd: () => hasS('s30') ? 180 : 300 },
+  fold: { name: 'Time Fold', node: 's26', dur: () => 0, cd: () => 1200 * cdMult('fold') },
 };
 const abilReady = k => S.stats.time >= (S.abil[k].ready || 0);
 const surgeActive = () => hasS('s25') && S.stats.time < (S.abil.surge.until || 0);
@@ -615,14 +692,34 @@ const EUPG = [
   { id: 'e2', name: 'Starlight', cost: 2, desc: 'Quanta production ×1,000 × (1 + total Essence)^1.5.', eff: () => fmtMult(3 + 1.5 * S.totalEssence.add(1).log10()) },
   { id: 'e3', name: 'Trials', cost: 3, desc: 'Unlock Challenges.' },
   { id: 'e4', name: 'Bloom', cost: 5, desc: 'Shard gain ×(1 + Ascensions).', eff: () => '×' + fmt(1 + S.ascensions) },
-  { id: 'e5', name: 'Perfect Recall', cost: 8, desc: 'Keep endless Shard upgrades when you Ascend.' },
+  { id: 'e5', name: 'Perfect Recall', cost: 8, desc: 'Keep the whole Shard web when you Ascend: its upgrades, bonus nodes and the Architect’s Shard ideas.' },
+  { id: 'e35', name: 'Muscle Memory', cost: 2, desc: 'Keep Memory, the Automata, Clockmaker, the three branch keepers, Starseed and Self-Collapse when you Ascend.' },
   { id: 'e7', name: 'Shard Stream', cost: 15, desc: 'Passively gain 10% of your pending Collapse Shards every second.' },
   { id: 'e8', name: 'Self-Ascend', cost: 30, desc: 'Unlock Auto-Ascend.' },
   { id: 'e9', name: 'Transcendence', cost: 75, desc: 'Quanta production exponent +0.02.' },
   { id: 'e10', name: 'Eternal Clock', cost: 200, desc: 'Clock Speed base +0.02.' },
   { id: 'e11', name: 'Harmony', cost: 1000, desc: 'Resonance +0.3.' },
   { id: 'e12', name: 'Recursion', cost: 1e4, desc: 'Essence gain ×(log₁₀(Ascensions + 10))².', eff: () => '×' + fmt(Math.pow(L10(S.ascensions + 10), 2)) },
+  { id: 'e13', name: 'Echo of Ages', cost: 40, desc: 'Shard gain ×10.' },
+  { id: 'e14', name: 'Distillery', cost: 120, desc: 'Essence gain ×1.5.' },
+  { id: 'e15', name: 'Deep Memory', cost: 500, desc: 'Keep the Upgrade web (and the Architect’s Quanta ideas) when you Ascend.' },
+  { id: 'e16', name: 'Lumen', cost: 3000, desc: 'Quanta production ×1e6.' },
+  { id: 'e17', name: 'Old Light', cost: 2e5, desc: 'Quanta production exponent +0.01.' },
+  { id: 'e18', name: 'Shard Rain', cost: 1e5, desc: 'Shard gain ×5.' },
+  fx('e19', 'Nebula Glow', 10, 'qm', 10), kx('e22', 'Night Sky', 500, 'tier', 100, 14), kx('e20', 'Daystar', 2e4, 'synergy', 0.3, 14, 15),
+  fx('e23', 'Starfall', 1e6, 'shard', 1.73), fx('e21', 'Firmament', 2e6, 'qm', 100), kx('e24', 'Ever-Light', 1e8, 'qexp', 0.005),
+  kx('e25', 'Keepsake', 4, 'head', 1000), kx('e29', 'Steady Stream', 60, 'insight', 1000), fx('e26', 'Old Habits', 100, 'shard', 1.41),
+  kx('e27', 'Long Memory', 5000, 'thrift', 0.1, 7), fx('e28', 'Archive', 5e5, 'shard', 1.73),
+  fx('e30', 'Proving Ground', 8, 'ess', 1.02), fx('e33', 'Gauntlet', 300, 'shard', 1.73), fx('e31', 'Stillwater', 400, 'ess', 1.05),
+  kx('e32', 'Crucible', 1e5, 'surge', 20), fx('e34', 'Apotheosis', 1e7, 'ess', 1.07),
 ];
+// every field upgrade, per field, with its web; plus plain descriptions for the ones written with fx()
+const FU = {};
+for (const k of FIELDS) FU[k] = [].concat(QUPG.filter(u => u[k]).map(u => ['q', u]), SUPG.filter(u => u[k]).map(u => ['s', u]), EUPG.filter(u => u[k]).map(u => ['e', u]));
+const fSum = k => { let s = 0; for (const [l, u] of FU[k]) if (l === 'q' ? S.qUpg[u.id] : l === 's' ? hasS(u.id) : S.eUpg[u.id]) s += u[k]; return s; };
+const niceX = v => { const x = Math.pow(10, v); return x >= 1e5 && Math.abs(v - Math.round(v)) < 1e-9 ? '1e' + Math.round(v) : x >= 1000 ? Math.round(x).toLocaleString('en-US') : String(+x.toFixed(3)); };
+const FIELD_TXT = { qm: 'Quanta production ×', hi: 'Every generator above Flicker ×', shard: 'Shard gain ×', ess: 'Essence gain ×', pc: 'Flickers ×', res: 'Resonance +', clock: 'Clock Speed base +' };
+for (const u of [].concat(QUPG, SUPG, EUPG)) if (!u.desc) u.desc = FIELDS.filter(k => u[k]).map(k => FIELD_TXT[k] + (FLOG[k] ? niceX(u[k]) : u[k]) + (k === 'pc' ? ' per Clock Speed level' : '') + '.').join(' ');
 const EREP = [
   { id: 'amp', name: 'Amplify', desc: 'Quanta production ×10 per level.', c0: 1, r: 3, q: 100, eff: L => fmtMult(L) },
   { id: 'expo', name: 'Exponent', desc: 'Quanta production exponent +0.005 per level.', c0: 10, r: 10, q: 5, eff: L => '+' + (0.005 * L).toFixed(3) },
@@ -632,7 +729,7 @@ const EREP = [
 // Challenges are Collapse-level runs with infinitely repeatable completions.
 const CHALS = [
   { name: 'Stillness', desc: 'Clock Speed has no effect.', reward: 'Clock Speed base +0.005 per completion.', g0: 25, gs: 12, rw: c => '+' + (0.005 * c).toFixed(3) },
-  { name: 'Narrow Band', desc: 'Only Flicker through Flare can be bought.', reward: 'Flicker–Flare ×3 per completion.', g0: 20, gs: 8, rw: c => fmtMult(c * L10(3)) },
+  { name: 'Narrow Band', desc: 'Only Flicker through Flame can be bought.', reward: 'Flicker–Flame ×3 per completion.', g0: 20, gs: 8, rw: c => fmtMult(c * L10(3)) },
   { name: 'Dissonance', desc: 'Resonance is fixed at ×1.', reward: 'Resonance +0.05 per completion.', g0: 25, gs: 12, rw: c => '+' + (0.05 * c).toFixed(2) },
   { name: 'Inflation', desc: 'Generator costs scale twice as fast.', reward: 'Generator cost scaling ×0.97 per completion (down to ×0.6).', g0: 25, gs: 12, rw: c => '×' + Math.max(0.6, Math.pow(0.97, c)).toFixed(3) },
   { name: 'Entropy', desc: 'All production is divided by (1 + seconds in this run / 10).', reward: 'Quanta production ×(1 + completions)³.', g0: 20, gs: 10, rw: c => '×' + fmt(Math.pow(1 + c, 3)) },
@@ -645,11 +742,11 @@ const ACH = [
   ['a1', 'First Light', 'Buy a Flicker.', () => tierBought(0) > 0],
   ['a2', 'Sparks Fly', 'Buy a Spark.', () => tierBought(1) > 0],
   ['a3', 'Smoulder', 'Buy an Ember.', () => tierBought(2) > 0],
-  ['a4', 'Flare Up', 'Buy a Flare.', () => tierBought(3) > 0],
-  ['a5', 'Heartbeat', 'Buy a Pulsar.', () => tierBought(4) > 0],
-  ['a6', 'Distant Beacon', 'Buy a Quasar.', () => tierBought(5) > 0],
-  ['a7', 'Supernova', 'Buy a Nova.', () => tierBought(6) > 0],
-  ['a8', 'Tear in the Sky', 'Buy a Rift.', () => tierBought(7) > 0],
+  ['a4', 'Catching Fire', 'Buy a Flame.', () => tierBought(3) > 0],
+  ['a5', 'Flare Up', 'Buy a Flare.', () => tierBought(4) > 0],
+  ['a6', 'Ablaze', 'Buy a Blaze.', () => tierBought(5) > 0],
+  ['a7', 'Gathering Fire', 'Buy a Bonfire.', () => tierBought(6) > 0],
+  ['a8', 'Into the Inferno', 'Buy an Inferno.', () => tierBought(7) > 0],
   ['a9', 'Hundredfold', 'Buy 100 Flickers in one run.', () => tierBought(0) >= 100],
   ['a10', 'Full Spectrum', 'Buy 10 of each of the first eight generators in one run.', () => [0, 1, 2, 3, 4, 5, 6, 7].every(i => tierBought(i) >= 10)],
   ['a37', 'Uncharted', 'Buy a 12th-tier generator.', () => tierBought(11) > 0],
@@ -694,28 +791,43 @@ const ACH = [
    curves so its inventions can never break the game.
    ===================================================================== */
 const PROC = {
-  q: { cur: 'q', curName: 'Quanta', costLog: n => 15 + 10 * n + 0.12 * n * n },
+  q: { cur: 'q', curName: 'Quanta', costLog: n => 10 + 5 * n + 0.05 * n * n },
   s: { cur: 'shards', curName: 'Shards', costLog: n => 1 + 0.9 * n + 0.05 * n * n },
   e: { cur: 'essence', curName: 'Essence', costLog: n => 4.5 + 0.6 * n + 0.02 * n * n },
 };
+// How often the Architect writes each kind of idea. Many kinds change how the game
+// plays (prices, resonance, Pulse, gifts, abilities) instead of adding a multiplier.
 const FORGE_KINDS = {
-  q: { qmult: 3, tier: 3, res: 1.2, clock: 1.2, flick: 0.8, qexp: 0.6 },
-  s: { qmult: 3, tier: 2, shard: 2, clock: 1, qexp: 0.8 },
-  e: { qmult: 3, tier: 1.5, shard: 2, ess: 1.5, qexp: 1 },
+  q: { qmult: 1.2, tier: 1.6, res: 1, clock: 1, flick: 0.6, qexp: 0.5, thrift: 1.4, synergy: 1.4, resonate: 1, pulsecd: 0.7, lucky: 0.7, windfall: 0.8, insight: 0.6 },
+  s: { qmult: 1.5, tier: 1.2, shard: 2, clock: 1, qexp: 0.8, head: 1.2, hoard: 0.8, thrift: 1, resonate: 0.8, synergy: 1, insight: 0.6, surge: 0.9, fold: 0.7 },
+  e: { qmult: 2, tier: 1.2, shard: 2, ess: 1.5, qexp: 1, head: 1, insight: 0.8, thrift: 0.8, synergy: 0.8 },
 };
+const FORGE_VER = 3; // bump when the Quanta idea values or idea placement change, so saved ideas are redone
+const RES_MIN = 5, LUCKY_MAX = 0.5, LUCKY_X = 20, HEAD_CAP = 22, CD_FLOOR = 0.3;
 function forgeValue(layer, kind, n) {
   const big = (a, b, c) => layer === 'q' ? a : layer === 's' ? b : c;
   switch (kind) {
-    case 'qmult': return big(1 + 0.02 * n, 1 + 0.06 * n, 5 + 0.2 * n);
-    case 'tier': return big(1.2 + 0.025 * n, 1.2 + 0.06 * n, 5 + 0.2 * n);
-    case 'idle': return big(1.5 + 0.03 * n, 1.5 + 0.07 * n, 6 + 0.25 * n);
-    case 'pulse': return 1 + 0.05 * n;
-    case 'res': return 0.02;
-    case 'clock': return big(0.002, 0.004, 0.004);
-    case 'flick': return 0.5;
-    case 'qexp': return big(0.003, 0.005, 0.005);
+    case 'qmult': return big(0.5 + 0.01 * n, 1 + 0.06 * n, 5 + 0.2 * n);
+    case 'tier': return big(0.6 + 0.0125 * n, 1.2 + 0.06 * n, 5 + 0.2 * n);
+    case 'idle': return big(0.8 + 0.015 * n, 1.5 + 0.07 * n, 6 + 0.25 * n);
+    case 'pulse': return 0.5 + 0.025 * n;
+    case 'res': return big(0.01, 0.02, 0.02);
+    case 'clock': return big(0.001, 0.004, 0.004);
+    case 'flick': return 0.25;
+    case 'qexp': return big(0.0015, 0.005, 0.005);
     case 'shard': return big(0, L10(1.5), 1);
     case 'ess': return L10(1.5);
+    case 'thrift': return big(0.12, 0.1, 0.15);   // price growth of one generator (or Clock Speed) −12%
+    case 'synergy': return big(0.5, 0.8, 1.5);    // tier ×(1 + higher tier bought)^v
+    case 'resonate': return 1;                    // resonates one purchase sooner
+    case 'pulsecd': return 0.1;                   // Pulse recharges 10% faster
+    case 'lucky': return 0.06;                    // chance of a Lucky Pulse
+    case 'windfall': return 300 + 10 * n;         // seconds of production, paid out once
+    case 'insight': return big(2, 0.3, 0.2);      // the Architect's other ideas cost less (log)
+    case 'head': return big(0, 4, 8);             // Collapses start with more Quanta (log)
+    case 'hoard': return 0.2;                     // share of Shards earned, paid out once
+    case 'surge': return 5;                       // seconds
+    case 'fold': return 0.1;                      // Time Fold recharges 10% faster
   }
   return 0;
 }
@@ -732,11 +844,34 @@ const NAME_BITS = {
   idle: [['Stillwater', 'Dormant', 'Patient', 'Sleeping', 'Waiting'], ['Bloom', 'Star', 'Sun', 'Garden', 'Vigil']],
   shard: [['Faceted', 'Cleaved', 'Geode', 'Prismatic', 'Splintered'], ['Harvest', 'Vein', 'Hoard', 'Seam', 'Crown']],
   ess: [['Hallowed', 'Vesper', 'Sacred', 'Silent', 'Distilled'], ['Psalm', 'Vigil', 'Ember', 'Rite', 'Spirit']],
+  thrift: [['Frugal', 'Lean', 'Thrifty', 'Sparing', 'Humble'], ['Ledger', 'Bargain', 'Measure', 'Discount', 'Margin']],
+  synergy: [[], ['Bond', 'Link', 'Chain', 'Pact', 'Tether']],
+  resonate: [[], ['Overtone', 'Refrain', 'Cadence', 'Harmonic', 'Resonator']],
+  pulsecd: [['Quick', 'Nimble', 'Hasty', 'Eager', 'Snapping'], ['Trigger', 'Spring', 'Hammer', 'Reflex', 'Fuse']],
+  lucky: [['Lucky', 'Fickle', 'Gambler’s', 'Fortunate', 'Wild'], ['Spark', 'Coin', 'Star', 'Charm', 'Throw']],
+  windfall: [['Sudden', 'Spilled', 'Borrowed', 'Stolen', 'Golden'], ['Windfall', 'Hour', 'Harvest', 'Gift', 'Cache']],
+  insight: [['Clear', 'Lucid', 'Sharpened', 'Bright', 'Waking'], ['Insight', 'Thought', 'Notion', 'Vision', 'Draft']],
+  head: [['Early', 'Warm', 'Running', 'Kindled', 'Primed'], ['Start', 'Dawn', 'Seed', 'Hearth', 'Spring']],
+  hoard: [['Buried', 'Sunken', 'Old', 'Remembered', 'Glittering'], ['Hoard', 'Trove', 'Cache', 'Reliquary', 'Vault']],
+  surge: [['Long', 'Rolling', 'Swelling', 'Endless', 'Tidal'], ['Surge', 'Wave', 'Breaker', 'Crest', 'Swell']],
+  fold: [['Creased', 'Bent', 'Doubled', 'Pleated', 'Twisted'], ['Hour', 'Moment', 'Fold', 'Clock', 'Minute']],
 };
+const priceName = t => t === -1 ? 'Clock Speed' : genDef(t).name; // "Flicker prices", "Clock Speed prices"
 const REASONS = {
   tier: t => [`You lean on ${genDef(t).name}s, so I built this for them.`, `${genDef(t).name}s deserve more. Here.`, `I watched your ${genDef(t).name}s work. They could work harder.`],
   pulse: () => ['Your hands are restless. Let them matter.', 'You click like you mean it. I noticed.', 'Every Pulse you send, I hear.'],
   idle: () => ['You prefer to watch. This rewards patience.', 'You were away. I kept thinking.', 'Stillness suits you. I made something for it.'],
+  thrift: t => [`${t === -1 ? 'Clock Speed' : plural(genDef(t).name)} cost too much. I rewrote the prices.`, 'Costs are only numbers. I changed some.', 'Spend less, build more.'],
+  synergy: (t, src) => [`Your ${genDef(src).name}s and ${genDef(t).name}s should talk. Now they do.`, 'I tied two of your generators together.', 'One tier lifting another. I like that.'],
+  resonate: t => [`Your ${genDef(t).name}s were almost singing. I tuned them.`, 'Ten was an arbitrary number anyway.'],
+  pulsecd: () => ['Your hands are quick. The Pulse should keep up.', 'Less waiting between Pulses.'],
+  lucky: () => ['Not every Pulse is the same. Some are lucky.', 'I added a little chance. You will like it.'],
+  windfall: () => ['Take this. Consider it an advance.', 'A gift, all at once.'],
+  insight: () => ['I think faster when you trust me. My other ideas will be cheaper.', 'Every idea makes the next one easier.'],
+  head: () => ['Why start from nothing every time?', 'Next time, you begin with a little warmth.'],
+  hoard: () => ['I kept some Shards aside. Here they are.', 'Old fragments, found again.'],
+  surge: () => ['Your Surges end too soon.', 'Let the Surge run longer.'],
+  fold: () => ['Time folds easier the second time.', 'I loosened the hours a little.'],
   any: () => ['Your numbers are climbing. I wrote something to match.', 'A new idea, still warm.', 'I had a thought while you were busy.', 'This did not exist a moment ago.', 'Try this. I just made it.', 'The lattice suggested this to me.'],
 };
 let SIMULATING = false;
@@ -745,8 +880,37 @@ function aiSay(text, kind = 'ai') {
   log.push({ t: S.stats.time, text });
   S.ai.total++;
   if (log.length > 60) log.splice(0, log.length - 60);
-  if (!SIMULATING) { toast('✦ ' + text, kind); blip(1.6); setTimeout(() => blip(1.9), 70); }
+  if (!SIMULATING) say(text);
 }
+// The speech bubble: types the line out with little blips, holds it, then shows the next one (clicking skips)
+const SAY = { q: [], busy: false, timer: 0, typing: false, full: '' };
+function say(text) {
+  if (S.settings.ui && !S.settings.ui.toasts) return;
+  SAY.q.push(text); if (SAY.q.length > 6) SAY.q.splice(0, SAY.q.length - 6); // lines wait their turn; only a long backlog drops the oldest
+  if (!SAY.busy) sayNext();
+}
+function sayNext() {
+  const box = $('say'), txt = box.querySelector('.say-t'), orb = box.querySelector('.orb'), text = SAY.q.shift();
+  clearTimeout(SAY.timer);
+  if (text === undefined) { SAY.busy = false; box.classList.remove('on'); document.body.style.removeProperty('--sayh'); return; }
+  SAY.busy = true; SAY.full = text; box.classList.add('on'); txt.textContent = '';
+  let i = 0;
+  const hold = () => { SAY.typing = false; box.classList.remove('typing'); orb.classList.remove('talk'); SAY.timer = setTimeout(() => { box.classList.remove('on'); SAY.timer = setTimeout(sayNext, 320); }, 2600 + text.length * 30); };
+  const step = () => {
+    i = Math.min(text.length, i + 2); txt.textContent = text.slice(0, i);
+    document.body.style.setProperty('--sayh', (box.offsetHeight + 8) + 'px');
+    if (i % 6 < 2 && text[i - 1] !== ' ') blip(1.45 + Math.random() * 0.5);
+    if (i < text.length) SAY.timer = setTimeout(step, /[.,:;!?]/.test(text[i - 1]) ? 140 : 38); else hold();
+  };
+  if (S.settings.ui && S.settings.ui.motion === false) { txt.textContent = text; document.body.style.setProperty('--sayh', (box.offsetHeight + 8) + 'px'); hold(); return; }
+  SAY.typing = true; box.classList.add('typing'); orb.classList.add('talk');
+  step();
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest || !e.target.closest('#say')) return;
+  if (SAY.typing) { clearTimeout(SAY.timer); $('say').querySelector('.say-t').textContent = SAY.full; SAY.typing = false; $('say').classList.remove('typing'); $('say').querySelector('.orb').classList.remove('talk'); SAY.timer = setTimeout(() => { $('say').classList.remove('on'); SAY.timer = setTimeout(sayNext, 320); }, 2200 + SAY.full.length * 25); }
+  else sayNext();
+});
 function playStyle() {
   const now = S.stats.time, recent = S.ai.pulses.filter(t => now - t < 120).length;
   if (recent >= 15) return 'active';
@@ -763,27 +927,46 @@ function favouriteTier() {
 function forgeNew(layer) {
   const list = S.forge[layer], n = list.length, style = playStyle();
   const w = Object.assign({}, FORGE_KINDS[layer]);
-  if (style === 'active' && layer === 'q') w.pulse = 3;
+  if (style === 'active' && layer === 'q') { w.pulse = 3; w.pulsecd *= 2; w.lucky *= 2; }
   if (style === 'idle') w.idle = 3;
+  // some ideas only make sense once their system exists, and stop once they are maxed out
+  const top = highestTier();
+  const resTiers = []; for (let i = 0; i <= top; i++) if (resStep(i) > RES_MIN) resTiers.push(i);
+  if (!resTiers.length) w.resonate = 0;
+  if (top < 1) w.synergy = 0;
+  if (Math.pow(10, procSum('pulsecd')) <= CD_FLOOR + 1e-9) w.pulsecd = 0;
+  if (procSum('lucky') >= LUCKY_MAX) w.lucky = 0;
+  if (!S.sUpg.s25) w.surge = 0;
+  if (!S.sUpg.s26 || Math.pow(10, procSum('fold')) <= CD_FLOOR + 1e-9) w.fold = 0;
+  if (S.totalShards.log10() < 1) w.hoard = 0;
+  if (headStartLog() >= HEAD_CAP) w.head = 0;
   const last = list.slice(-2).map(u => u.kind);
   if (last.length === 2 && last[0] === last[1]) w[last[0]] = 0;
   if (list.slice(-6).some(u => u.kind === 'qexp')) w.qexp = 0;
   let tot = 0; for (const k in w) tot += w[k];
   let r = Math.random() * tot, kind = 'qmult';
-  for (const k in w) { r -= w[k]; if (r <= 0) { kind = k; break; } }
-  const tier = kind === 'tier' ? (Math.random() < 0.5 ? highestTier() : favouriteTier()) : null;
+  for (const k in w) { if (!(w[k] > 0)) continue; r -= w[k]; if (r <= 0) { kind = k; break; } }
+  let tier = null, src;
+  if (kind === 'tier') tier = Math.random() < 0.5 ? top : favouriteTier();
+  else if (kind === 'thrift') tier = Math.random() < 0.25 ? -1 : (Math.random() < 0.5 ? top : favouriteTier());
+  else if (kind === 'resonate') tier = rnd(resTiers);
+  else if (kind === 'synergy') { src = 1 + Math.floor(Math.random() * top); tier = Math.random() < 0.6 ? src - 1 : Math.floor(Math.random() * src); }
   const bits = NAME_BITS[kind];
-  const name = (kind === 'tier' ? genDef(tier).name : rnd(bits[0])) + ' ' + rnd(bits[1]);
-  const reason = rnd((REASONS[kind] || REASONS.any)(tier));
+  const name = kind === 'tier' || kind === 'resonate' ? genDef(tier).name + ' ' + rnd(bits[1])
+    : kind === 'synergy' ? genDef(src).name + '–' + genDef(tier).name + ' ' + rnd(bits[1])
+    : rnd(bits[0]) + ' ' + rnd(bits[1]);
+  const reason = rnd((REASONS[kind] || REASONS.any)(tier, src));
   const u = { n, kind, v: forgeValue(layer, kind, n), tier, name, reason, own: false };
-  if (WEB_DEF[layer]) { u.branch = ARCH_BRANCH[layer](kind); u.parent = pickParentWeb(layer, u.branch); }
+  if (src !== undefined) u.src = src;
+  if (WEB_DEF[layer]) { u.branch = ARCH_BRANCH[layer](kind, tier); u.parent = pickParentWeb(layer, u.branch); }
   list.push(u);
   return u;
 }
+const pct = v => Math.round(v * 100) + '%';
 function forgeDesc(u) {
   switch (u.kind) {
     case 'qmult': return 'Quanta production ' + fmtMult(u.v) + '.';
-    case 'tier': return genDef(u.tier).name + 's ' + fmtMult(u.v) + '.';
+    case 'tier': return plural(genDef(u.tier).name) + ' ' + fmtMult(u.v) + '.';
     case 'idle': return 'While you have not touched the game for a minute, Quanta production ' + fmtMult(u.v) + '.';
     case 'pulse': return 'Pulse ' + fmtMult(u.v) + '.';
     case 'res': return 'Resonance +' + u.v + '.';
@@ -792,6 +975,23 @@ function forgeDesc(u) {
     case 'qexp': return 'Quanta production exponent +' + u.v + '.';
     case 'shard': return 'Shard gain ' + fmtMult(u.v) + '.';
     case 'ess': return 'Essence gain ×1.5.';
+    case 'thrift': return priceName(u.tier) + ' prices grow ' + pct(u.v) + ' slower.';
+    case 'synergy': return plural(genDef(u.tier).name) + ' ×(1 + ' + plural(genDef(u.src).name) + ' bought)^' + u.v + ', now ' + fmtMult(u.v * L10(1 + tierBought(u.src))) + '.';
+    case 'resonate': { const s = resStep(u.tier); return plural(genDef(u.tier).name) + ' resonate one purchase sooner (' + (u.own ? 'every ' + s : 'every ' + s + ' → ' + Math.max(RES_MIN, s - 1)) + ' bought).'; }
+    case 'pulsecd': return 'Pulse recharges ' + pct(u.v) + ' faster.';
+    case 'lucky': return 'Each Pulse has a ' + pct(u.v) + ' chance to be Lucky: ×' + LUCKY_X + ' Quanta.';
+    case 'windfall': {
+      const now = u.own && u.gave !== undefined ? 'gave ' + fmt(D.fromLog(u.gave)) : (() => { const p = qpsLog(); return p > -Infinity ? 'about ' + fmt(D.fromLog(p + L10(u.v))) : 'once Flickers make Quanta'; })();
+      return 'Once, when bought: gain ' + Math.round(u.v / 60) + ' minutes of Quanta production (' + now + ').';
+    }
+    case 'insight': return 'My other ideas in this web cost ÷' + fmt(D.fromLog(u.v)) + '.';
+    case 'head': return 'Every Collapse starts with ×' + fmt(D.fromLog(u.v)) + ' more Quanta (up to ' + fmt(D.fromLog(HEAD_CAP)) + ').';
+    case 'hoard': {
+      const now = u.own && u.gave !== undefined ? 'gave ' + fmt(D.fromLog(u.gave)) : 'about ' + fmt(S.totalShards.mul(D.fromNum(u.v)).floor());
+      return 'Once, when bought: gain ' + pct(u.v) + ' of the Shards earned this Ascension (' + now + ').';
+    }
+    case 'surge': return 'Surge lasts ' + u.v + ' seconds longer.';
+    case 'fold': return 'Time Fold recharges ' + pct(u.v) + ' faster.';
   }
   return '';
 }
@@ -801,7 +1001,7 @@ function procUpg(layer, n) {
   return S.forge[layer][n];
 }
 // how many unbought ideas the Architect keeps on offer at once, spread around the web
-const OPEN_IDEAS = { q: 3, s: 3, e: 1 };
+const OPEN_IDEAS = { q: 3, s: 3, e: 2 };
 const ideaOwned = (layer, i) => { const u = S.forge[layer][i]; return !!u && !!u.own; };
 const openIdeas = layer => { const out = []; S.forge[layer].forEach((u, i) => { if (!u.own) out.push(i); }); return out; };
 function ensureOpen(layer) {
@@ -812,21 +1012,43 @@ function ensureOpen(layer) {
 }
 const cheapestOpen = layer => { const o = openIdeas(layer); return o.length ? o[0] : -1; };
 const openAffordable = layer => openIdeas(layer).some(i => S[PROC[layer].cur].log10() >= procCost(layer, i));
-const procCost = (layer, n) => PROC[layer].costLog(n);
-let PROC_AGG = {};
+const procCost = (layer, n) => Math.max(0, (layer === 'q' ? qPrice(PROC.q.costLog(n)) : PROC[layer].costLog(n)) - procAgg(layer).insight);
+let PROC_AGG = {}, UPG_VER = 0;
+const UPG_KEY = { q: 'qUpg', s: 'sUpg', e: 'eUpg' };
+// everything of one web that works like an idea: the Architect's owned ideas plus the owned grown upgrades
 function procAgg(layer) {
-  const cnt = S.proc[layer], c = PROC_AGG[layer];
-  if (c && c.cnt === cnt && c.S === S) return c.a;
-  const a = { qmult: 0, res: 0, clock: 0, flick: 0, qexp: 0, shard: 0, ess: 0, idle: 0, pulse: 0, tier: {} };
-  for (const u of S.forge[layer]) {
-    if (!u.own) continue;
-    if (u.kind === 'tier') a.tier[u.tier] = (a.tier[u.tier] || 0) + u.v; else a[u.kind] += u.v;
+  const cnt = S.proc[layer], c = PROC_AGG[layer], iso = isolated(), up = S[UPG_KEY[layer]];
+  if (c && c.cnt === cnt && c.S === S && c.uv === UPG_VER && c.iso === iso && c.up === up) return c.a;
+  const a = { qmult: 0, res: 0, clock: 0, flick: 0, qexp: 0, shard: 0, ess: 0, idle: 0, pulse: 0, pulsecd: 0, lucky: 0, insight: 0, head: 0, surge: 0, fold: 0, tier: {}, thrift: {}, reson: {}, syn: [] };
+  const list = S.forge[layer].filter(u => u.own);
+  for (const u of KIND_UPG[layer]) if (layer === 's' ? hasS(u.id) : up[u.id]) list.push(u);
+  for (const u of list) {
+    switch (u.kind) {
+      case 'tier': a.tier[u.tier] = (a.tier[u.tier] || 0) + u.v; break;
+      case 'thrift': a.thrift[u.tier] = (a.thrift[u.tier] || 0) + L10(1 - u.v); break;
+      case 'resonate': a.reson[u.tier] = (a.reson[u.tier] || 0) + 1; break;
+      case 'synergy': a.syn.push(u); break;
+      case 'pulsecd': case 'fold': a[u.kind] += L10(1 - u.v); break;
+      case 'windfall': case 'hoard': break; // one-time gifts, paid out when bought
+      default: if (u.kind in a) a[u.kind] += u.v;
+    }
   }
-  PROC_AGG[layer] = { cnt, a, S };
+  PROC_AGG[layer] = { cnt, a, S, uv: UPG_VER, iso, up };
   return a;
 }
 const procSum = k => procAgg('q')[k] + procAgg('s')[k] + procAgg('e')[k];
-const procTier = i => (procAgg('q').tier[i] || 0) + (procAgg('s').tier[i] || 0) + (procAgg('e').tier[i] || 0);
+const procMap = (k, i) => (procAgg('q')[k][i] || 0) + (procAgg('s')[k][i] || 0) + (procAgg('e')[k][i] || 0);
+const procTier = i => procMap('tier', i);
+const thriftMult = i => Math.max(0.4, Math.pow(10, procMap('thrift', i))); // i = -1 is Clock Speed
+const resStep = i => Math.max(RES_MIN, 10 - procMap('reson', i));          // bought per resonance
+function procSyn(i) {
+  let L = 0;
+  for (const l of ['q', 's', 'e']) for (const u of procAgg(l).syn) if (u.tier === i) L += u.v * L10(1 + tierBought(u.src));
+  return L;
+}
+const cdMult = k => Math.max(CD_FLOOR, Math.pow(10, procSum(k)));
+const headStartLog = () => Math.min(HEAD_CAP, (hasS('s11') ? 6 : 1) + procSum('head'));
+const luckyChance = () => Math.min(LUCKY_MAX, procSum('lucky'));
 function buyProc(layer, i) {
   ensureOpen(layer);
   if (i === undefined) i = cheapestOpen(layer);
@@ -836,6 +1058,8 @@ function buyProc(layer, i) {
   if (S[P.cur].log10() < cost) return false;
   S[P.cur] = S[P.cur].sub(D.fromLog(cost)).max0();
   u.own = true; S.proc[layer]++;
+  if (u.kind === 'windfall') { const p = qpsLog(); if (p > -Infinity) { u.gave = p + L10(u.v); S.q = S.q.add(D.fromLog(u.gave)); capQ(); } }
+  if (u.kind === 'hoard') { const g = S.totalShards.mul(D.fromNum(u.v)).floor(); u.gave = g.log10(); S.shards = S.shards.add(g); S.totalShards = S.totalShards.add(g); }
   for (const nu of ensureOpen(layer)) { // the Architect writes a new idea right away
     if (nu.n > S.ai.announced[layer]) { S.ai.announced[layer] = nu.n; aiSay(nu.reason + ' “' + nu.name + '”: ' + forgeDesc(nu)); }
   }
@@ -917,7 +1141,7 @@ function newState() {
       ui: { theme: 'nebula', stars: true, motion: true, compact: false, tint: true, toasts: true, scale: 1 } },
     relics: {}, anom: { echo: 0, hourglass: 0, prism: 0 }, secret: { orb: 0, guide: 0 },
     abil: { surge: { ready: 0, until: 0 }, fold: { ready: 0 } },
-    minor: { q: {}, s: {} },
+    minor: { q: {}, s: {}, e: {} },
     hist: { every: 30, next: 0, t: [], q: [], best: [], sh: [], es: [] },
     introSeen: false,
     last: Date.now(),
@@ -933,20 +1157,20 @@ const hasE = id => !!S.eUpg[id];
 const inChal = i => S.chal.active === i;
 const totalBought = () => S.gens.reduce((t, g) => t + g.bought, 0);
 const totalComps = () => S.chal.comps.reduce((a, b) => a + b, 0);
-const momentum = () => Math.min(100, 1 + S.stats.tCollapse / 20);
+const momentum = () => Math.min(30, 1 + S.stats.tCollapse / 20);
 const latticeExp = () => hasS('s18') ? 0.7 : hasS('s13') ? 0.55 : 0.4;
 const shardsVisible = () => S.reached.collapse || S.collapses > 0 || S.ascensions > 0;
 const ascVisible = () => S.reached.limit || S.ascensions > 0;
 const AUTOBUYERS = ['ab0', 'ab1', 'ab2', 'ab3', 'ab4', 'ab5', 'ab6', 'ab7', 'ab8', 'abC', 'abL', 'abH', 'abK'];
 const autoVisible = () => AUTOBUYERS.some(id => S.sUpg[id]) || !!S.sUpg.s9 || !!S.eUpg.e8;
+const ASC_KEEP_AUTO = ['s2', 's9', 's11'].concat(AUTOBUYERS); // what Muscle Memory (e35) keeps through Ascension
 const tierBought = i => S.gens[i] ? S.gens[i].bought : 0;
 const genUnlocked = i => !(inChal(1) && i > 3) && (i === 0 || tierBought(i - 1) > 0 || tierBought(i) > 0);
 
 function resonance() {
   if (inChal(2)) return 1;
   let r = CFG.resBase;
-  if (hasQ('q3')) r += 0.15;
-  if (hasQ('q9')) r += 0.15;
+  r += fSum('res');
   if (hasS('s7')) r += 0.15;
   if (hasS('s17')) r += 0.3;
   if (hasE('e11')) r += 0.3;
@@ -956,8 +1180,7 @@ function resonance() {
 }
 function clockBase() {
   let b = CFG.clockBase;
-  if (hasQ('q4')) b += 0.015;
-  if (hasQ('q11')) b += 0.015;
+  b += fSum('clock');
   if (!isolated()) b += 0.005 * S.sRep.tune;
   if (hasE('e10')) b += 0.02;
   if (hasR('moonlit')) b += 0.02;
@@ -967,13 +1190,13 @@ function clockBase() {
   return b + 0.005 * S.chal.comps[0] + procSum('clock');
 }
 const clockMultLog = () => inChal(0) ? 0 : S.clock * L10(clockBase());
-const clockStep = () => hasS('s8') ? L10(6) : 1;
+const clockStep = () => (hasS('s8') ? L10(6) : 1) * thriftMult(-1);
 const clockCostLog = (n = 1) => quadSumLog(CFG.clock0, clockStep(), CFG.clockScale, S.clock, n);
 const clockMax = () => quadMax(lq(), CFG.clock0, clockStep(), CFG.clockScale, S.clock);
 function genStep(i) {
   let s = genDef(i).step;
   if (inChal(3)) s *= 2;
-  return s * Math.max(0.6, Math.pow(0.97, S.chal.comps[3]));
+  return s * Math.max(0.6, Math.pow(0.97, S.chal.comps[3])) * thriftMult(i);
 }
 const genCostLog = (i, n = 1) => quadSumLog(genDef(i).base, genStep(i), CFG.genScale, tierBought(i), n);
 const genMax = i => quadMax(lq(), genDef(i).base, genStep(i), CFG.genScale, tierBought(i));
@@ -989,11 +1212,13 @@ function globalMultLog() {
   if (hasR('selftaught')) L += L10(3);
   L += minorSum('qmult');
   if (hasR('lucky7')) L += L10(77);
-  if (hasQ('q16')) L += 3;
+  L += fSum('qm');
+  if (hasQ('q20')) L += L10(S.gens.length);
   if (hasS('s15')) L += 3;
   if (hasS('s20')) L += 2 * L10(S.gens.length);
-  if (hasS('s24')) L += Object.keys(S.sUpg).length * L10(1.5);
+  if (hasS('s24')) L += Object.keys(S.sUpg).length * L10(1.3);
   if (hasS('s28')) L += 4;
+  if (hasE('e16')) L += 6;
   if (surgeActive()) L += 3;
   if (hasR('secondwind')) L += 3;
   if (hasR('annotated')) L += L10(1 + Object.keys(S.ach).length);
@@ -1008,15 +1233,16 @@ function globalMultLog() {
   return { all, q: L };
 }
 function tierMultLog(i, gl) {
-  let L = gl.all + Math.floor(S.gens[i].bought / 10) * L10(resonance());
+  let L = gl.all + Math.floor(S.gens[i].bought / resStep(i)) * L10(resonance()) + procSyn(i);
   if (i === 0) {
     L += gl.q;
     if (hasQ('q2')) L += L10(1 + Math.max(0, lq()));
-    if (hasQ('q8')) L += S.clock * L10(1.1);
-    if (hasQ('q13')) L += 3 * L10(Math.max(1, lq()));
+    if (hasQ('q8')) L += S.clock * L10(1.07);
+    if (hasQ('q13')) L += 2 * L10(Math.max(1, lq()));
     L += procSum('flick') * L10(Math.max(1, lq()));
+    L += S.clock * fSum('pc');
   } else {
-    if (hasQ('q6')) L += L10(4);
+    L += fSum('hi');
   }
   if (i < 4 && hasS('s19')) L += 1;
   L += procTier(i);
@@ -1033,6 +1259,7 @@ function qExponent() {
   if (hasS('s14')) x += 0.015;
   if (hasS('s16')) x += 0.025;
   if (hasE('e9')) x += 0.02;
+  if (hasE('e17')) x += 0.01;
   x += 0.005 * S.eRep.expo + 0.01 * S.chal.comps[6] + procSum('qexp');
   if (inChal(6)) x *= 0.8;
   return x;
@@ -1051,10 +1278,8 @@ function genRateLog(i, gl = globalMultLog()) { // per second, of tier i-1 (or Qu
 
 function shardMultLog() {
   let L = 0;
-  if (hasQ('q10')) L += L10(2);
-  if (hasQ('q12')) L += L10(3);
-  if (hasQ('q14')) L += L10(5);
-  if (hasQ('q15')) L += 3 * L10(Math.max(1, runBestLog() / 100));
+  L += fSum('shard');
+  if (hasQ('q15')) L += 2.5 * L10(Math.max(1, runBestLog() / 100));
   if (hasS('s5')) L += L10(2);
   if (hasS('s10')) L += 2 * L10(L10(S.collapses + 10));
   if (!isolated()) L += S.sRep.prism * L10(1.25);
@@ -1063,6 +1288,8 @@ function shardMultLog() {
   if (hasS('s23')) L += L10(5);
   L += minorSum('shard');
   if (hasS('s29')) L += L10(3);
+  if (hasE('e13')) L += 1;
+  if (hasE('e18')) L += L10(5);
   if (hasS('s31')) L += L10(1 + S.run.abil);
   return L;
 }
@@ -1081,7 +1308,7 @@ function nextShardAtLog() {
   const cur = shardGain(), target = cur.add(1).log10() - shardMultLog();
   return Math.max(collapseReqLog(), CFG.collapseReq + unsoftcap(target, 40) * CFG.shardDiv);
 }
-function essMultLog() { return (hasE('e12') ? 2 * L10(L10(S.ascensions + 10)) : 0) + procSum('ess'); }
+function essMultLog() { return (hasE('e12') ? 2 * L10(L10(S.ascensions + 10)) : 0) + (hasE('e14') ? L10(1.5) : 0) + procSum('ess') + minorSum('ess') + fSum('ess'); }
 const canAscend = () => lq() >= CFG.limit - 1e-9;
 function essenceGain() {
   if (!canAscend()) return D.Z;
@@ -1111,6 +1338,7 @@ function buyGen(i, mode) {
   return n;
 }
 function buyClock(mode) {
+  if (tierBought(0) === 0) return 0; // Clock Speed speeds up generators: none yet, so it would only waste the first Quanta
   const n = mode === 'max' ? clockMax() : (lq() >= clockCostLog() ? 1 : 0);
   if (n <= 0) return 0;
   S.q = S.q.sub(D.fromLog(clockCostLog(n))).max0();
@@ -1123,7 +1351,7 @@ function maxAll() {
   for (let i = S.gens.length - 1; i >= 0; i--) n += buyGen(i, 'max');
   return n;
 }
-const pulseCd = () => (S.relics.metronome ? 1000 : 1500) / (hasS('s22') ? 2 : 1); // ms between Pulses
+const pulseCd = () => (S.relics.metronome ? 1000 : 1500) / (hasS('s22') ? 2 : 1) * cdMult('pulsecd'); // ms between Pulses
 let lastPulse = -1e9;
 const pulseReady = () => performance.now() - lastPulse >= pulseCd();
 function pulseGain() {
@@ -1138,6 +1366,7 @@ function pulse() {
   const pb = UI.el && UI.el.pulse;
   if (pb) { pb.classList.remove('cooling', 'ready-flash'); void pb.offsetWidth; pb.style.setProperty('--cdms', pulseCd() + 'ms'); pb.classList.add('cooling'); }
   let g = pulseGain();
+  if (Math.random() < luckyChance()) { g = g.mul(D.fromNum(LUCKY_X)); luckyPop(); }
   S.q = S.q.add(g); S.stats.pulses++; capQ();
   S.ai.pulses.push(S.stats.time); if (S.ai.pulses.length > 400) S.ai.pulses.splice(0, 200);
   { const now = S.stats.time; let c = 0; for (let k = S.ai.pulses.length - 1; k >= 0 && now - S.ai.pulses[k] <= 90; k--) c++; if (c >= 40) grantSecret('x2'); }
@@ -1146,12 +1375,12 @@ function pulse() {
 function buyQ(id) {
   const u = QBY[id];
   if (S.qUpg[id] || lq() < u.cost) return false;
-  S.q = S.q.sub(D.fromLog(u.cost)).max0(); S.qUpg[id] = true; return true;
+  S.q = S.q.sub(D.fromLog(u.cost)).max0(); S.qUpg[id] = true; UPG_VER++; return true;
 }
 function buyS(id) {
   const u = SBY[id];
   if (S.sUpg[id] || sForkTaken(id) || S.shards.lt(u.cost)) return false;
-  S.shards = S.shards.sub(u.cost).max0(); S.sUpg[id] = true; return true;
+  S.shards = S.shards.sub(u.cost).max0(); S.sUpg[id] = true; UPG_VER++; return true;
 }
 // Reshape: refund every Shard spent on the tree and restart the current run
 function reshapeTree() {
@@ -1179,7 +1408,7 @@ function useAbility(k) {
 function buyE(id) {
   const u = EBY[id];
   if (S.eUpg[id] || S.essence.lt(u.cost)) return false;
-  S.essence = S.essence.sub(u.cost).max0(); S.eUpg[id] = true;
+  S.essence = S.essence.sub(u.cost).max0(); S.eUpg[id] = true; UPG_VER++;
   if (id === 'e6') { toast('The Limit is broken. Quanta is now Unbounded.', 'es'); aiEvent('unbound'); }
   return true;
 }
@@ -1193,7 +1422,7 @@ function buyRep(def, store, cur, mode) {
 }
 
 function resetQLayer() {
-  S.q = D.fromNum(hasS('s11') ? 1e6 : 10);
+  S.q = D.fromLog(headStartLog());
   S.gens = [newGen()];
   S.clock = 0;
   if (!hasS('s2')) { S.qUpg = {}; S.proc.q = 0; for (const u of S.forge.q) u.own = false; S.minor.q = {}; MINOR_VER++; }
@@ -1222,12 +1451,20 @@ function doAscend(quiet = false) {
   if (S.stats.fastAscend === null || t < S.stats.fastAscend) S.stats.fastAscend = t;
   S.chal.active = -1;
   S.shards = D.Z; S.totalShards = D.Z; S.collapses = 0;
-  // Shard upgrades are permanent; Remembrance also keeps repeatable levels
+  // Ascension wipes the Shard layer too, at first. Memory-branch Essence upgrades keep more of it:
+  // Remembrance the repeatable levels, Muscle Memory the automation, Perfect Recall the whole Shard web
   if (!hasE('e1')) S.sRep = { forge: 0, tune: 0, prism: 0 };
-  S.qUpg = {};
+  if (!hasE('e5')) {
+    const kept = {}; if (hasE('e35')) for (const id of ASC_KEEP_AUTO) if (S.sUpg[id]) kept[id] = true;
+    S.sUpg = kept; S.minor.s = {};
+  }
+  // Deep Memory (e15) keeps the Upgrade web through Ascension, like Memory does through Collapse
+  const keepQ = hasE('e15'), qKeep = keepQ ? { u: S.qUpg, m: S.minor.q, own: S.forge.q.map(u => u.own), n: S.proc.q } : null;
   if (!hasE('e5')) { S.proc.s = 0; for (const u of S.forge.s) u.own = false; }
   resetQLayer();
-  S.qUpg = {}; S.proc.q = 0; for (const u of S.forge.q) u.own = false; S.minor.q = {}; MINOR_VER++;
+  if (keepQ) { S.qUpg = qKeep.u; S.minor.q = qKeep.m; S.forge.q.forEach((u, i) => { u.own = qKeep.own[i]; }); S.proc.q = qKeep.n; }
+  else { S.qUpg = {}; S.proc.q = 0; for (const u of S.forge.q) u.own = false; S.minor.q = {}; }
+  MINOR_VER++;
   S.stats.tAscend = 0;
   aiEvent('ascend', gain);
   if (!quiet) { flash('rgba(255,210,122,.55)'); sfx('ascend'); if (S.ascensions === 1) toast('You Ascended. Spend Essence in the Ascension tab.', 'es'); }
@@ -1377,7 +1614,7 @@ const SECRETS = [
   { id: 'x1', name: 'Patience', hint: 'Sometimes the best move is none.', desc: 'Leave the game open without touching it for 10 minutes.', reward: ['anom', 'hourglass'] },
   { id: 'x2', name: 'Drumroll', hint: 'Keep the rhythm.', desc: 'Pulse 40 times within 90 seconds.', reward: ['relic', 'metronome'] },
   { id: 'x3', name: 'Small Talk', hint: 'It might like to be noticed.', desc: 'Click the Architect 10 times.', reward: ['anom', 'echo'] },
-  { id: 'x4', name: 'Minimalist', hint: 'Less, but enough.', desc: 'Collapse without buying a single Flare.', reward: ['relic', 'bareframe'] },
+  { id: 'x4', name: 'Minimalist', hint: 'Less, but enough.', desc: 'Collapse without buying a single Flame.', reward: ['relic', 'bareframe'] },
   { id: 'x5', name: 'Night Owl', hint: 'The Lattice is quietest at night.', desc: 'Play between 3 AM and 5 AM.', reward: ['relic', 'moonlit'] },
   { id: 'x6', name: 'Overkill', hint: 'Why stop at the line?', desc: 'Collapse with at least 1e60 Quanta.', reward: ['relic', 'heavy'] },
   { id: 'x7', name: 'Lucky', hint: 'Sevens, twice.', desc: 'Own exactly 77 Flickers.', reward: ['relic', 'lucky7'] },
@@ -1425,6 +1662,17 @@ function poke() {
   if (S.secret.orb >= 10) grantSecret('x3');
 }
 const tabTimes = [];
+// a Lucky Pulse (from the Architect's "lucky" ideas): a bright chime and a pop-up over the Pulse button
+function luckyPop() {
+  if (SIMULATING) return;
+  blip(2.2); setTimeout(() => blip(2.8), 60);
+  const pb = UI.el && UI.el.pulse; if (!pb) return;
+  const r = pb.getBoundingClientRect(); if (!r.width) return; // Pulse pressed by key from another tab
+  const el = document.createElement('div');
+  el.className = 'lucky-pop'; el.textContent = 'Lucky! ×' + LUCKY_X;
+  el.style.left = (r.left + r.width / 2) + 'px'; el.style.top = r.top + 'px';
+  document.body.appendChild(el); setTimeout(() => el.remove(), 1000);
+}
 
 /* ---------------- Appearance ---------------- */
 function applyUI() {
@@ -1710,10 +1958,10 @@ const TABS = [
   ['gen', 'Generators', () => true, () => false],
   ['upg', 'Upgrades', () => true, () => QUPG.some(u => !S.qUpg[u.id] && lq() >= u.cost) || openAffordable('q')],
   ['shard', 'Shards', shardsVisible, () => SUPG.some(u => !S.sUpg[u.id] && S.shards.gte(u.cost)) || (shardsVisible() && openAffordable('s'))],
-  ['auto', 'Automation', autoVisible, () => false],
   ['asc', 'Ascension', ascVisible, () => EUPG.some(u => !S.eUpg[u.id] && S.essence.gte(u.cost)) || (streamVisible('e') && openAffordable('e'))],
+  ['auto', 'Automation', autoVisible, () => false],
   ['chal', 'Challenges', () => hasE('e3'), () => false],
-  ['arch', 'Architect', () => tutorialDone(), () => S.ai.total > S.ai.seen],
+  ['arch', 'Architect', () => tutorialDone(), () => false], // its lines show in the speech bubble; no dot on the tab
   ['ach', 'Achievements', () => true, () => false],
   ['stats', 'Statistics', () => true, () => false],
   ['guide', 'Guide', () => true, () => false],
@@ -1864,10 +2112,11 @@ function buildGenTab() {
       show(row, unl || (i > 0 && genUnlocked(i - 1) && !(inChal(1) && i > 3)));
       setC(row, 'locked', !unl);
       setT(am, fmt(g.amt, 0) + '  (' + g.bought + ' bought)');
-      setT(mu, fmtMult(tierMultLog(i, R.gl)) + '  · next ×' + R.res.toFixed(2) + ' in ' + (10 - g.bought % 10));
-      bar.style.width = ((g.bought % 10) * 10) + '%';
+      const rs = resStep(i);
+      setT(mu, fmtMult(tierMultLog(i, R.gl)) + '  · next ×' + R.res.toFixed(2) + ' in ' + (rs - g.bought % rs));
+      bar.style.width = ((g.bought % rs) / rs * 100) + '%';
       const r = genRateLog(i, R.gl);
-      setT(ra, r > -Infinity ? '+' + fmt(D.fromLog(r)) + (i === 0 ? ' Quanta/s' : ' ' + genDef(i - 1).name + 's/s') : (i === 0 ? 'makes Quanta' : 'makes ' + genDef(i - 1).name + 's'));
+      setT(ra, r > -Infinity ? '+' + fmt(D.fromLog(r)) + (i === 0 ? ' Quanta/s' : ' ' + plural(genDef(i - 1).name) + '/s') : (i === 0 ? 'makes Quanta' : 'makes ' + plural(genDef(i - 1).name)));
       if (!unl) { setT(bb, 'Requires a ' + genDef(i - 1).name); setDis(bb, true); setC(bb, 'can', false); return; }
       const c0 = genCostLog(i), lm = lq(), m = S.settings.buyMode;
       let n = m === 'max' ? genMax(i) : m === '10' ? 10 : 1;
@@ -1913,22 +2162,148 @@ const WEB_DEF = {
   q: { root: 'q1', cur: 'q', curName: 'Quanta', costLog: id => QBY[id].cost, owned: id => !!S.qUpg[id],
     ring: { kind: 'qmult', v: L10(1.1), text: 'Quanta production ×1.1' },
     branches: [
-      { name: 'Light', sub: 'production', angle: -150, start: 'q2', links: [['q2', 'q5'], ['q2', 'q13'], ['q5', 'q7'], ['q13', 'q16']], minor: { kind: 'qmult', v: L10(1.15), text: 'Quanta production ×1.15' } },
-      { name: 'Harmony', sub: 'resonance and clock', angle: -30, start: 'q3', links: [['q3', 'q9'], ['q3', 'q4'], ['q4', 'q11'], ['q4', 'q8']], minor: { kind: 'res', v: 0.01, text: 'Resonance +0.01' } },
-      { name: 'Cascade', sub: 'tiers and Shards', angle: 90, start: 'q6', links: [['q6', 'q10'], ['q10', 'q12'], ['q10', 'q15'], ['q12', 'q14']], minor: { kind: 'shard', v: L10(1.03), text: 'Shard gain ×1.03' } },
+      { name: 'Light', sub: 'production', angle: -150, start: 'q2', links: [['q2', 'q32'], ['q2', 'q5'], ['q32', 'q17'], ['q32', 'q33'], ['q5', 'q34'], ['q5', 'q7'], ['q17', 'q18'], ['q33', 'q37'], ['q7', 'q39'], ['q34', 'q35'], ['q18', 'q13'], ['q18', 'q19'], ['q37', 'q38'], ['q39', 'q40'], ['q35', 'q36'], ['q13', 'q45'], ['q19', 'q16'], ['q38', 'q42'], ['q40', 'q41'], ['q36', 'q20'], ['q45', 'q46'], ['q16', 'q21'], ['q42', 'q43'], ['q20', 'q48'], ['q41', 'q44'], ['q21', 'q47'], ['q46', 'q49'], ['q47', 'q50']], minor: { kind: 'qmult', v: L10(1.035), text: 'Quanta production ×1.035' } },
+      { name: 'Harmony', sub: 'resonance and clock', angle: -30, start: 'q3', links: [['q3', 'q51'], ['q3', 'q52'], ['q51', 'q22'], ['q51', 'q53'], ['q52', 'q9'], ['q22', 'q4'], ['q53', 'q55'], ['q9', 'q23'], ['q9', 'q54'], ['q4', 'q8'], ['q4', 'q11'], ['q23', 'q56'], ['q55', 'q57'], ['q54', 'q58'], ['q11', 'q59'], ['q56', 'q24'], ['q57', 'q64'], ['q58', 'q61'], ['q59', 'q25'], ['q24', 'q60'], ['q61', 'q62'], ['q60', 'q26'], ['q25', 'q63'], ['q62', 'q65'], ['q26', 'q66']], minor: { kind: 'res', v: 0.002, text: 'Resonance +0.002' } },
+      { name: 'Cascade', sub: 'tiers and Shards', angle: 90, start: 'q6', links: [['q6', 'q67'], ['q6', 'q68'], ['q67', 'q10'], ['q67', 'q69'], ['q68', 'q27'], ['q69', 'q28'], ['q10', 'q12'], ['q27', 'q70'], ['q28', 'q71'], ['q12', 'q72'], ['q70', 'q29'], ['q71', 'q30'], ['q72', 'q14'], ['q29', 'q73'], ['q30', 'q75'], ['q14', 'q15'], ['q73', 'q74'], ['q75', 'q76'], ['q15', 'q77'], ['q74', 'q31'], ['q77', 'q79'], ['q31', 'q78'], ['q76', 'q80']], minor: { kind: 'shard', v: L10(1.008), text: 'Shard gain ×1.008' } },
     ] },
   s: { root: 's1', cur: 'shards', curName: 'Shards', costLog: id => L10(SBY[id].cost), owned: id => !!S.sUpg[id],
     ring: { kind: 'qmult', v: L10(1.15), text: 'Quanta production ×1.15' },
     branches: [
-      { name: 'Radiance', sub: 'raw power', angle: -150, start: 's3', links: [['s3', 's7'], ['s3', 's12'], ['s3', 's13'], ['s7', ['s19', 's20']], [['s19', 's20'], 's17'], ['s12', 's14'], ['s14', 's16'], ['s16', 's28'], ['s13', 's18']], minor: { kind: 'qmult', v: L10(1.25), text: 'Quanta production ×1.25' } },
-      { name: 'Clockwork', sub: 'speed and automation', angle: -30, start: 's2', links: [['s2', 'ab0'], ['s2', 's8'], ['ab0', 'ab1'], ['ab1', 'abC'], ['ab1', 'ab2'], ['ab2', 'ab3'], ['ab3', 's11'], ['ab3', 'ab4'], ['ab4', 'abL'], ['abL', 'abH'], ['abH', 'abK'], ['ab4', 'ab5'], ['ab5', 'ab6'], ['ab6', 'ab7'], ['ab7', 'ab8'], ['ab7', 's9'], ['s8', ['s21', 's22']], [['s21', 's22'], 's27'], ['s27', 's15']], minor: { kind: 'clock', v: 0.001, text: 'Clock Speed base +0.001' } },
-      { name: 'Echoes', sub: 'Shards and abilities', angle: 90, start: 's5', links: [['s5', 's25'], ['s5', ['s23', 's24']], ['s25', 's26'], ['s26', 's31'], ['s26', 's30'], [['s23', 's24'], 's10'], ['s10', 's29']], minor: { kind: 'shard', v: L10(1.05), text: 'Shard gain ×1.05' } },
+      { name: 'Radiance', sub: 'raw power', angle: -150, start: 's3', links: [['s3', 's32'], ['s32', 's7'], ['s3', 's12'], ['s3', 's13'], ['s7', ['s19', 's20']], [['s19', 's20'], 's33'], ['s33', 's17'], ['s17', 's38'], ['s12', 's34'], ['s34', 's14'], ['s14', 's35'], ['s35', 's16'], ['s16', 's28'], ['s28', 's37'], ['s13', 's36'], ['s36', 's18'], ['s18', 's39']], minor: { kind: 'qmult', v: L10(1.12), text: 'Quanta production ×1.12' } },
+      { name: 'Clockwork', sub: 'speed and automation', angle: -30, start: 's2', links: [['s2', 'ab0'], ['s2', 's8'], ['ab0', 'ab1'], ['ab1', 'abC'], ['ab1', 'ab2'], ['ab2', 'ab3'], ['ab3', 's11'], ['ab3', 'ab4'], ['ab4', 'abL'], ['abL', 'abH'], ['abH', 'abK'], ['ab4', 'ab5'], ['ab5', 'ab6'], ['ab6', 'ab7'], ['ab7', 'ab8'], ['ab7', 's9'], ['s9', 's45'], ['abK', 's46'], ['s11', 's44'], ['s8', 's40'], ['s40', ['s21', 's22']], [['s21', 's22'], 's41'], ['s41', 's27'], ['s41', 's42'], ['s27', 's15'], ['s15', 's43']], minor: { kind: 'clock', v: 0.0007, text: 'Clock Speed base +0.0007' } },
+      { name: 'Echoes', sub: 'Shards and abilities', angle: 90, start: 's5', links: [['s5', 's47'], ['s47', 's25'], ['s5', ['s23', 's24']], ['s25', 's26'], ['s26', 's31'], ['s26', 's30'], ['s26', 's50'], ['s31', 's52'], ['s30', 's53'], [['s23', 's24'], 's48'], ['s48', 's10'], ['s10', 's49'], ['s49', 's29'], ['s29', 's51'], ['s51', 's54']], minor: { kind: 'shard', v: L10(1.016), text: 'Shard gain ×1.016' } },
+    ] },
+  e: { root: 'e6', cur: 'essence', curName: 'Essence', costLog: id => L10(EBY[id].cost), owned: id => !!S.eUpg[id],
+    ring: { kind: 'qmult', v: L10(2), text: 'Quanta production ×2' },
+    branches: [
+      { name: 'Starlight', sub: 'raw power', angle: -150, start: 'e2', links: [['e2', 'e19'], ['e19', 'e9'], ['e2', 'e10'], ['e9', 'e16'], ['e16', 'e20'], ['e10', 'e11'], ['e10', 'e22'], ['e11', 'e18'], ['e18', 'e23'], ['e16', 'e17'], ['e17', 'e21'], ['e21', 'e24']], minor: { kind: 'qmult', v: L10(1.4), text: 'Quanta production ×1.4' } },
+      { name: 'Memory', sub: 'what you keep, and automation', angle: -30, start: 'e1', links: [['e1', 'e25'], ['e1', 'e35'], ['e25', 'e5'], ['e5', 'e7'], ['e5', 'e8'], ['e7', 'e29'], ['e7', 'e15'], ['e8', 'e26'], ['e15', 'e27'], ['e27', 'e28']], minor: { kind: 'shard', v: L10(1.045), text: 'Shard gain ×1.045' } },
+      { name: 'Trials', sub: 'Shards, Essence and Challenges', angle: 90, start: 'e3', links: [['e3', 'e4'], ['e3', 'e14'], ['e3', 'e30'], ['e4', 'e13'], ['e13', 'e12'], ['e13', 'e33'], ['e14', 'e31'], ['e12', 'e32'], ['e32', 'e34']], minor: { kind: 'ess', v: L10(1.013), text: 'Essence gain ×1.013' } },
     ] },
 };
+// the branch an idea belongs on, by what it does (t = its generator tier; -1 is Clock Speed)
 const ARCH_BRANCH = {
-  q: k => (k === 'res' || k === 'clock') ? 1 : (k === 'tier' || k === 'qexp') ? 2 : 0,
-  s: k => (k === 'qmult' || k === 'tier') ? 0 : (k === 'clock' || k === 'idle' || k === 'pulse') ? 1 : 2,
+  q: (k, t) => ['res', 'clock', 'resonate', 'pulsecd', 'insight'].includes(k) || (k === 'thrift' && t === -1) ? 1 : ['tier', 'qexp', 'thrift', 'synergy'].includes(k) ? 2 : 0,
+  s: (k, t) => ['qmult', 'tier', 'idle', 'pulse', 'resonate', 'synergy'].includes(k) ? 0 : ['clock', 'head', 'thrift', 'insight'].includes(k) ? 1 : 2,
+  e: (k, t) => ['qmult', 'tier', 'idle', 'pulse', 'qexp', 'synergy'].includes(k) ? 0 : ['head', 'insight', 'thrift'].includes(k) ? 1 : 2,
 };
+/* Grown upgrades: hundreds of small notables of every kind, grown off the hand-made ones in short chains.
+   Seeded, so every save sees the same webs. Most of them do something other than ×Quanta; the ones that
+   work like the Architect's ideas (kind) are counted in procAgg, the simple ones use fields (FU). */
+const GROW = {
+  q: { n: 40, kinds: [
+    { tier: 3, pulse: 1, idle: 1, lucky: 0.7, pulsecd: 0.7, flick: 0.6, qm: 0.8 },
+    { res: 1.5, resonate: 1, thrift: 2, pc: 1.2, clock: 0.3 },
+    { tier: 2.2, synergy: 2, shard: 1.5, head: 0.8 }] },
+  s: { n: 26, kinds: [
+    { tier: 2.5, synergy: 1.5, resonate: 0.6, qm: 0.6 },
+    { thrift: 2, head: 1.2, insight: 1, idle: 1, pulsecd: 0.6, pc: 0.8 },
+    { shard: 1.6, surge: 1, fold: 1, lucky: 0.8, pulse: 0.6 }] },
+  e: { n: 16, kinds: [
+    { tier: 2, synergy: 1.5, qexp: 0.4, qm: 0.6 },
+    { head: 1, insight: 1.2, thrift: 1.2, shard: 1 },
+    { ess: 1.2, shard: 1.2, res: 1, surge: 0.6, fold: 0.6 }] },
+};
+// strength of a grown upgrade of each kind; s runs from 1 (cheapest) to 2 (dearest in its web)
+const GROW_VAL = {
+  q: { tier: s => L10(1.5 + 0.5 * s), pulse: s => L10(2 * s), idle: s => L10(1.2 + 0.2 * s), lucky: s => 0.01 * s, pulsecd: s => 0.025 * s, flick: s => 0.04 * s, qm: s => L10(1.15 + 0.15 * s),
+    res: s => 0.002 * s, resonate: () => 1, thrift: s => 0.02 * s, pc: s => L10(1 + 0.004 * s), clock: () => 0.001, hi: s => L10(1 + 0.04 * s), synergy: s => 0.06 * s, shard: s => L10(1 + 0.1 * s), head: s => 0.5 * s },
+  s: { tier: s => L10(2 * s), synergy: s => 0.1 * s, hi: s => L10(1 + 0.06 * s), resonate: () => 1, qm: s => L10(1.5 * s), thrift: s => 0.025 * s, head: s => s, insight: s => 0.3 * s, idle: s => L10(1 + 0.5 * s),
+    pulsecd: s => 0.03 * s, pc: s => L10(1 + 0.005 * s), shard: s => L10(1 + 0.12 * s), surge: s => Math.round(3 * s), fold: s => 0.03 * s, lucky: s => 0.012 * s, pulse: s => L10(3 * s) },
+  e: { tier: s => L10(10 * s), synergy: s => 0.15 * s, hi: s => L10(1 + 0.1 * s), qexp: s => 0.002 * s, qm: s => L10(100 * s), head: s => 1.5 * s, insight: s => 0.5 * s, thrift: s => 0.03 * s,
+    shard: s => L10(1 + 0.5 * s), ess: s => L10(1 + 0.02 * s), res: s => 0.004 * s, surge: s => Math.round(5 * s), fold: s => 0.05 * s },
+};
+const GROW_NAMES = Object.assign({}, NAME_BITS, {
+  qm: NAME_BITS.qmult,
+  hi: [['Falling', 'Rushing', 'Deep', 'Swift', 'Heavy', 'Sheer', 'Sunken'], ['Cascade', 'Torrent', 'Rapids', 'Spillway', 'Current', 'Weir', 'Sluice']],
+  pc: [['Ticking', 'Measured', 'Steady', 'Tolling', 'Counted', 'Even'], ['Beat', 'Tick', 'Toll', 'Chime', 'Count', 'Stroke']],
+});
+const GROWN = new Set(), KIND_UPG = { q: [], s: [], e: [] }, GROW_P = { q: 0.18, s: 0.1, e: 0.18 }; // strength of the grown upgrades per web (the Shard web feeds the Collapse loop)
+const roundSig = (x, d = 2) => +x.toPrecision(d);
+function growDesc(u) {
+  const G = t => plural(genDef(t).name), x = v => niceX(v);
+  switch (u.kind) {
+    case 'tier': return G(u.tier) + ' ×' + x(u.v) + '.';
+    case 'thrift': return priceName(u.tier) + ' prices grow ' + pct(u.v) + ' slower.';
+    case 'resonate': return G(u.tier) + ' resonate one purchase sooner (every 10 bought becomes every 9, and so on, down to every 5).';
+    case 'synergy': return G(u.tier) + ' ×(1 + ' + G(u.src) + ' bought)^' + u.v + '.';
+    case 'pulse': return 'Pulse ×' + x(u.v) + '.';
+    case 'idle': return 'While you have not touched the game for a minute, Quanta production ×' + x(u.v) + '.';
+    case 'lucky': return 'Each Pulse gets +' + pct(u.v) + ' chance to be Lucky (×' + LUCKY_X + ' Quanta).';
+    case 'pulsecd': return 'Pulse recharges ' + pct(u.v) + ' faster.';
+    case 'flick': return 'Flickers ×(log₁₀ Quanta)^' + u.v + '.';
+    case 'head': return 'Every Collapse starts with ×' + x(u.v) + ' more Quanta (up to ' + x(HEAD_CAP) + ' in all).';
+    case 'insight': return 'The Architect’s ideas in this web cost ÷' + x(u.v) + '.';
+    case 'surge': return 'Surge lasts ' + u.v + ' seconds longer.';
+    case 'fold': return 'Time Fold recharges ' + pct(u.v) + ' faster.';
+    case 'qexp': return 'Quanta production exponent +' + u.v + '.';
+  }
+  return '';
+}
+// what a kind upgrade shows as "Currently ..."
+const kindEff = u => u.kind === 'synergy' ? () => fmtMult(u.v * L10(1 + tierBought(u.src))) : u.kind === 'flick' ? () => fmtMult(u.v * L10(Math.max(1, lq()))) : undefined;
+function growWebs() {
+  const LISTS = { q: QUPG, s: SUPG, e: EUPG }, BY = { q: QBY, s: SBY, e: EBY };
+  // the hand-written kind upgrades (kx) join the list first
+  for (const layer of ['q', 's', 'e']) for (const u of LISTS[layer]) if (u.kind) { KIND_UPG[layer].push(u); if (!u.desc) u.desc = growDesc(u); u.eff = kindEff(u); }
+  const names = new Set([].concat(QUPG, SUPG, EUPG).map(u => u.name));
+  for (const layer of ['q', 's', 'e']) {
+    const W = WEB_DEF[layer], cfg = GROW[layer], rng = mulberry(hashStr('grow:' + layer));
+    const pick = a => a[Math.floor(rng() * a.length)];
+    const costLog = id => W.costLog(id);
+    let maxC = 0; for (const br of W.branches) for (const l of br.links) for (const id of [].concat(l[0], l[1])) maxC = Math.max(maxC, costLog(id));
+    let k = 0;
+    W.branches.forEach((br, b) => {
+      const ids = []; for (const l of br.links) for (const id of [].concat(l[0], l[1])) if (!ids.includes(id)) ids.push(id);
+      const anchors = ids.slice(), wts = cfg.kinds[b], made = [];
+      for (let i = anchors.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [anchors[i], anchors[j]] = [anchors[j], anchors[i]]; }
+      let a = 0;
+      while (made.length < cfg.n) {
+        const anchor = anchors[a++ % anchors.length], len = Math.min(cfg.n - made.length, 1 + Math.floor(rng() * 3));
+        let prev = anchor, c = costLog(anchor);
+        for (let j = 0; j < len; j++) {
+          // the next price: a little above the one before (Quanta costs are already logs)
+          c += layer === 'q' ? Math.max(1, Math.round(Math.max(1.5, 0.08 * c) * (0.6 + 0.8 * rng()))) : Math.max(0.3, 0.1 * c) * (0.6 + 0.8 * rng());
+          const cost = layer === 'q' ? c : roundSig(Math.pow(10, c)), s = 1 + Math.min(1, c / Math.max(1, maxC));
+          let tot = 0; for (const kd in wts) tot += wts[kd];
+          let r = rng() * tot, kind = 'qm'; for (const kd in wts) { r -= wts[kd]; if (r <= 0) { kind = kd; break; } }
+          const id = 'g' + layer + (++k), u = { id, name: '', cost, grown: true };
+          const val = kind === 'resonate' || kind === 'surge' ? GROW_VAL[layer][kind](s) : GROW_VAL[layer][kind](s) * GROW_P[layer];
+          if (FIELDS.includes(kind)) {
+            u[kind] = FLOG[kind] ? L10(roundSig(Math.pow(10, val), val < L10(1.1) ? 4 : 3)) : +val.toFixed(4);
+          } else {
+            u.kind = kind; u.v = ['tier', 'pulse', 'idle', 'head', 'insight'].includes(kind) ? L10(roundSig(Math.pow(10, val), val < L10(1.1) ? 3 : 2)) : +val.toFixed(3);
+            // which generator it is about: around the tiers you have when you can afford it
+            let topT = layer === 's' ? 2 + Math.floor((s - 1) * 10) : 6 + Math.floor((s - 1) * 14);
+            if (layer === 'q') { topT = 1; while (topT + 1 < GEN_NAMES.length && genDef(topT + 1).base <= c - 2) topT++; }
+            if (kind === 'tier' || kind === 'resonate') u.tier = Math.max(0, Math.min(GEN_NAMES.length - 1, topT - Math.floor(rng() * 4)));
+            if (kind === 'thrift') u.tier = Math.max(0, Math.min(GEN_NAMES.length - 1, topT - Math.floor(rng() * 4)));
+            if (kind === 'synergy') { u.src = Math.max(1, Math.min(GEN_NAMES.length - 1, topT - Math.floor(rng() * 3))); u.tier = rng() < 0.6 ? u.src - 1 : Math.floor(rng() * u.src); }
+            u.eff = kindEff(u);
+            KIND_UPG[layer].push(u);
+          }
+          // a name nobody else has
+          const bits = GROW_NAMES[kind] || GROW_NAMES.qmult;
+          for (let tries = 0; tries < 30 && (!u.name || names.has(u.name)); tries++)
+            u.name = (kind === 'tier' || kind === 'resonate' ? genDef(u.tier).name : kind === 'synergy' ? genDef(u.src).name + '–' + genDef(u.tier).name : pick(bits[0].length ? bits[0] : NAME_BITS.qmult[0])) + ' ' + pick(bits[1]);
+          const base = u.name;
+          for (let n = 2; names.has(u.name); n++) u.name = base + ' ' + (n <= 10 ? ['II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][n - 2] : n);
+          names.add(u.name);
+          u.desc = u.kind ? growDesc(u) : FIELDS.filter(f => u[f]).map(f => FIELD_TXT[f] + (FLOG[f] ? niceX(u[f]) : u[f]) + (f === 'pc' ? ' per Clock Speed level' : '') + '.').join(' ');
+          LISTS[layer].push(u); BY[layer][id] = u; GROWN.add(id);
+          for (const f of FIELDS) if (u[f]) FU[f].push([layer, u]);
+          br.links.push([prev, id]); prev = id; made.push(id);
+        }
+      }
+    });
+  }
+}
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+growWebs();
+// The Upgrade web starts cheap and climbs gently: about 20 Quanta for the first upgrade, catching up with the
+// written prices at 1e18 (dearer ones are unchanged). The Architect's Quanta ideas follow the same curve.
+const qPrice = c => c >= 18 ? c : L10(roundSig(Math.pow(10, 1.3 + 16.7 * Math.pow(Math.max(0, c - 2) / 16, 2)), 2));
+for (const u of QUPG) u.cost = qPrice(u.cost);
 // Force layout: springs along edges, repulsion between nodes, anchors pull notables to their branch.
 function relax(nodes, edges, pos, iters) {
   const ids = Object.keys(nodes), n = ids.length, idx = {};
@@ -1971,7 +2346,7 @@ function relax(nodes, edges, pos, iters) {
 const WEB_STATIC = {};
 function webStatic(layer) {
   if (WEB_STATIC[layer]) return WEB_STATIC[layer];
-  const W = WEB_DEF[layer], nodes = {}, edges = [], placed = [];
+  const W = WEB_DEF[layer], nodes = {}, edges = [], placed = [], forks = [];
   const add = n => (nodes[n.id] = n);
   const link = (x, y, arc) => edges.push(arc ? [x, y, 1] : [x, y]);
   const polar = (ang, r) => [Math.cos(ang) * r, Math.sin(ang) * r];
@@ -1994,22 +2369,23 @@ function webStatic(layer) {
   W.branches.forEach((br, b) => {
     const th0 = br.angle * Math.PI / 180, span = 100 * Math.PI / 180, kids = {};
     for (const [p, c] of br.links) (kids[key(p)] = kids[key(p)] || []).push(c);
-    const leaves = g => { const k = kids[key(g)]; return k ? k.reduce((s, c) => s + leaves(c), 0) : 1; };
+    const leaves = g => { const k = kids[key(g)]; return k ? k.reduce((s, c) => s + leaves(c), 0) : (GROWN.has(ids(g)[0]) ? 0.4 : 1); };
     let li = 0;
     const place = (g, depth, a0, a1, parent, pAng) => {
       const ang = (a0 + a1) / 2, r = R(depth), gi = ids(g), dir = [Math.cos(ang), Math.sin(ang)], nrm = [-dir[1], dir[0]];
       gi.forEach((id, k) => {
         const off = gi.length > 1 ? (k ? 105 : -105) : 0;
-        add({ id, type: 'notable', br: b, upg: id, costLog: W.costLog(id), anchor: [dir[0] * r + nrm[0] * off, dir[1] * r + nrm[1] * off] });
+        add({ id, type: 'notable', br: b, upg: id, gen: GROWN.has(id), costLog: W.costLog(id), anchor: [dir[0] * r + nrm[0] * off, dir[1] * r + nrm[1] * off] });
         for (const p of ids(parent)) link(p, id);
       });
       placed.push({ b, depth, ang, g: gi });
+      if (gi.length > 1) forks.push(gi); // a path choice: own one side and the other closes
       // bonus loop on the outer side of a split, alternating along a straight line
       const side = Math.abs(ang - pAng) < 0.02 ? ((li++ % 2) ? 1 : -1) : (ang > pAng ? 1 : -1);
-      sideLoop(`m:${layer}:${b}:${key(g)}`, ids(parent), gi, side, { br: b, eff: br.minor });
+      if (!GROWN.has(gi[0])) sideLoop(`m:${layer}:${b}:${key(g)}`, ids(parent), gi, side, { br: b, eff: br.minor });
       const k = kids[key(g)] || [], total = k.reduce((s, c) => s + leaves(c), 0);
       let cur = a0;
-      for (const c of k) { const w = (a1 - a0) * leaves(c) / total; place(c, depth + 1, cur, cur + w, g, ang); cur += w; }
+      for (const c of k) { const w = (a1 - a0) * leaves(c) / total; place(c, depth + (GROWN.has(ids(c)[0]) ? 0.55 : 1), cur, cur + w, g, ang); cur += w; }
     };
     place(br.start, 0, th0 - span / 2, th0 + span / 2, W.root, th0);
   });
@@ -2019,19 +2395,19 @@ function webStatic(layer) {
   const pos = {};
   for (const id in nodes) pos[id] = nodes[id].anchor.slice();
   relax(nodes, edges, pos, 200);
-  return (WEB_STATIC[layer] = { nodes, edges, adj, pos });
+  return (WEB_STATIC[layer] = { nodes, edges, adj, pos, forks });
 }
 let MINOR_VER = 0;
 const MINOR_AGG = {};
 function minorAgg(layer) {
   const c = MINOR_AGG[layer];
   if (c && c.v === MINOR_VER && c.S === S) return c.a;
-  const a = { qmult: 0, res: 0, clock: 0, shard: 0 }, st = webStatic(layer);
+  const a = { qmult: 0, res: 0, clock: 0, shard: 0, ess: 0 }, st = webStatic(layer);
   for (const id in S.minor[layer]) { const n = st.nodes[id] || (/^c\d+$/.test(id) ? connectorNode(layer, +id.slice(1)) : null); if (n && n.eff) a[n.eff.kind] += n.eff.v; }
   MINOR_AGG[layer] = { v: MINOR_VER, S, a };
   return a;
 }
-const minorSum = k => minorAgg('q')[k] + minorAgg('s')[k];
+const minorSum = k => minorAgg('q')[k] + minorAgg('s')[k] + minorAgg('e')[k];
 const isBig = n => !!n && (n.type === 'notable' || n.type === 'root' || n.type === 'arch');
 // connector bonus node c<i> sits between an Architect idea a<i> and the big node it grows from
 function connectorNode(layer, i) {
@@ -2058,6 +2434,7 @@ function webOwned(layer, n) {
   return WEB_DEF[layer].owned(n.upg);
 }
 const webForked = (layer, n) => layer === 's' && n.type === 'notable' && sForkTaken(n.upg);
+const webForkOther = (layer, id) => { for (const f of webStatic(layer).forks) if (f.includes(id)) return f.find(x => x !== id); return null; };
 function webAvail(layer, n) {
   if (webOwned(layer, n) || webForked(layer, n)) return false;
   if (n.type === 'root') return true;
@@ -2075,7 +2452,7 @@ function webBuy(layer, id) {
   if (S[W.cur].log10() < cost) return false;
   if (n.type === 'arch') return buyProc(layer, n.arch);
   if (n.type === 'minor') { S[W.cur] = S[W.cur].sub(D.fromLog(cost)).max0(); S.minor[layer][n.id] = true; MINOR_VER++; return true; }
-  return layer === 'q' ? buyQ(n.upg) : buyS(n.upg);
+  return layer === 'q' ? buyQ(n.upg) : layer === 's' ? buyS(n.upg) : buyE(n.upg);
 }
 function webFrontier(layer) {
   const st = webStatic(layer), out = [];
@@ -2096,33 +2473,53 @@ function webAutoBuy(layer, max = 40, branch) {
   }
   return bought;
 }
-function pickParentWeb(layer, b) {
+// Where a new idea grows: off an owned big upgrade of its own branch, spread around. The upgrade carrying the
+// fewest ideas wins (a little randomness breaks ties), so ideas turn up here and there along the branch instead
+// of trailing off in a line. Ideas sprout from other ideas only once the owned upgrades there already carry some.
+function pickParentWeb(layer, b, list = S.forge[layer]) {
   const W = WEB_DEF[layer]; if (!W) return null;
-  const st = webStatic(layer), cands = [];
-  for (const id in st.nodes) { const n = st.nodes[id]; if (n.br === b && isBig(n) && webOwned(layer, n)) cands.push(id); }
+  const st = webStatic(layer), kids = {}, open = new Set(), depth = [];
+  list.forEach((u, i) => {
+    if (!u.parent) return;
+    kids[u.parent] = (kids[u.parent] || 0) + 1;
+    if (!u.own) open.add(u.parent);
+    depth[i] = /^a\d+$/.test(u.parent) ? (depth[+u.parent.slice(1)] || 0) + 1 : 1;
+  });
+  let best = null, bs = Infinity;
+  const consider = (id, extra) => { const s = (kids[id] || 0) + extra + (open.has(id) ? 3 : 0) + Math.random() * 1.2; if (s < bs) { bs = s; best = id; } };
+  for (const id in st.nodes) { const n = st.nodes[id]; if (n.br === b && n.type === 'notable' && webOwned(layer, n)) consider(id, 0); }
+  list.forEach((u, i) => { if (u.branch === b && u.own) consider('a' + i, 1.5 + (depth[i] || 1)); });
+  if (best) return best;
+  const br = W.branches[b]; // nothing of this branch owned yet: wait at the branch's first upgrade
+  return br ? (Array.isArray(br.start) ? br.start[0] : br.start) : W.root;
+}
+// spread every idea of a web over its own branch again (saves from before ideas were spread out)
+function respreadIdeas(layer) {
   const list = S.forge[layer];
-  for (let i = 0; i < list.length; i++) if (list[i].branch === b && list[i].own) cands.push('a' + i);
-  const busy = new Set(list.filter(u => !u.own).map(u => u.parent));
-  const free = cands.filter(c => !busy.has(c));
-  if (free.length) return Math.random() < 0.5 ? free[free.length - 1] : rnd(free);
-  if (!cands.length) return W.root;
-  return Math.random() < 0.6 ? cands[cands.length - 1] : rnd(cands);
+  if (!WEB_DEF[layer]) return;
+  list.forEach((u, i) => {
+    u.branch = ARCH_BRANCH[layer](u.kind, u.tier); u.parent = pickParentWeb(layer, u.branch, list.slice(0, i));
+    const last = u.name.split(' ').pop(); // generator names changed: rename ideas about a generator
+    if (u.kind === 'tier' || u.kind === 'resonate') u.name = genDef(u.tier).name + ' ' + last;
+    if (u.kind === 'synergy') u.name = genDef(u.src).name + '–' + genDef(u.tier).name + ' ' + last;
+  });
+  delete WEB_CACHE[layer]; WEB_POS[layer] = {};
 }
 // The full web for drawing: static nodes plus the Architect's growth, with re-settled positions.
-const WEB_CACHE = {}, WEB_POS = { q: {}, s: {} };
+const WEB_CACHE = {}, WEB_POS = { q: {}, s: {}, e: {} };
 function webGraph(layer) {
   const st = webStatic(layer), W = WEB_DEF[layer];
   ensureOpen(layer);
   const nArch = S.forge[layer].length, c = WEB_CACHE[layer];
   if (c && c.nArch === nArch && c.S === S) return c;
   const pos = WEB_POS[layer];
-  if (!c || c.S !== S) for (const k in pos) if (/^a\d+$/.test(k)) delete pos[k];
+  for (const k in pos) delete pos[k]; // auto-tidy: a new node means a fresh layout of the whole web
   const nodes = Object.assign({}, st.nodes), edges = st.edges.slice();
   for (const id in st.nodes) if (!pos[id]) pos[id] = st.pos[id].slice();
   let grew = false;
   for (let i = 0; i < nArch; i++) {
     const u = S.forge[layer][i];
-    if (u.branch === undefined) { u.branch = ARCH_BRANCH[layer](u.kind); u.parent = W.root; }
+    if (u.branch === undefined) { u.branch = ARCH_BRANCH[layer](u.kind, u.tier); u.parent = pickParentWeb(layer, u.branch, S.forge[layer].slice(0, i)); }
     const id = 'a' + i, cid = 'c' + i;
     u.parent = bigParent(layer, nodes[u.parent] ? u.parent : W.root);
     const parent = nodes[u.parent] ? u.parent : W.root;
@@ -2132,7 +2529,7 @@ function webGraph(layer) {
     if (!pos[id]) {
       const pp = pos[parent] || [0, 0];
       const base = (pp[0] || pp[1]) ? Math.atan2(pp[1], pp[0]) : W.branches[u.branch].angle * Math.PI / 180;
-      let best = null, bestA = base, score = -1;
+      let best = null, bestA = base, score = -Infinity; // the least crowded spot wins, even when every spot is crowded
       for (const da of [0, 0.45, -0.45, 0.9, -0.9, 1.35, -1.35, 1.8, -1.8, 2.4, -2.4]) for (const dist of [140, 200, 260]) {
         const a2 = base + da, c = [pp[0] + Math.cos(a2) * dist, pp[1] + Math.sin(a2) * dist];
         let m = 1e12; for (const k in pos) { const q = pos[k], d2 = (q[0] - c[0]) ** 2 + (q[1] - c[1]) ** 2; if (d2 < m) m = d2; }
@@ -2179,8 +2576,10 @@ function webInfo(layer, n) {
   const W = WEB_DEF[layer], br = W.branches[n.br];
   if (n.type === 'arch') { const u = S.forge[layer][n.arch]; return { name: u.name, label: 'The Architect\u2019s idea' + (br ? ' · ' + br.name : ''), desc: forgeDesc(u), reason: u.reason }; }
   if (n.type === 'minor') return { name: n.eff.text, label: (n.connector !== undefined ? 'Bonus node, grown by the Architect' : 'Bonus node') + (br ? ' · ' + br.name : ''), desc: n.eff.text + '.' };
-  const u = layer === 'q' ? QBY[n.upg] : SBY[n.upg];
-  return { name: u.name, label: n.type === 'root' ? 'The root' : 'Notable · ' + (br ? br.name : ''), desc: u.desc, eff: u.eff };
+  const u = layer === 'q' ? QBY[n.upg] : layer === 's' ? SBY[n.upg] : EBY[n.upg];
+  const other = webForkOther(layer, n.upg), ou = other && (layer === 's' ? SBY[other] : layer === 'q' ? QBY[other] : EBY[other]);
+  const choice = ou ? 'Path choice: you get this or ' + ou.name + ', not both. Buying one closes the other' + (layer === 's' ? ' (Reshape the tree to switch).' : '.') : '';
+  return { name: u.name, label: n.type === 'root' ? 'The root' : (ou ? 'Path choice · ' : 'Notable · ') + (br ? br.name : ''), desc: u.desc, eff: u.eff, choice };
 }
 const BR_HUE = [['var(--es)', 'var(--esr)'], ['var(--q)', 'var(--qr)'], ['var(--sh)', 'var(--shr)']];
 function buildWebView(T, layer, tabId) {
@@ -2188,14 +2587,14 @@ function buildWebView(T, layer, tabId) {
   const wrap = h('div', { class: 'treeview' });
   const svg = sv('svg', { class: 'treesvg' }), world = sv('g'), gE = sv('g'), gN = sv('g');
   world.append(gE, gN); svg.append(world);
-  const pType = h('div', { class: 'pb' }), pName = h('div', { class: 'pn' }), pDesc = h('div', { class: 'pd' }), pEff = h('div', { class: 'pe' }), pWhy = h('div', { class: 'pw' }), pCost = h('div', { class: 'pc' });
+  const pType = h('div', { class: 'pb' }), pName = h('div', { class: 'pn' }), pDesc = h('div', { class: 'pd' }), pEff = h('div', { class: 'pe' }), pWhy = h('div', { class: 'pw' }), pCost = h('div', { class: 'pc' }), pFork = h('div', { class: 'pf' });
   const pBuy = h('button', {}, 'Buy');
-  const panel = h('div', { class: 'nodepanel' }, pType, pName, pDesc, pEff, pWhy, pCost, pBuy);
+  const panel = h('div', { class: 'nodepanel' }, pType, pName, pDesc, pFork, pEff, pWhy, pCost, pBuy);
   const tools = h('div', { class: 'treetools' }, h('button', { onclick: () => zoomBy(1.25) }, '+'), h('button', { onclick: () => zoomBy(0.8) }, '−'), h('button', { onclick: () => fit(true) }, 'Fit'), h('button', { onclick: () => tidy(), title: 'Re-sort the whole web' }, 'Tidy'));
   const hint = h('div', { class: 'treehint' }, 'Drag to move · scroll to zoom · click a node to inspect it · double-click to buy (the whole path if needed)');
   wrap.append(svg, tools, panel, hint);
   T.append(wrap);
-  let view = { x: 0, y: 0, k: 0.5 }, anim = null, sel = null, hover = null, fitted = false, builtG = null, els = {}, edgeEls = [], shown = {}, tweening = false;
+  let view = { x: 0, y: 0, k: 0.5 }, anim = null, sel = null, hover = null, fitted = false, builtG = null, els = {}, edgeEls = [], forkEls = [], shown = {}, tweening = false;
   const apply = () => world.setAttribute('transform', `translate(${view.x.toFixed(1)},${view.y.toFixed(1)}) scale(${view.k.toFixed(4)})`);
   function animateTo(v) {
     const start = !anim; anim = v;
@@ -2253,6 +2652,11 @@ function buildWebView(T, layer, tabId) {
       if (arc) { const cx = (p[0] + q[0]) * 2, cy = (p[1] + q[1]) * 2; ln.setAttribute('d', `M${p[0].toFixed(1)},${p[1].toFixed(1)} Q${cx.toFixed(1)},${cy.toFixed(1)} ${q[0].toFixed(1)},${q[1].toFixed(1)}`); }
       else ln.setAttribute('d', `M${p[0].toFixed(1)},${p[1].toFixed(1)} L${q[0].toFixed(1)},${q[1].toFixed(1)}`);
     }
+    for (const [ln, lb, a, b] of forkEls) {
+      const p = shown[a], q = shown[b]; if (!p || !q) continue;
+      ln.setAttribute('d', `M${p[0].toFixed(1)},${p[1].toFixed(1)} L${q[0].toFixed(1)},${q[1].toFixed(1)}`);
+      lb.setAttribute('transform', `translate(${((p[0] + q[0]) / 2).toFixed(1)},${((p[1] + q[1]) / 2).toFixed(1)})`);
+    }
   }
   // Tidy: forget every remembered position and lay the whole web out again (the nodes glide to their new spots)
   function tidy() {
@@ -2272,17 +2676,24 @@ function buildWebView(T, layer, tabId) {
   }
   function rebuild(grown) {
     const G = webGraph(layer);
-    gE.textContent = ''; gN.textContent = ''; els = {}; edgeEls = [];
+    gE.textContent = ''; gN.textContent = ''; els = {}; edgeEls = []; forkEls = [];
     for (const [a, b, arc] of G.edges) { const ln = sv('path', { class: 'te' + (arc ? ' arc' : '') }); ln.style.setProperty('--ec', BR_HUE[Math.max(0, G.nodes[b].br)] ? `rgba(${BR_HUE[Math.max(0, G.nodes[b].br)][1]},.7)` : 'rgba(200,200,255,.6)'); gE.append(ln); edgeEls.push([ln, a, b, arc]); }
+    // path choices: a dashed line between the two sides and a CHOOSE ONE tag between them
+    for (const [a, b] of webStatic(layer).forks) {
+      const ln = sv('path', { class: 'tfork' }), lb = sv('g', { class: 'tforkl' }), tx = sv('text', { y: 4 });
+      tx.textContent = 'CHOOSE ONE'; tx.setAttribute('y', 5); lb.append(sv('rect', { x: -80, y: -16, width: 160, height: 32, rx: 16 }), tx);
+      gE.append(ln, lb); forkEls.push([ln, lb, a, b, tx]);
+    }
     let i = 0;
     for (const id in G.nodes) {
-      const n = G.nodes[id], g = sv('g', { class: 'tn ' + n.type });
+      const n = G.nodes[id], g = sv('g', { class: 'tn ' + n.type + (n.gen ? ' gen' : '') });
       g.style.setProperty('--bc', n.br < 0 ? '#e7eaff' : BR_HUE[n.br][0]);
       const body = sv('g', { class: 'tbody' }); body.style.animationDelay = (-((i++ * 0.37) % 5)).toFixed(2) + 's';
-      const r = n.type === 'root' ? 30 : n.type === 'notable' ? 19 : n.type === 'arch' ? 15 : 8;
+      const r = n.type === 'root' ? 30 : n.type === 'notable' ? (n.gen ? 13 : 19) : n.type === 'arch' ? 15 : 8;
       const shape = n.type === 'arch' ? sv('polygon', { class: 'tshape', points: `0,${-r} ${r},0 0,${r} ${-r},0` }) : sv('circle', { class: 'tshape', r });
       body.append(shape);
-      if (n.type !== 'minor') { body.append(sv('circle', { class: 'tcore', r: n.type === 'root' ? 9 : 5 })); const lbl = sv('text', { class: 'tl', y: r + 16 }); lbl.textContent = webInfo(layer, n).name; body.append(lbl); }
+      if (n.type === 'notable' && webForkOther(layer, n.upg)) body.append(sv('circle', { class: 'tforkring', r: r + 8 })); // one side of a path choice
+      if (n.type !== 'minor') { body.append(sv('circle', { class: 'tcore', r: n.type === 'root' ? 9 : n.gen ? 3.5 : 5 })); const lbl = sv('text', { class: 'tl', y: r + 16 }); lbl.textContent = webInfo(layer, n).name; body.append(lbl); }
       g.append(body);
       if (grown >= 0 && ((n.type === 'arch' && n.arch >= grown) || (n.connector !== undefined && n.connector >= grown))) g.classList.add('fresh');
       g.addEventListener('click', e => { e.stopPropagation(); sel = id; });
@@ -2319,11 +2730,17 @@ function buildWebView(T, layer, tabId) {
       setC(g, 'sel', sel === id);
     }
     for (const [ln, a, b] of edgeEls) { setC(ln, 'on', !!owned[a] && !!owned[b]); setC(ln, 'fogged', !owned[a] && !owned[b] && (dist[a] > 3 || dist[b] > 3)); }
+    for (const [ln, lb, a, b, tx] of forkEls) {
+      const done = !!owned[a] || !!owned[b], open = !done && (webAvail(layer, G.nodes[a]) || webAvail(layer, G.nodes[b])), fog = !done && !open && (dist[a] > 3 && dist[b] > 3);
+      for (const el of [ln, lb]) { setC(el, 'done', done); setC(el, 'fog', fog); }
+      setC(lb, 'open', open); setT(tx, done ? 'PATH CHOSEN' : 'CHOOSE ONE');
+    }
     const f = sel || hover, n = f && G.nodes[f];
     show(panel, !!n);
     if (n) {
       const info = webInfo(layer, n), o = webOwned(layer, n), forked = webForked(layer, n);
       setT(pType, info.label); setT(pName, info.name); setT(pDesc, info.desc);
+      show(pFork, !!info.choice); if (info.choice) setT(pFork, info.choice);
       show(pEff, !!info.eff); if (info.eff) setT(pEff, 'Currently ' + info.eff());
       show(pWhy, !!info.reason); if (info.reason) setT(pWhy, '“' + info.reason + '”');
       let costTxt, can = false, label = 'Buy';
@@ -2344,42 +2761,6 @@ function buildWebView(T, layer, tabId) {
   }, tabId);
 }
 
-/* ---------------- Architect upgrade streams ---------------- */
-function buildStream(T, layer, kind, title, tabId) {
-  const P = PROC[layer];
-  const sub = h('span', { class: 'muted' });
-  const bmax = h('button', { onclick: act(() => { let k = 0; while (k < 200 && buyProc(layer)) k++; return k; }, 'upgrade') }, 'Buy all affordable');
-  const n1 = h('div', { class: 'n' }), d1 = h('div', { class: 'd' }), r1 = h('div', { class: 'why' }), c1 = h('div', { class: 'c' });
-  const cur = h('div', { class: 'card ' + kind, onclick: act(() => buyProc(layer), 'upgrade') }, n1, d1, r1, c1);
-  const draft = h('div', { class: 'card draft' }, h('div', { class: 'n' }, 'Drafting…'), h('div', { class: 'd' }, 'The Architect writes the next upgrade the moment you buy this one, based on how you are playing right now.'));
-  const grid = h('div', { class: 'cards' }, cur, draft);
-  const more = h('button', { class: 'linkish', onclick: () => { showAll = !showAll; shown = -1; } });
-  const wrap = h('div', {}, h('h2', {}, title), h('div', { class: 'opt-row' }, bmax, sub), grid, h('div', { class: 'opt-row', style: 'margin-top:6px' }, more));
-  T.append(wrap);
-  let shown = -1, shownS = null, shownNote = '', showAll = false;
-  const owned = [];
-  up(() => {
-    const n = S.proc[layer], note = S.settings.notation;
-    if (n === shown && shownS === S && note === shownNote) return;
-    shown = n; shownS = S; shownNote = note;
-    for (const el of owned) el.remove();
-    owned.length = 0;
-    const list = S.forge[layer].filter(x => x.own).reverse(), cap = showAll ? list.length : 24;
-    for (const u of list.slice(0, cap)) {
-      const el = h('div', { class: 'card bought ' + kind }, h('div', { class: 'n' }, u.name), h('div', { class: 'd' }, forgeDesc(u)), h('div', { class: 'why' }, '“' + u.reason + '”'), h('div', { class: 'c' }, 'Owned'));
-      grid.append(el); owned.push(el);
-    }
-    show(more, list.length > 24);
-    setT(more, showAll ? 'Show only the newest 24' : 'Show all ' + list.length + ' you own');
-  }, tabId);
-  up(() => {
-    const vis = streamVisible(layer); show(wrap, vis); if (!vis) return;
-    ensureOpen(layer); const n = cheapestOpen(layer), u = S.forge[layer][n], cost = procCost(layer, n), can = S[P.cur].log10() >= cost;
-    setT(n1, u.name); setT(d1, forgeDesc(u)); setT(r1, '“' + u.reason + '”'); setT(c1, 'Cost: ' + fmt(D.fromLog(cost)) + ' ' + P.curName);
-    setC(cur, 'can', can); setDis(bmax, !can);
-    setT(sub, 'Written by the Architect, there is always another' + (layer === 'q' && !hasS('s2') ? ' · lost on Collapse until you own Memory' : ''));
-  }, tabId);
-}
 /* ---------------- Architect tab: current goal + everything it has said ---------------- */
 function buildArchTab() {
   const T = UI.tabs.arch;
@@ -2409,13 +2790,13 @@ function buildGuideTab() {
   const sections = [
     [() => true, 'Quanta and Pulse', 'Quanta is the main number. <b>Pulse</b> gives you Quanta by hand: 1 per click, more with some upgrades, and it needs 1.5 seconds to recharge between clicks. It is only useful in the first minute; after that your generators produce far more on their own.'],
     [() => true, 'Generators', 'Flickers make Quanta every second. Every other generator makes the one below it: Sparks make Flickers, Embers make Sparks, and so on. So a higher tier boosts everything underneath it. There is no last tier: whenever you buy the highest one, a new one appears above it.'],
-    [() => true, 'Resonance', 'Every 10 of a generator you buy multiplies that generator by its Resonance (×2 at first). The thin bar under each multiplier shows how close you are to the next 10.'],
+    [() => true, 'Resonance', 'Every 10 of a generator you buy multiplies that generator by its Resonance (about ×1.8 at first). Some upgrades make a generator resonate sooner, every 9 bought or fewer. The thin bar under each multiplier shows how close you are to the next 10.'],
     [() => true, 'Clock Speed', 'Multiplies every generator at once. It gets more expensive quickly, but it is always worth buying.'],
     [() => true, 'Upgrades', 'One-time boosts paid in Quanta. A dot on a tab means something there is affordable. <b>Max all</b> (key M) buys as many generators and Clock Speed levels as you can afford.'],
     [() => S.ai.log.length > 0, 'The Architect', 'The game\'s own AI. It writes endless upgrades for every layer (Quanta, Shards, Essence) and names every new generator tier. Each new upgrade is invented when you buy the previous one, shaped by how you play: it builds for your favourite and newest generators, rewards clicking if you click a lot, and rewards idling if you leave the game running.'],
     [shardsVisible, 'Collapse and Shards', 'At 1e25 Quanta you can Collapse: Quanta, generators and Clock Speed reset, and you get Shards. Shards buy upgrades in the <b>Shard tree</b>: start at Fracture, then grow three branches. Radiance is raw power, Clockwork is speed and automation, Echoes is the Shard economy and the active abilities <b>Surge</b> and <b>Time Fold</b>. At each fork you choose one of two paths. <b>Reshape the tree</b> refunds every Shard so you can try a different build. More Quanta at the moment you Collapse means more Shards.'],
     [autoVisible, 'Automation', 'The Clockwork branch of the Shard web has one autobuyer per generator (Automata I buys Flickers, II buys Sparks, and so on), one for Clock Speed, one each for the Light, Harmony and Cascade branches of the Upgrade web, and later Auto-Collapse. Configure them in the Automation tab.'],
-    [ascVisible, 'The Limit and Ascension', 'Quanta stops at 1e308, the Limit. There you can Ascend: Quanta, generators, Shards and Shard repeatables reset, but Shard upgrades stay and you gain Essence. Spend your first Essence on <b>Unbounded</b> to break the Limit for good. Past it, every order of magnitude is a little harder to reach (dampening), but the Architect starts gathering <b>Inspiration</b>: Quanta production ×10 every 30 seconds, forever, so you never stop moving.'],
+    [ascVisible, 'The Limit and Ascension', 'Quanta stops at 1e308, the Limit. There you can Ascend for Essence. At first an Ascension resets everything but Essence: Quanta, generators, the Upgrade web, Shards, the whole Shard web and its repeatables. The <b>Memory</b> branch of the Essence web lets you keep more: Muscle Memory keeps your automation, Perfect Recall the Shard web, Deep Memory the Upgrade web. Essence buys nodes in the <b>Essence web</b>; its root, <b>Unbounded</b>, breaks the Limit for good, so buy it first. Past it, every order of magnitude is a little harder to reach (dampening), but the Architect starts gathering <b>Inspiration</b>: Quanta production ×10 every 30 seconds, forever, so you never stop moving.'],
     [() => hasE('e3'), 'Challenges', 'Runs with a handicap. Reach the goal to complete one; every Challenge can be completed again and again with a higher goal and a stronger reward.'],
     [() => SECRETS.some(s => S.ach[s.id]), 'Secrets', 'Some achievements are hidden. Each one shows only a hint until you earn it, and each unlocks something special: a <b>Relic</b> (a permanent upgrade in the Upgrades tab) or an <b>Anomaly</b> (a generator in the Generators tab that never resets). Pay attention to the hints, and to odd things you might try.'],
     [() => true, 'Appearance', 'Options → Appearance lets you change the color theme, the UI size, and turn the starfield, animations, rainbow generator colors and pop-up notifications on or off.'],
@@ -2527,23 +2908,27 @@ function buildAutoTab() {
   }, 'auto');
 }
 
+// what an Ascension wipes right now, given the Memory-branch upgrades you own
+function ascResetText() {
+  const r = ['Quanta', 'generators', 'Shards'];
+  if (!hasE('e15')) r.push('the Upgrade web');
+  if (!hasE('e5')) r.push(hasE('e35') ? 'the Shard web except its automation' : 'the whole Shard web');
+  if (!hasE('e1')) r.push('Shard repeatables');
+  return r.slice(0, -1).join(', ') + ' and ' + r[r.length - 1];
+}
 function buildAscTab() {
   const T = UI.tabs.asc;
   const info = h('div', { class: 'info' }); T.append(info);
   up(() => setH(info, `You have <b class="hl-es">${fmt(S.essence.floor(), 0)}</b> Essence (${fmt(S.totalEssence.floor(), 0)} total, ${S.ascensions} Ascensions).<br>` +
-    `Ascending needs ${fmt(D.fromLog(CFG.limit))} Quanta and resets Quanta, generators, Shards and Shard repeatables. Shard upgrades and Challenge completions are permanent.` +
+    `Ascending needs ${fmt(D.fromLog(CFG.limit))} Quanta and resets ${ascResetText()}. Essence upgrades and Challenge completions are permanent; the Memory branch keeps more each time.` +
     (hasE('e6') ? ` <br>The Architect's <b class="hl-sh">Inspiration</b>: Quanta production <b>${fmtMult(inspirationLog())}</b> (×10 more every 30 seconds, forever).` : '') +
     (hasE('e6') ? ` Essence gain: ×10 every ${CFG.ascDiv} orders of magnitude past the Limit${essMultLog() > 0 ? ', then ' + fmtMult(essMultLog()) : ''}.` : ' Each Ascension gives 1 Essence until you break the Limit.')), 'asc');
-  T.append(h('h2', {}, 'Essence upgrades'));
-  const grid = h('div', { class: 'cards' }); T.append(grid);
-  for (const u of EUPG) {
-    const [el, fn] = upgCard('es', u, buyE, () => hasE(u.id), () => S.essence.gte(u.cost), () => 'Cost: ' + fmt(u.cost, 0) + ' Essence');
-    grid.append(el); up(fn, 'asc');
-  }
+  T.append(h('h2', {}, 'Essence web'));
+  T.append(h('div', { class: 'muted', style: 'margin:-2px 0 8px' }, 'Start at Unbounded, then grow three branches: Starlight is raw power, Memory is what you keep and automation, Trials is Shards, Essence and Challenges. Diamonds are the Architect’s ideas. Everything here is permanent.'));
+  buildWebView(T, 'e', 'asc');
   T.append(h('h2', {}, 'Repeatable'));
   const rg = h('div', { class: 'cards' }); T.append(rg);
   for (const d of EREP) { const [el, fn] = repCard('es', d, 'eRep', 'essence', 'Essence'); rg.append(el); up(fn, 'asc'); }
-  buildStream(T, 'e', 'es', 'Endless Essence upgrades', 'asc');
 }
 
 function buildChalTab() {
@@ -2806,6 +3191,8 @@ function init() {
   for (const l of ['q', 's', 'e']) S.forge[l].forEach((u, i) => { if (u.own === undefined) u.own = i < S.proc[l]; });
   if (S.sUpg.s4) { for (const id of ['ab0', 'ab1', 'ab2', 'ab3', 'abC']) S.sUpg[id] = true; delete S.sUpg.s4; }
   if (S.sUpg.s6) { for (const id of ['ab4', 'ab5', 'ab6', 'ab7', 'ab8', 'abL', 'abH', 'abK']) S.sUpg[id] = true; delete S.sUpg.s6; }
+  // Quanta ideas became cheaper and weaker: re-value the ones already written; ideas now spread over their branch
+  if (S.forgeVer !== FORGE_VER) { for (const u of S.forge.q) u.v = forgeValue('q', u.kind, u.n); for (const l of ['q', 's', 'e']) respreadIdeas(l); S.forgeVer = FORGE_VER; PROC_AGG = {}; }
   applyUI();
   if (!S.introSeen) playIntro();
   setTab(TABS.some(t => t[0] === S.settings.tab) ? S.settings.tab : 'gen');
@@ -2821,6 +3208,7 @@ function init() {
 window.UB = {
   get S() { return S; }, D, CFG, genDef, procUpg, buyProc, PROC, tick, simulate, maxAll, buyGen, buyClock, buyQ, buyS, buyE, buyRep, SREP, EREP, QUPG, SUPG, EUPG, CHALS,
   doCollapse, doAscend, startChal, leaveChal, shardGain, essenceGain, chalGoalLog, qpsLog, newState,
+  webAutoBuy, webBuy, webGraph, webFrontier, webCostLog, forgeNew, forgeDesc, procAgg, procCost, resStep, thriftMult, genCostLog, pulse, luckyChance, headStartLog, useAbility, ensureOpen,
   pause(v) { paused = v; }, reset() { S = newState(); }, setS(x) { S = x; }, loadFrom, render,
 };
 init();

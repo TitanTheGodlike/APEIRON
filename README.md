@@ -23,9 +23,9 @@ Start with a single Flicker and a handful of **Quanta**, the first light. Every 
 
 ## Features
 
-- **An Architect that never runs out of ideas.** Every upgrade you buy prompts it to write the next one, shaped by how you play: your favorite generators, your newest tier, whether you click or idle.
-- **Endless generators.** Buy the highest tier and a new one appears above it, named by the Architect.
-- **Sprawling skill webs.** Upgrades and Shard upgrades live on two big pannable, zoomable webs: notable upgrades joined by small bonus nodes, cross-linked branches, forks where you pick one of two paths, and a Reshape button to rebuild your Shard build. The Architect grows new nodes off whatever you own, and the web re-settles around them.
+- **An Architect that never runs out of ideas.** Every upgrade you buy prompts it to write the next one, shaped by how you play: your favorite generators, your newest tier, whether you click or idle. Its ideas do more than multiply: cheaper prices, faster resonance, generators that boost each other, Lucky Pulses, one-time windfalls, head starts and longer abilities. It talks to you in a speech bubble, one line at a time.
+- **Endless generators.** From Flicker and Spark up through fires, suns and galaxies: buy the highest tier and a new one appears above it, named by the Architect.
+- **Sprawling skill webs.** Over 400 upgrades on three big pannable, zoomable webs (Upgrades, Shards, Essence), starting at just 20 Quanta. Most do more than multiply Quanta: single-generator boosts, generator bonds, faster resonance, cheaper prices, Pulse and Lucky Pulse upgrades, head starts, longer Surges. Branching trees, bonus nodes, clearly marked path choices where you pick one of two, and a Reshape button to rebuild your Shard build. The Architect's ideas grow here and there on the branch they belong to, and the web tidies itself around them.
 - **Active abilities.** Surge and Time Fold reward playing actively instead of only idling.
 - **Three layers of progression:** Quanta, Shards and Essence, each with its own upgrades, repeatables and automation.
 - **Seven Challenges** you can complete forever, each completion harder and more rewarding.

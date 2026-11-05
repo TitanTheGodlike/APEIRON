@@ -2704,7 +2704,7 @@ const WEB_DEF = {
     branches: [
       { name: 'Radiance', sub: 'raw power', angle: -150, start: 'sF', links: [['sF', 's3'], ['s3', 's32'], ['s32', 's7'], ['s3', 's12'], ['s3', 's13'], ['s7', ['s19', 's20']], [['s19', 's20'], 's33'], ['s33', 's17'], ['s17', 's38'], ['s12', 's34'], ['s34', 's14'], ['s14', 's35'], ['s35', 's16'], ['s16', 's28'], ['s28', 's37'], ['s13', 's36'], ['s36', 's18'], ['s18', 's39']], minor: { kind: 'qmult', v: L10(1.12), text: 'Quanta production ×1.12' } },
       { name: 'Clockwork', sub: 'speed and automation', angle: -30, start: 'sB', links: [['sB', 'ab0'], ['sB', 's8'], ['ab0', 'ab1'], ['ab1', 'abC'], ['ab1', 'ab2'], ['ab2', 'ab3'], ['ab3', 's11'], ['ab3', 'ab4'], ['ab4', 'abL'], ['abL', 'abH'], ['abH', 'abK'], ['ab4', 'ab5'], ['ab5', 'ab6'], ['ab6', 'ab7'], ['ab7', 'ab8'], ['ab7', 's9'], ['s9', 's45'], ['abK', 's46'], ['s11', 's44'], ['s8', 's40'], ['s40', ['s21', 's22']], [['s21', 's22'], 's41'], ['s41', 's27'], ['s41', 's42'], ['s27', 's15'], ['s15', 's43'], ['ab0', 's2']], minor: { kind: 'clock', v: 0.0007, text: 'Clock Speed base +0.0007' } },
-      { name: 'Echoes', sub: 'Shards and abilities', angle: 90, start: 's5', links: [['s5', 's47'], ['s47', 's25'], ['s5', ['s23', 's24']], ['s25', 's26'], ['s26', 's31'], ['s26', 's30'], ['s26', 's50'], ['s31', 's52'], ['s30', 's53'], [['s23', 's24'], 's48'], ['s48', 's10'], ['s10', 's49'], ['s49', 's29'], ['s29', 's51'], ['s51', 's54']], minor: { kind: 'shard', v: L10(1.016), text: 'Shard gain ×1.016' } },
+      { name: 'Echoes', sub: 'Shards and abilities', angle: 90, start: 's5', links: [['s5', 's47'], ['s47', 's25'], ['s5', ['s23', 's24']], ['s25', 's26'], ['s26', 's31'], ['s25', 's30'], ['s26', 's50'], ['s31', 's52'], ['s30', 's53'], ['s25', 's48'], [['s23', 's24'], 's10'], [['s23', 's24'], 's49'], ['s10', 's29'], ['s49', 's51'], ['s29', 's54']], minor: { kind: 'shard', v: L10(1.016), text: 'Shard gain ×1.016' } },
     ] },
   e: { root: 'e6', cur: 'essence', curName: 'Essence', costLog: id => L10(EBY[id].cost), owned: id => !!S.eUpg[id], loopNodes: 1,
     ring: { kind: 'qmult', v: L10(2), text: 'Quanta production ×2' },
@@ -2840,6 +2840,7 @@ function growWebs() {
   // a second, later pass fills out the thin Shard web: short twigs on the written upgrades with the fewest
   // branches. It has its own seed and numbering, so every upgrade from the first pass stays exactly the same.
   pass('s', GROW_MORE_S, 'grow2:', GROW.s.n * 3, (ids, br) => {
+    if (br.name === 'Echoes') return ['s47', 's25', 's23', 's24', 's31', 's30', 's50', 's52', 's53', 's48', 's10', 's49', 's29', 's51', 's54']; // re-linked later
     const kids = {};
     for (const [a, b] of br.links) if (!GROWN.has([].concat(b)[0])) for (const x of [].concat(a)) kids[x] = (kids[x] || 0) + 1;
     return ids.filter(id => !GROWN.has(id) && (kids[id] || 0) <= 1);

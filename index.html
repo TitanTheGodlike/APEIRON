@@ -183,6 +183,22 @@ label.chk input{accent-color:var(--q)}
 #modal textarea{width:100%;height:150px;background:#070a1a;color:var(--ink);border:1px solid var(--edge2);border-radius:3px;font:12px/1.4 var(--mono);padding:8px;resize:vertical}
 #modal .mbtns{display:flex;gap:8px;justify-content:flex-end}
 .muted{color:var(--faint);font-size:12px}
+/* cards: the hand, what is working, rarity colours */
+.hand{display:flex;flex-wrap:wrap;gap:14px;margin:4px 0 10px}
+.pcard{--rc:#aab2de;width:180px;min-height:250px;padding:12px 12px 14px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;border:2px solid var(--rc);border-radius:12px;background:linear-gradient(170deg,rgba(255,255,255,.07),rgba(9,11,30,.96) 45%),rgba(9,11,30,.95);box-shadow:0 0 18px color-mix(in srgb,var(--rc) 35%,transparent),inset 0 0 22px rgba(0,0,0,.5);animation:dealIn .45s cubic-bezier(.2,1.4,.4,1) both;transition:transform .15s,box-shadow .15s;white-space:normal;cursor:pointer}
+.pcard:hover{transform:translateY(-6px) rotate(-1deg);box-shadow:0 0 28px color-mix(in srgb,var(--rc) 60%,transparent)}
+.pcard.rare{--rc:#7fe3ff}.pcard.epic{--rc:#c49bff}.pcard.legend{--rc:#ffd27a;background:linear-gradient(170deg,rgba(255,210,122,.18),rgba(9,11,30,.96) 50%)}
+.pc-r{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--rc)}
+.pc-g{font-size:40px;line-height:1.1;color:var(--rc);text-shadow:0 0 14px var(--rc);margin:6px 0}
+.pc-n{font-weight:700;font-size:14px}
+.pc-t{font-size:12.5px;color:var(--dim);flex:1}
+.pc-k{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--rc);border:1px solid var(--rc);border-radius:20px;padding:3px 14px}
+@keyframes dealIn{from{transform:translateY(30px) rotateY(80deg);opacity:0}}
+.deal-wait{font-size:13px;color:var(--dim);margin:2px 0 6px}
+.deal-bar{height:4px;max-width:420px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}.deal-bar i{display:block;height:100%;background:var(--sh)}
+.card-active{display:flex;flex-direction:column;gap:5px}
+.card-active .ca{font-size:13px;padding:6px 10px;border-left:3px solid #aab2de;background:rgba(255,255,255,.03);border-radius:3px}
+.card-active .ca.rare{border-left-color:#7fe3ff}.card-active .ca.epic{border-left-color:#c49bff}.card-active .ca.legend{border-left-color:#ffd27a}
 kbd{background:rgba(30,40,90,.6);border:1px solid var(--edge2);border-radius:3px;padding:0 5px;font:12px var(--mono)}
 /* The Architect */
 .orb{position:relative;flex:none;width:36px;height:36px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#fff 0 8%,#e6d8ff 9% 14%,rgba(var(--shr),.9) 15% 30%,transparent 31%),conic-gradient(from 0deg,#5a4dff,#c49bff,#7fe3ff,#ff9be6,#5a4dff);box-shadow:0 0 16px rgba(var(--shr),.6),0 0 40px rgba(var(--qr),.2);animation:spin 10s linear infinite}
@@ -781,6 +797,10 @@ const ACH = [
   ['a34', 'Trial Master', 'Reach 25 total Challenge completions.', () => totalComps() >= 25],
   ['a35', 'Essence Well', 'Hold 1e6 Essence.', () => S.essence.log10() >= 6],
   ['a36', 'Tap Tap', 'Pulse 100 times.', () => S.stats.pulses >= 100],
+  ['a44', 'Dealt In', 'Keep your first card.', () => S.cards.drawn >= 1],
+  ['a45', 'Card Sharp', 'Keep 50 cards.', () => S.cards.drawn >= 50],
+  ['a46', 'Full Table', 'Have 4 cards working at once.', () => S.cards.active.length >= 4],
+  ['a43', 'Legend', 'Keep a Legendary card.', null],
 ];
 /* =====================================================================
    THE ARCHITECT — the game's own AI. It never runs out of ideas: every time you
@@ -886,12 +906,22 @@ function aiSay(text, kind = 'ai') {
 const SAY = { q: [], busy: false, timer: 0, typing: false, full: '' };
 function say(text) {
   if (S.settings.ui && !S.settings.ui.toasts) return;
+  if (!tutorialDone()) return; // the tutorial is talking: the line stays in the Architect log only
   SAY.q.push(text); if (SAY.q.length > 6) SAY.q.splice(0, SAY.q.length - 6); // lines wait their turn; only a long backlog drops the oldest
   if (!SAY.busy) sayNext();
 }
+// forget everything still waiting to be said and close the bubble (used by Hard reset)
+function sayClear() {
+  SAY.q = []; clearTimeout(SAY.timer); SAY.busy = false; SAY.typing = false;
+  const box = $('say'); box.classList.remove('on', 'typing'); box.querySelector('.orb').classList.remove('talk'); box.querySelector('.say-t').textContent = '';
+  document.body.style.removeProperty('--sayh');
+}
 function sayNext() {
-  const box = $('say'), txt = box.querySelector('.say-t'), orb = box.querySelector('.orb'), text = SAY.q.shift();
+  const box = $('say'), txt = box.querySelector('.say-t'), orb = box.querySelector('.orb');
   clearTimeout(SAY.timer);
+  // never over the intro or the tutorial: wait until they are gone
+  if (SAY.q.length && ($('intro').classList.contains('open') || !tutorialDone())) { SAY.busy = true; box.classList.remove('on'); SAY.timer = setTimeout(sayNext, 1000); return; }
+  const text = SAY.q.shift();
   if (text === undefined) { SAY.busy = false; box.classList.remove('on'); document.body.style.removeProperty('--sayh'); return; }
   SAY.busy = true; SAY.full = text; box.classList.add('on'); txt.textContent = '';
   let i = 0;
@@ -1012,7 +1042,7 @@ function ensureOpen(layer) {
 }
 const cheapestOpen = layer => { const o = openIdeas(layer); return o.length ? o[0] : -1; };
 const openAffordable = layer => openIdeas(layer).some(i => S[PROC[layer].cur].log10() >= procCost(layer, i));
-const procCost = (layer, n) => Math.max(0, (layer === 'q' ? qPrice(PROC.q.costLog(n)) : PROC[layer].costLog(n)) - procAgg(layer).insight);
+const procCost = (layer, n) => Math.max(0, (layer === 'q' ? qPrice(PROC.q.costLog(n)) : PROC[layer].costLog(n)) - procAgg(layer).insight - cardSum('ideas'));
 let PROC_AGG = {}, UPG_VER = 0;
 const UPG_KEY = { q: 'qUpg', s: 'sUpg', e: 'eUpg' };
 // everything of one web that works like an idea: the Architect's owned ideas plus the owned grown upgrades
@@ -1048,7 +1078,7 @@ function procSyn(i) {
 }
 const cdMult = k => Math.max(CD_FLOOR, Math.pow(10, procSum(k)));
 const headStartLog = () => Math.min(HEAD_CAP, (hasS('s11') ? 6 : 1) + procSum('head'));
-const luckyChance = () => Math.min(LUCKY_MAX, procSum('lucky'));
+const luckyChance = () => Math.min(0.9, Math.min(LUCKY_MAX, procSum('lucky')) + cardSum('lucky'));
 function buyProc(layer, i) {
   ensureOpen(layer);
   if (i === undefined) i = cheapestOpen(layer);
@@ -1143,6 +1173,7 @@ function newState() {
     abil: { surge: { ready: 0, until: 0 }, fold: { ready: 0 } },
     minor: { q: {}, s: {}, e: {} },
     hist: { every: 30, next: 0, t: [], q: [], best: [], sh: [], es: [] },
+    cards: { hand: null, active: [], next: 0, drawn: 0, by: [0, 0, 0, 0], seq: 0 },
     introSeen: false,
     last: Date.now(),
   };
@@ -1176,7 +1207,7 @@ function resonance() {
   if (hasE('e11')) r += 0.3;
   if (hasR('lucky7')) r += 0.07;
   r += minorSum('res');
-  return r + 0.05 * S.chal.comps[2] + procSum('res');
+  return r + 0.05 * S.chal.comps[2] + procSum('res') + cardSum('res');
 }
 function clockBase() {
   let b = CFG.clockBase;
@@ -1208,9 +1239,10 @@ function globalMultLog() {
   const ai = aiMods();
   let all = clockMultLog() + ai.all;
   if (inChal(4)) all -= L10(1 + S.stats.tCollapse / 10);
+  all += cardSum('speed');
   let L = achMultLog() + procSum('qmult') + ai.q + inspirationLog() + anomN('echo') * L10(2);
   if (hasR('selftaught')) L += L10(3);
-  L += minorSum('qmult');
+  L += minorSum('qmult') + cardSum('qmult') + (isIdle() ? cardSum('idle') : 0);
   if (hasR('lucky7')) L += L10(77);
   L += fSum('qm');
   if (hasQ('q20')) L += L10(S.gens.length);
@@ -1246,6 +1278,7 @@ function tierMultLog(i, gl) {
   }
   if (i < 4 && hasS('s19')) L += 1;
   L += procTier(i);
+  if (i === highestTier()) L += cardSum('top');
   if (i < 3 && hasR('bareframe')) L += 1;
   if (i < 4) L += S.chal.comps[1] * L10(3);
   return L;
@@ -1291,7 +1324,7 @@ function shardMultLog() {
   if (hasE('e13')) L += 1;
   if (hasE('e18')) L += L10(5);
   if (hasS('s31')) L += L10(1 + S.run.abil);
-  return L;
+  return L + cardSum('shard');
 }
 const collapseReqLog = () => hasS('s23') ? 30 : CFG.collapseReq;
 const runBestLog = () => Math.max(lq(), S.run.best === undefined ? -Infinity : S.run.best);
@@ -1308,7 +1341,7 @@ function nextShardAtLog() {
   const cur = shardGain(), target = cur.add(1).log10() - shardMultLog();
   return Math.max(collapseReqLog(), CFG.collapseReq + unsoftcap(target, 40) * CFG.shardDiv);
 }
-function essMultLog() { return (hasE('e12') ? 2 * L10(L10(S.ascensions + 10)) : 0) + (hasE('e14') ? L10(1.5) : 0) + procSum('ess') + minorSum('ess') + fSum('ess'); }
+function essMultLog() { return (hasE('e12') ? 2 * L10(L10(S.ascensions + 10)) : 0) + (hasE('e14') ? L10(1.5) : 0) + procSum('ess') + minorSum('ess') + fSum('ess') + cardSum('ess'); }
 const canAscend = () => lq() >= CFG.limit - 1e-9;
 function essenceGain() {
   if (!canAscend()) return D.Z;
@@ -1351,14 +1384,14 @@ function maxAll() {
   for (let i = S.gens.length - 1; i >= 0; i--) n += buyGen(i, 'max');
   return n;
 }
-const pulseCd = () => (S.relics.metronome ? 1000 : 1500) / (hasS('s22') ? 2 : 1) * cdMult('pulsecd'); // ms between Pulses
+const pulseCd = () => (S.relics.metronome ? 1000 : 1500) / (hasS('s22') ? 2 : 1) / (cardHas('pulse') ? 2 : 1) * cdMult('pulsecd'); // ms between Pulses
 let lastPulse = -1e9;
 const pulseReady = () => performance.now() - lastPulse >= pulseCd();
 function pulseGain() {
   let g = D.fromNum(1);
   if (hasQ('q1')) g = g.add(D.fromLog(qpsLog()));
   if (S.relics.metronome) g = g.add(D.fromLog(qpsLog() + L10(2)));
-  return g.mul(D.fromLog(procSum('pulse')));
+  return g.mul(D.fromLog(procSum('pulse') + cardSum('pulse')));
 }
 function pulse() {
   if (!pulseReady()) return false;
@@ -1439,6 +1472,7 @@ function doCollapse(quiet = false) {
   if (!S.run.clockBought) grant('a26');
   if (tierBought(3) === 0) grantSecret('x4');
   if (runBestLog() >= 60) grantSecret('x6');
+  S.cards.active = S.cards.active.filter(c => c.k !== 'shard' && c.k !== 'top'); // used up by this Collapse
   resetQLayer();
   aiEvent('collapse', gain);
   if (!quiet) { flash('rgba(196,155,255,.5)'); sfx('collapse'); }
@@ -1466,6 +1500,7 @@ function doAscend(quiet = false) {
   else { S.qUpg = {}; S.proc.q = 0; for (const u of S.forge.q) u.own = false; S.minor.q = {}; }
   MINOR_VER++;
   S.stats.tAscend = 0;
+  S.cards.active = S.cards.active.filter(c => c.until >= 0); // Ascension uses up every until-the-next card
   aiEvent('ascend', gain);
   if (!quiet) { flash('rgba(255,210,122,.55)'); sfx('ascend'); if (S.ascensions === 1) toast('You Ascended. Spend Essence in the Ascension tab.', 'es'); }
   return true;
@@ -1554,7 +1589,75 @@ function tick(dt) {
   if (S.chal.active >= 0 && lq() >= chalGoalLog(S.chal.active)) completeChal();
   runAuto();
   aiTick();
+  cardsTick();
   checkAch();
+}
+/* =====================================================================
+   CARDS: once you have Collapsed, the Architect deals three cards every
+   ten minutes and you keep one. Rarity is random and so is each card's roll;
+   buffs run on game time, a few last until your next Collapse or Ascension.
+   ===================================================================== */
+const RARITY = [
+  { id: 'common', name: 'Common', w: 60, p: 1 },
+  { id: 'rare', name: 'Rare', w: 28, p: 2 },
+  { id: 'epic', name: 'Epic', w: 10, p: 3.5 },
+  { id: 'legend', name: 'Legendary', w: 2, p: 6 },
+];
+const DEAL_EVERY = 600; // seconds of game time between hands
+const cardsOn = () => S.reached.collapse || S.collapses > 0 || S.ascensions > 0;
+const cardScale = () => 0.6 + Math.max(0, runBestLog()) / 120; // a card matters early and late
+const durTxt = s => s % 60 === 0 && s >= 60 ? (s / 60) + (s === 60 ? ' minute' : ' minutes') : fmtTime(s); // 300 → '5 minutes'
+const untilTxt = c => c.dur < 0 ? (c.k === 'ess' ? 'until you Ascend' : 'until you Collapse') : 'for ' + durTxt(c.dur);
+const CARD_KINDS = {
+  qmult: { w: 3, g: '☀', names: ['Bright Hour', 'Gold Leaf', 'Open Window', 'Sunlit Page', 'High Tide'], dur: 300, val: (p, s) => 0.7 * p * s, text: c => 'Quanta production ' + fmtMult(c.v) + ' ' + untilTxt(c) + '.' },
+  speed: { w: 1.4, g: '⏱', names: ['Quickening', 'Racing Heart', 'Tailwind', 'Spun Gears'], dur: 180, val: p => 0.05 * p, text: c => 'Every generator ' + fmtMult(c.v) + ' ' + untilTxt(c) + '.' },
+  top: { w: 2, g: '▲', names: ['Crowned Tier', 'Summit', 'Spire', 'Lighthouse Keeper'], dur: -1, val: (p, s) => 1.4 * p * s, text: c => 'Your highest generator ' + fmtMult(c.v) + ' ' + untilTxt(c) + '.' },
+  pulse: { w: 1.4, g: '✋', names: ['Drumroll', 'Quick Hands', 'Heartbeat', 'Strike Twice'], dur: 180, val: p => 1.5 * p, text: c => 'Pulse ' + fmtMult(c.v) + ' and it recharges twice as fast ' + untilTxt(c) + '.' },
+  lucky: { w: 1, g: '✧', names: ['Four Leaves', 'Loaded Die', 'Wishbone', 'Shooting Star'], dur: 300, val: p => 0.06 * p, text: c => 'Lucky Pulse chance +' + pct(c.v) + ' ' + untilTxt(c) + '.' },
+  res: { w: 1.2, g: '≋', names: ['Tuned Strings', 'Echo Chamber', 'Perfect Fifth', 'Ringing Bell'], dur: 300, val: p => 0.02 * p, text: c => 'Resonance +' + c.v.toFixed(2) + ' ' + untilTxt(c) + '.' },
+  idle: { w: 1.2, g: '☾', names: ['Long Nap', 'Still Water', 'Dreaming', 'Quiet Night'], dur: 900, val: (p, s) => p * s, text: c => 'While you have not touched the game for a minute, Quanta production ' + fmtMult(c.v) + ' ' + untilTxt(c) + '.' },
+  time: { w: 1.5, g: '⌛', names: ['Borrowed Time', 'Lost Hour', 'Stopped Clock', 'Time Capsule'], instant: true, val: p => 120 * p, text: c => 'Right now: gain ' + durTxt(Math.round(c.v / 60) * 60) + ' of Quanta production.' },
+  shard: { w: 1.5, req: () => S.collapses > 0 || S.ascensions > 0, g: '◆', names: ['Fault Line', 'Geode', 'Cracked Mirror', 'Shard Storm'], dur: -1, val: p => L10(1 + p), text: c => 'Your next Collapse gives ' + fmtMult(c.v) + ' Shards.' },
+  ess: { w: 1, req: () => S.ascensions > 0, g: '✧', names: ['Distilled Light', 'Halo', 'Vesper', 'Last Ember'], dur: -1, val: p => L10(1 + 0.5 * p), text: c => 'Your next Ascension gives ' + fmtMult(c.v) + ' Essence.' },
+  abil: { w: 0.8, req: () => hasS('s25') || hasS('s26'), g: '↻', names: ['Second Wind', 'Rewind', 'Encore'], instant: true, val: () => 1, text: () => 'Right now: Surge and Time Fold recharge.' },
+  ideas: { w: 0.8, g: '✦', names: ['Inspiration', 'Sketchbook', 'Bright Idea', 'Muse'], dur: 600, val: p => p, text: c => 'The Architect’s ideas cost ÷' + fmt(D.fromLog(c.v)) + ' ' + untilTxt(c) + '.' },
+  gamble: { w: 0.7, g: '⚀', names: ['Coin Flip', 'Double or Nothing', 'Wild Card'], val: (p, s) => 2 * p * s, text: c => 'A coin flip when you keep it: heads, Quanta production ' + fmtMult(c.v) + ' for 10 minutes; tails, nothing.' },
+};
+const cardSum = k => { let s = 0; for (const c of S.cards.active) if (c.k === k) s += c.v; return s; };
+const cardHas = k => S.cards.active.some(c => c.k === k);
+function dealCards() {
+  const hand = [], used = new Set(), s = cardScale();
+  for (let n = 0; n < 3; n++) {
+    let tot = 0; const pool = [];
+    for (const k in CARD_KINDS) { const d = CARD_KINDS[k]; if (used.has(k) || (d.req && !d.req())) continue; pool.push(k); tot += d.w; }
+    let r = Math.random() * tot, k = pool[0];
+    for (const x of pool) { r -= CARD_KINDS[x].w; if (r <= 0) { k = x; break; } }
+    used.add(k);
+    let rr = Math.random() * 100, ri = 0; for (; ri < RARITY.length - 1; ri++) { rr -= RARITY[ri].w; if (rr <= 0) break; }
+    const d = CARD_KINDS[k], p = RARITY[ri].p * (0.85 + 0.3 * Math.random()); // each card rolls a little up or down
+    hand.push({ k, r: ri, v: d.val(p, s), dur: d.dur === undefined ? 0 : d.dur, name: rnd(d.names), id: ++S.cards.seq });
+  }
+  S.cards.hand = hand;
+  aiSay(rnd(['I drew three cards for you. Keep one.', 'Your hand is dealt. Choose.', 'Three cards, one choice. The others go back in the deck.', 'Fortune is a kind of Quanta too. Pick a card.']));
+}
+function keepCard(i) {
+  const hand = S.cards.hand; if (!hand || !hand[i]) return false;
+  const c = hand[i], d = CARD_KINDS[c.k], t = S.stats.time;
+  S.cards.hand = null; S.cards.next = t + DEAL_EVERY; S.cards.drawn++; S.cards.by[c.r]++;
+  if (c.k === 'time') { const p = qpsLog(); if (p > -Infinity) { S.q = S.q.add(D.fromLog(p + L10(c.v))); capQ(); } }
+  else if (c.k === 'abil') { S.abil.surge.ready = 0; S.abil.fold.ready = 0; }
+  else if (c.k === 'gamble') {
+    if (Math.random() < 0.5) { S.cards.active.push({ k: 'qmult', v: c.v, dur: 600, until: t + 600, name: c.name + ' (heads)', r: c.r }); aiSay('Heads. Enjoy it.'); }
+    else aiSay(rnd(['Tails. The deck owes you one.', 'Tails. Nothing this time.']));
+  }
+  else S.cards.active.push({ k: c.k, v: c.v, dur: c.dur, until: c.dur < 0 ? -1 : t + c.dur, name: c.name, r: c.r });
+  if (c.r === 3) grant('a43');
+  return true;
+}
+function cardsTick() {
+  const C = S.cards, t = S.stats.time;
+  if (C.active.length && C.active.some(c => c.until >= 0 && c.until <= t)) C.active = C.active.filter(c => c.until < 0 || c.until > t);
+  if (!C.hand && cardsOn() && t >= C.next) dealCards();
 }
 function simulate(total, maxTicks = 2000) {
   const n = Math.min(maxTicks, Math.max(1, Math.ceil(total / 0.05))), step = total / n;
@@ -1959,6 +2062,7 @@ const TABS = [
   ['upg', 'Upgrades', () => true, () => QUPG.some(u => !S.qUpg[u.id] && lq() >= u.cost) || openAffordable('q')],
   ['shard', 'Shards', shardsVisible, () => SUPG.some(u => !S.sUpg[u.id] && S.shards.gte(u.cost)) || (shardsVisible() && openAffordable('s'))],
   ['asc', 'Ascension', ascVisible, () => EUPG.some(u => !S.eUpg[u.id] && S.essence.gte(u.cost)) || (streamVisible('e') && openAffordable('e'))],
+  ['cards', 'Cards', () => cardsOn(), () => !!S.cards.hand],
   ['auto', 'Automation', autoVisible, () => false],
   ['chal', 'Challenges', () => hasE('e3'), () => false],
   ['arch', 'Architect', () => tutorialDone(), () => false], // its lines show in the speech bubble; no dot on the tab
@@ -1967,7 +2071,7 @@ const TABS = [
   ['guide', 'Guide', () => true, () => false],
   ['opt', 'Options', () => true, () => false],
 ];
-const TAB_ICONS = { gen: '◈', arch: '✦', upg: '▲', shard: '◆', auto: '⟳', asc: '✧', chal: '⚔', ach: '★', stats: '≣', guide: '?', opt: '⚙' };
+const TAB_ICONS = { gen: '◈', arch: '✦', upg: '▲', shard: '◆', auto: '⟳', asc: '✧', cards: '♢', chal: '⚔', ach: '★', stats: '≣', guide: '?', opt: '⚙' };
 function setTab(id) {
   if (S.settings.tab !== id) { const now = performance.now(); tabTimes.push(now); while (tabTimes.length && now - tabTimes[0] > 60000) tabTimes.shift(); if (tabTimes.length >= 30) grantSecret('x10'); }
   S.settings.tab = id;
@@ -2797,6 +2901,7 @@ function buildGuideTab() {
     [shardsVisible, 'Collapse and Shards', 'At 1e25 Quanta you can Collapse: Quanta, generators and Clock Speed reset, and you get Shards. Shards buy upgrades in the <b>Shard tree</b>: start at Fracture, then grow three branches. Radiance is raw power, Clockwork is speed and automation, Echoes is the Shard economy and the active abilities <b>Surge</b> and <b>Time Fold</b>. At each fork you choose one of two paths. <b>Reshape the tree</b> refunds every Shard so you can try a different build. More Quanta at the moment you Collapse means more Shards.'],
     [autoVisible, 'Automation', 'The Clockwork branch of the Shard web has one autobuyer per generator (Automata I buys Flickers, II buys Sparks, and so on), one for Clock Speed, one each for the Light, Harmony and Cascade branches of the Upgrade web, and later Auto-Collapse. Configure them in the Automation tab.'],
     [ascVisible, 'The Limit and Ascension', 'Quanta stops at 1e308, the Limit. There you can Ascend for Essence. At first an Ascension resets everything but Essence: Quanta, generators, the Upgrade web, Shards, the whole Shard web and its repeatables. The <b>Memory</b> branch of the Essence web lets you keep more: Muscle Memory keeps your automation, Perfect Recall the Shard web, Deep Memory the Upgrade web. Essence buys nodes in the <b>Essence web</b>; its root, <b>Unbounded</b>, breaks the Limit for good, so buy it first. Past it, every order of magnitude is a little harder to reach (dampening), but the Architect starts gathering <b>Inspiration</b>: Quanta production ×10 every 30 seconds, forever, so you never stop moving.'],
+    [cardsOn, 'Cards', 'After your first Collapse, the Architect deals you three cards every ten minutes of play (see the <b>Cards</b> tab). Keep one. Cards are Common, Rare, Epic or Legendary, and each rolls a little stronger or weaker. They give Quanta, speed up every generator, boost your top tier, Pulse, Lucky Pulses, Resonance or idle play for a while, add Shards or Essence to your next prestige, hand you production on the spot, or flip a coin for a big boost.'],
     [() => hasE('e3'), 'Challenges', 'Runs with a handicap. Reach the goal to complete one; every Challenge can be completed again and again with a higher goal and a stronger reward.'],
     [() => SECRETS.some(s => S.ach[s.id]), 'Secrets', 'Some achievements are hidden. Each one shows only a hint until you earn it, and each unlocks something special: a <b>Relic</b> (a permanent upgrade in the Upgrades tab) or an <b>Anomaly</b> (a generator in the Generators tab that never resets). Pay attention to the hints, and to odd things you might try.'],
     [() => true, 'Appearance', 'Options → Appearance lets you change the color theme, the UI size, and turn the starfield, animations, rainbow generator colors and pop-up notifications on or off.'],
@@ -2908,6 +3013,35 @@ function buildAutoTab() {
   }, 'auto');
 }
 
+/* ---------------- Cards tab: the hand you are dealt, what is working now, your record ---------------- */
+function buildCardsTab() {
+  const T = UI.tabs.cards;
+  T.append(h('h2', {}, 'The Architect’s deck'), h('div', { class: 'muted', style: 'margin-bottom:12px' }, 'Every ' + durTxt(DEAL_EVERY) + ' of play I deal three cards. Keep one; the others go back in the deck. Rarer cards roll stronger, and every card rolls a little up or down. Most work for a few minutes of game time, some until your next Collapse or Ascension.'));
+  const hand = h('div', { class: 'hand' }), wait = h('div', { class: 'deal-wait' }), waitBar = h('div', { class: 'deal-bar' }, h('i', {}));
+  T.append(hand, h('div', {}, wait, waitBar));
+  T.append(h('h2', {}, 'Working now'));
+  const act = h('div', { class: 'card-active' }); T.append(act);
+  T.append(h('h2', {}, 'Your record'));
+  const rec = h('div', { class: 'muted' }); T.append(rec);
+  let handKey = '';
+  up(() => {
+    const C = S.cards, key = C.hand ? C.hand.map(c => c.id).join(',') : '';
+    if (key !== handKey) {
+      handKey = key; hand.textContent = '';
+      if (C.hand) C.hand.forEach((c, i) => {
+        const d = CARD_KINDS[c.k], R = RARITY[c.r];
+        const el = h('button', { class: 'pcard ' + R.id, style: `animation-delay:${i * 0.12}s`, onclick: act2(() => { if (keepCard(i)) sfx('upgrade'); }) },
+          h('div', { class: 'pc-r' }, R.name), h('div', { class: 'pc-g' }, d.g), h('div', { class: 'pc-n' }, c.name), h('div', { class: 'pc-t' }, d.text(c)), h('div', { class: 'pc-k' }, 'Keep'));
+        hand.append(el);
+      });
+    }
+    show(wait, !C.hand); show(waitBar, !C.hand);
+    if (!C.hand) { const left = Math.max(0, C.next - S.stats.time); setT(wait, 'Next hand in ' + fmtTime(left) + '.'); waitBar.firstChild.style.width = (100 * (1 - left / DEAL_EVERY)).toFixed(1) + '%'; }
+    setH(act, C.active.length ? C.active.map(c => `<div class="ca ${RARITY[c.r].id}"><b>${esc(c.name)}</b> · ${esc(CARD_KINDS[c.k].text(c))}${c.until >= 0 ? ` <span class="muted">(${fmtTime(Math.max(0, c.until - S.stats.time))} left)</span>` : ''}</div>`).join('') : '<div class="muted">Nothing yet. Keep a card to start one.</div>');
+    setT(rec, `${C.drawn} cards kept: ${RARITY.map((r, i) => C.by[i] + ' ' + r.name).join(', ')}.`);
+  }, 'cards');
+}
+const act2 = fn => e => { e.stopPropagation(); fn(); };
 // what an Ascension wipes right now, given the Memory-branch upgrades you own
 function ascResetText() {
   const r = ['Quanta', 'generators', 'Shards'];
@@ -3100,7 +3234,7 @@ function importDialog() {
   }], ['Cancel', () => true]]);
 }
 function resetDialog() {
-  modal('Hard reset', 'This wipes your save completely. There is no undo.', [['Wipe everything', () => { S = newState(); applyUI(); save(); setTab('gen'); toast('Fresh start.'); }], ['Cancel', () => true]]);
+  modal('Hard reset', 'This wipes your save completely. There is no undo.', [['Wipe everything', () => { sayClear(); S = newState(); applyUI(); save(); setTab('gen'); toast('Fresh start.'); }], ['Cancel', () => true]]);
 }
 
 /* ---------------- Progress bar ---------------- */
@@ -3176,7 +3310,7 @@ function init() {
     const raw = NOSAVE ? null : localStorage.getItem(SAVE_KEY);
     if (raw) { S = loadFrom(raw); away = (Date.now() - S.last) / 1000; }
   } catch (e) { console.warn('Save could not be loaded', e); S = newState(); }
-  buildHeader(); buildNav(); buildGenTab(); buildArchTab(); buildUpgTab(); buildShardTab(); buildAutoTab(); buildAscTab(); buildChalTab(); buildAchTab(); buildStatsTab(); buildGuideTab(); buildOptTab(); buildProgress();
+  buildHeader(); buildNav(); buildGenTab(); buildArchTab(); buildUpgTab(); buildShardTab(); buildAutoTab(); buildAscTab(); buildCardsTab(); buildChalTab(); buildAchTab(); buildStatsTab(); buildGuideTab(); buildOptTab(); buildProgress();
   if (away > 10 && S.settings.offline) {
     const q0 = S.q, s0 = S.shards, e0 = S.essence, c0 = S.stats.totalCollapses, a0 = S.ascensions;
     simulate(away, 4000);

@@ -443,7 +443,7 @@ function quadMax(lm, c0, s, q, k) {
 const CFG = {
   cascadeLog: 0,      // log10 of how fast tier N makes tier N-1
   collapseReq: 25,    // log10 Quanta needed to Collapse
-  shardDiv: 20,       // shards = 10^((logQ - req)/div) * mult
+  shardDiv: 30,       // shards = 10^((logQ - req)/div) * mult
   limit: 308,         // The Limit
   ascDiv: 60,         // essence beyond the limit = 10^((logQ - 308)/div) * mult
   clock0: 3,          // log10 first Clock Speed cost
@@ -508,38 +508,38 @@ const QUPG = [
 const SUPG = [
   { id: 's1', name: 'Fracture', cost: 1, desc: 'Quanta production ×10. The root of the tree.' },
   // Radiance: raw power
-  { id: 's3', name: 'Crystal Lattice', cost: 2, desc: 'Quanta production ×(1 + Shards earned this Ascension)^0.5.', eff: () => fmtMult(latticeExp() * S.totalShards.add(1).log10()) },
-  { id: 's7', name: 'Deep Resonance', cost: 30, desc: 'Resonance +0.15.' },
-  { id: 's19', name: 'Focused Light', cost: 300, desc: 'Flicker, Spark, Ember and Flare ×10 each.' },
-  { id: 's20', name: 'Wide Light', cost: 300, desc: 'Quanta production ×(generator tiers unlocked)².', eff: () => '×' + fmt(Math.pow(S.gens.length, 2)) },
-  { id: 's12', name: 'Fold', cost: 2e3, desc: 'Quanta production exponent +0.02.' },
-  { id: 's13', name: 'Lattice II', cost: 2e4, desc: 'Crystal Lattice grows faster (^0.5 → ^0.75).' },
-  { id: 's14', name: 'Fold II', cost: 3e5, desc: 'Quanta production exponent +0.03.' },
-  { id: 's17', name: 'Overtone', cost: 5e6, desc: 'Resonance +0.3.' },
-  { id: 's16', name: 'Deep Fold', cost: 1e8, desc: 'Quanta production exponent +0.05.' },
-  { id: 's18', name: 'Lattice III', cost: 3e9, desc: 'Crystal Lattice grows faster again (^0.75 → ^1).' },
-  { id: 's28', name: 'Starfire', cost: 1e11, desc: 'Quanta production ×10,000.' },
+  { id: 's3', name: 'Crystal Lattice', cost: 2, desc: 'Quanta production ×(1 + Shards earned this Ascension)^0.4.', eff: () => fmtMult(latticeExp() * S.totalShards.add(1).log10()) },
+  { id: 's7', name: 'Deep Resonance', cost: 300, desc: 'Resonance +0.15.' },
+  { id: 's19', name: 'Focused Light', cost: 1.5e4, desc: 'Flicker, Spark, Ember and Flare ×10 each.' },
+  { id: 's20', name: 'Wide Light', cost: 1.5e4, desc: 'Quanta production ×(generator tiers unlocked)².', eff: () => '×' + fmt(Math.pow(S.gens.length, 2)) },
+  { id: 's12', name: 'Fold', cost: 4e5, desc: 'Quanta production exponent +0.01.' },
+  { id: 's13', name: 'Lattice II', cost: 2e7, desc: 'Crystal Lattice grows faster (^0.4 → ^0.55).' },
+  { id: 's14', name: 'Fold II', cost: 2e9, desc: 'Quanta production exponent +0.015.' },
+  { id: 's17', name: 'Overtone', cost: 2.5e11, desc: 'Resonance +0.3.' },
+  { id: 's16', name: 'Deep Fold', cost: 4e13, desc: 'Quanta production exponent +0.025.' },
+  { id: 's18', name: 'Lattice III', cost: 1.3e16, desc: 'Crystal Lattice grows faster again (^0.55 → ^0.7).' },
+  { id: 's28', name: 'Starfire', cost: 5e18, desc: 'Quanta production ×10,000.' },
   // Clockwork: speed and automation
   { id: 's2', name: 'Memory', cost: 2, auto: true, desc: 'Keep Quanta upgrades when you Collapse.' },
-  { id: 's8', name: 'Gear Down', cost: 40, desc: 'Clock Speed cost grows ×6 per level instead of ×10.' },
-  { id: 's21', name: 'Patient Hands', cost: 400, desc: 'While you have not touched the game for a minute, Quanta production ×100.' },
-  { id: 's22', name: 'Busy Hands', cost: 400, desc: 'Pulse recharges twice as fast, and for 3 seconds after each Pulse, Quanta production ×100.' },
-  { id: 's4', name: 'Automata I', cost: 1500, auto: true, desc: 'Unlock autobuyers for Flicker–Flare and Clock Speed.' },
-  { id: 's11', name: 'Starseed', cost: 1e4, auto: true, desc: 'Start every Collapse with 1e6 Quanta.' },
-  { id: 's6', name: 'Automata II', cost: 1e5, auto: true, desc: 'Unlock autobuyers for every other generator and for Quanta upgrades.' },
-  { id: 's9', name: 'Self-Collapse', cost: 1e6, auto: true, desc: 'Unlock Auto-Collapse.' },
-  { id: 's27', name: 'Overclock III', cost: 2e7, desc: 'Clock Speed base +0.03.' },
-  { id: 's15', name: 'Refraction', cost: 5e8, desc: 'Quanta production ×1,000.' },
+  { id: 's8', name: 'Gear Down', cost: 500, desc: 'Clock Speed cost grows ×6 per level instead of ×10.' },
+  { id: 's21', name: 'Patient Hands', cost: 2.5e4, desc: 'While you have not touched the game for a minute, Quanta production ×100.' },
+  { id: 's22', name: 'Busy Hands', cost: 2.5e4, desc: 'Pulse recharges twice as fast, and for 3 seconds after each Pulse, Quanta production ×100.' },
+  { id: 's4', name: 'Automata I', cost: 2.5e5, auto: true, desc: 'Unlock autobuyers for Flicker–Flare and Clock Speed.' },
+  { id: 's11', name: 'Starseed', cost: 6e6, auto: true, desc: 'Start every Collapse with 1e6 Quanta.' },
+  { id: 's6', name: 'Automata II', cost: 3e8, auto: true, desc: 'Unlock autobuyers for every other generator and for Quanta upgrades.' },
+  { id: 's9', name: 'Self-Collapse', cost: 1.6e10, auto: true, desc: 'Unlock Auto-Collapse.' },
+  { id: 's27', name: 'Overclock III', cost: 2.6e12, desc: 'Clock Speed base +0.03.' },
+  { id: 's15', name: 'Refraction', cost: 6e14, desc: 'Quanta production ×1,000.' },
   // Echoes: the Shard economy and active abilities
   { id: 's5', name: 'Shard Focus', cost: 5, desc: 'Shard gain ×2.' },
-  { id: 's25', name: 'Surge', cost: 60, desc: 'Unlock the Surge ability (key S): Quanta production ×1,000 for 30 seconds, recharges in 5 minutes.' },
-  { id: 's23', name: 'Hoarder', cost: 600, desc: 'Shard gain ×5, but Collapsing needs 1e30 Quanta.' },
-  { id: 's24', name: 'Spender', cost: 600, desc: 'Quanta production ×1.5 for every Shard upgrade you own.', eff: () => fmtMult(Object.keys(S.sUpg).length * L10(1.5)) },
-  { id: 's10', name: 'Echoing Shards', cost: 5e3, desc: 'Shard gain ×(log₁₀(Collapses + 10))².', eff: () => '×' + fmt(Math.pow(L10(S.collapses + 10), 2)) },
-  { id: 's26', name: 'Time Fold', cost: 5e4, desc: 'Unlock the Time Fold ability (key F): instantly gain 10 minutes of Quanta production, recharges in 20 minutes.' },
-  { id: 's31', name: 'Echo Chamber', cost: 5e5, desc: 'Shard gain ×(1 + abilities used this Collapse).', eff: () => '×' + fmt(1 + S.run.abil) },
-  { id: 's29', name: 'Shard Bloom', cost: 1e7, desc: 'Shard gain ×3.' },
-  { id: 's30', name: 'Long Surge', cost: 2e8, desc: 'Surge lasts 60 seconds and recharges in 3 minutes.' },
+  { id: 's25', name: 'Surge', cost: 1000, desc: 'Unlock the Surge ability (key S): Quanta production ×1,000 for 30 seconds, recharges in 5 minutes.' },
+  { id: 's23', name: 'Hoarder', cost: 5e4, desc: 'Shard gain ×5, but Collapsing needs 1e30 Quanta.' },
+  { id: 's24', name: 'Spender', cost: 5e4, desc: 'Quanta production ×1.5 for every Shard upgrade you own.', eff: () => fmtMult(Object.keys(S.sUpg).length * L10(1.5)) },
+  { id: 's10', name: 'Echoing Shards', cost: 2e6, desc: 'Shard gain ×(log₁₀(Collapses + 10))².', eff: () => '×' + fmt(Math.pow(L10(S.collapses + 10), 2)) },
+  { id: 's26', name: 'Time Fold', cost: 1e8, desc: 'Unlock the Time Fold ability (key F): instantly gain 10 minutes of Quanta production, recharges in 20 minutes.' },
+  { id: 's31', name: 'Echo Chamber', cost: 5e9, desc: 'Shard gain ×(1 + abilities used this Collapse).', eff: () => '×' + fmt(1 + S.run.abil) },
+  { id: 's29', name: 'Shard Bloom', cost: 8e11, desc: 'Shard gain ×3.' },
+  { id: 's30', name: 'Long Surge', cost: 1.3e14, desc: 'Surge lasts 60 seconds and recharges in 3 minutes.' },
 ];
 const TREE = [
   { name: 'Radiance', sub: 'raw power', nodes: ['s3', 's7', ['s19', 's20'], 's12', 's13', 's14', 's17', 's16', 's18', 's28'] },
@@ -878,7 +878,7 @@ const inChal = i => S.chal.active === i;
 const totalBought = () => S.gens.reduce((t, g) => t + g.bought, 0);
 const totalComps = () => S.chal.comps.reduce((a, b) => a + b, 0);
 const momentum = () => Math.min(100, 1 + S.stats.tCollapse / 20);
-const latticeExp = () => hasS('s18') ? 1 : hasS('s13') ? 0.75 : 0.5;
+const latticeExp = () => hasS('s18') ? 0.7 : hasS('s13') ? 0.55 : 0.4;
 const shardsVisible = () => S.reached.collapse || S.collapses > 0 || S.ascensions > 0;
 const ascVisible = () => S.reached.limit || S.ascensions > 0;
 const autoVisible = () => !!(S.sUpg.s4 || S.sUpg.s6 || S.sUpg.s9 || S.eUpg.e8);
@@ -972,9 +972,9 @@ const DAMP = 0.85;
 const dampen = L => L > CFG.limit ? CFG.limit + Math.pow(L - CFG.limit, DAMP) : L;
 function qExponent() {
   let x = 1;
-  if (hasS('s12')) x += 0.02;
-  if (hasS('s14')) x += 0.03;
-  if (hasS('s16')) x += 0.05;
+  if (hasS('s12')) x += 0.01;
+  if (hasS('s14')) x += 0.015;
+  if (hasS('s16')) x += 0.025;
   if (hasE('e9')) x += 0.02;
   x += 0.005 * S.eRep.expo + 0.01 * S.chal.comps[6] + procSum('qexp');
   if (inChal(6)) x *= 0.8;
@@ -1100,7 +1100,8 @@ function reshapeTree() {
   const st = webStatic('s');
   for (const id in S.minor.s) if (st.nodes[id]) refund = refund.add(D.fromLog(st.nodes[id].costLog));
   if (refund.m === 0) return false;
-  S.sUpg = {}; S.minor.s = {}; MINOR_VER++; S.shards = S.shards.add(refund);
+  for (const id in S.minor.s) if (st.nodes[id]) delete S.minor.s[id];
+  S.sUpg = {}; MINOR_VER++; S.shards = S.shards.add(refund);
   resetQLayer();
   flash('rgba(196,155,255,.5)');
   return true;
@@ -1855,18 +1856,18 @@ const sv = (tag, attrs = {}) => { const el = document.createElementNS(SVGNS, tag
 const hashStr = s => { let x = 2166136261; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return x >>> 0; };
 const WEB_DEF = {
   q: { root: 'q1', cur: 'q', curName: 'Quanta', costLog: id => QBY[id].cost, owned: id => !!S.qUpg[id],
-    ring: { kind: 'qmult', v: L10(1.2), text: 'Quanta production ×1.2' },
+    ring: { kind: 'qmult', v: L10(1.1), text: 'Quanta production ×1.1' },
     branches: [
-      { name: 'Light', sub: 'production', angle: -150, nodes: ['q2', 'q5', 'q7', 'q13', 'q16'], minor: { kind: 'qmult', v: L10(1.3), text: 'Quanta production ×1.3' } },
-      { name: 'Harmony', sub: 'resonance and clock', angle: -30, nodes: ['q3', 'q4', 'q8', 'q9', 'q11'], minor: { kind: 'res', v: 0.02, text: 'Resonance +0.02' } },
-      { name: 'Cascade', sub: 'tiers and Shards', angle: 90, nodes: ['q6', 'q10', 'q12', 'q14', 'q15'], minor: { kind: 'shard', v: L10(1.05), text: 'Shard gain ×1.05' } },
+      { name: 'Light', sub: 'production', angle: -150, nodes: ['q2', 'q5', 'q7', 'q13', 'q16'], minor: { kind: 'qmult', v: L10(1.15), text: 'Quanta production ×1.15' } },
+      { name: 'Harmony', sub: 'resonance and clock', angle: -30, nodes: ['q3', 'q4', 'q8', 'q9', 'q11'], minor: { kind: 'res', v: 0.01, text: 'Resonance +0.01' } },
+      { name: 'Cascade', sub: 'tiers and Shards', angle: 90, nodes: ['q6', 'q10', 'q12', 'q14', 'q15'], minor: { kind: 'shard', v: L10(1.03), text: 'Shard gain ×1.03' } },
     ] },
   s: { root: 's1', cur: 'shards', curName: 'Shards', costLog: id => L10(SBY[id].cost), owned: id => !!S.sUpg[id],
-    ring: { kind: 'qmult', v: L10(1.3), text: 'Quanta production ×1.3' },
+    ring: { kind: 'qmult', v: L10(1.15), text: 'Quanta production ×1.15' },
     branches: [
-      { name: 'Radiance', sub: 'raw power', angle: -150, nodes: TREE[0].nodes, minor: { kind: 'qmult', v: L10(1.5), text: 'Quanta production ×1.5' } },
-      { name: 'Clockwork', sub: 'speed and automation', angle: -30, nodes: TREE[1].nodes, minor: { kind: 'clock', v: 0.002, text: 'Clock Speed base +0.002' } },
-      { name: 'Echoes', sub: 'Shards and abilities', angle: 90, nodes: TREE[2].nodes, minor: { kind: 'shard', v: L10(1.1), text: 'Shard gain ×1.1' } },
+      { name: 'Radiance', sub: 'raw power', angle: -150, nodes: TREE[0].nodes, minor: { kind: 'qmult', v: L10(1.25), text: 'Quanta production ×1.25' } },
+      { name: 'Clockwork', sub: 'speed and automation', angle: -30, nodes: TREE[1].nodes, minor: { kind: 'clock', v: 0.001, text: 'Clock Speed base +0.001' } },
+      { name: 'Echoes', sub: 'Shards and abilities', angle: 90, nodes: TREE[2].nodes, minor: { kind: 'shard', v: L10(1.05), text: 'Shard gain ×1.05' } },
     ] },
 };
 const ARCH_BRANCH = {
@@ -1903,56 +1904,53 @@ function relax(nodes, edges, pos, iters) {
 const WEB_STATIC = {};
 function webStatic(layer) {
   if (WEB_STATIC[layer]) return WEB_STATIC[layer];
-  const W = WEB_DEF[layer], nodes = {}, edges = [], first = [], at = [];
+  const W = WEB_DEF[layer], nodes = {}, edges = [], at = [];
   const add = n => (nodes[n.id] = n);
-  const link = (a, b) => edges.push([a, b]);
+  const link = (x, y) => edges.push([x, y]);
+  // Big nodes link straight to each other. Between each linked pair runs an optional side loop of
+  // bonus nodes (bulging to one side of the direct link) that you can pick up or skip.
+  const loop = (idp, A, B, count, effOf, side) => {
+    const pa = nodes[A[0]].anchor, pb = nodes[B[0]].anchor, cMax = Math.max(nodes[A[0]].costLog, nodes[B[0]].costLog);
+    const dx = pb[0] - pa[0], dy = pb[1] - pa[1], len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len;
+    let chain = A;
+    for (let k = 1; k <= count; k++) {
+      const f = k / (count + 1), bulge = Math.sin(f * Math.PI) * 75 * side, id = `${idp}:${k}`, e = effOf(k);
+      add({ id, type: 'minor', br: e.br, costLog: cMax - 0.3, eff: e.eff, anchor: [pa[0] + dx * f + nx * bulge, pa[1] + dy * f + ny * bulge] });
+      for (const p of chain) link(p, id);
+      chain = [id];
+    }
+    for (const c of B) link(chain[0], c);
+  };
   add({ id: W.root, type: 'root', br: -1, upg: W.root, costLog: W.costLog(W.root), anchor: [0, 0] });
   W.branches.forEach((br, b) => {
     const th0 = br.angle * Math.PI / 180;
-    const P = (r, off) => { const th = th0 + 0.12 * Math.sin(r / 150); const dx = Math.cos(th), dy = Math.sin(th); return [dx * r - dy * off, dy * r + dx * off]; };
-    let prev = [W.root], prevCost = W.costLog(W.root), r = 0;
+    const Pt = (r, off) => { const th = th0 + 0.12 * Math.sin(r / 150); const dx = Math.cos(th), dy = Math.sin(th); return [dx * r - dy * off, dy * r + dx * off]; };
+    let prev = [W.root];
     at[b] = [];
     br.nodes.forEach((entry, d) => {
-      const ids = Array.isArray(entry) ? entry : [entry], cost = W.costLog(ids[0]), rT = 210 + d * 170;
-      let chain = prev;
-      for (let k = 1; k <= 2; k++) {
-        const id = `m:${layer}:${b}:${d}:${k}`, rng = seeded(hashStr(id)), f = k / 3;
-        add({ id, type: 'minor', br: b, costLog: prevCost + (cost - prevCost) * f, eff: br.minor, anchor: P(r + (rT - r) * f, (rng() - 0.5) * 70) });
-        for (const p of chain) link(p, id);
-        chain = [id];
-        if (d === 0 && k === 1) first[b] = id;
-      }
+      const ids = Array.isArray(entry) ? entry : [entry], rT = 210 + d * 170;
       ids.forEach((id, k) => {
-        add({ id, type: 'notable', br: b, upg: id, costLog: W.costLog(id), anchor: P(rT, ids.length > 1 ? (k ? 85 : -85) : 0) });
-        for (const p of chain) link(p, id);
+        add({ id, type: 'notable', br: b, upg: id, costLog: W.costLog(id), anchor: Pt(rT, ids.length > 1 ? (k ? 85 : -85) : 0) });
+        for (const p of prev) link(p, id);
       });
-      at[b][d] = ids; prev = ids; prevCost = cost; r = rT;
+      at[b][d] = ids; prev = ids;
     });
+    br.nodes.forEach((entry, d) => loop(`m:${layer}:${b}:${d}`, d === 0 ? [W.root] : at[b][d - 1], at[b][d], 2, () => ({ br: b, eff: br.minor }), d % 2 ? 1 : -1));
   });
   const nb = W.branches.length;
   for (let b = 0; b < nb; b++) {
-    const b2 = (b + 1) % nb;
-    let a1 = W.branches[b].angle, a2 = W.branches[b2].angle; if (a2 < a1) a2 += 360;
-    const mid = (a1 + a2) / 2 * Math.PI / 180, id = `r:${layer}:${b}`;
-    add({ id, type: 'minor', br: -1, costLog: W.costLog(W.root) + 0.3, eff: W.ring, anchor: [Math.cos(mid) * 160, Math.sin(mid) * 160] });
-    link(first[b], id); link(id, first[b2]);
+    const b2 = (b + 1) % nb, A0 = at[b][0], B0 = at[b2][0];
+    for (const x of A0) for (const y of B0) link(x, y);
+    loop(`r:${layer}:${b}`, A0, B0, 2, () => ({ br: -1, eff: W.ring }), 1);
     const A = at[b][3], B = at[b2][3];
     if (A && B) {
-      const pa = nodes[A[0]].anchor, pc = nodes[B[0]].anchor;
-      let chain = A;
-      for (let k = 1; k <= 3; k++) {
-        const f = k / 4, bid = `b:${layer}:${b}:${k}`;
-        add({ id: bid, type: 'minor', br: k < 2 ? b : k > 2 ? b2 : -1, costLog: nodes[A[0]].costLog + (nodes[B[0]].costLog - nodes[A[0]].costLog) * f,
-          eff: k < 2 ? W.branches[b].minor : k > 2 ? W.branches[b2].minor : W.ring, anchor: [(pa[0] + (pc[0] - pa[0]) * f) * 1.12, (pa[1] + (pc[1] - pa[1]) * f) * 1.12] });
-        for (const p of chain) link(p, bid);
-        chain = [bid];
-      }
-      for (const c of B) link(chain[0], c);
+      for (const x of A) for (const y of B) link(x, y);
+      loop(`b:${layer}:${b}`, A, B, 3, k => k < 2 ? { br: b, eff: W.branches[b].minor } : k > 2 ? { br: b2, eff: W.branches[b2].minor } : { br: -1, eff: W.ring }, 1);
     }
   }
   const adj = {};
   for (const id in nodes) adj[id] = [];
-  for (const [a, b] of edges) { adj[a].push(b); adj[b].push(a); }
+  for (const [x, y] of edges) { adj[x].push(y); adj[y].push(x); }
   const pos = {};
   for (const id in nodes) pos[id] = nodes[id].anchor.slice();
   relax(nodes, edges, pos, 220);
@@ -1964,13 +1962,29 @@ function minorAgg(layer) {
   const c = MINOR_AGG[layer];
   if (c && c.v === MINOR_VER && c.S === S) return c.a;
   const a = { qmult: 0, res: 0, clock: 0, shard: 0 }, st = webStatic(layer);
-  for (const id in S.minor[layer]) { const n = st.nodes[id]; if (n && n.eff) a[n.eff.kind] += n.eff.v; }
+  for (const id in S.minor[layer]) { const n = st.nodes[id] || (/^c\d+$/.test(id) ? connectorNode(layer, +id.slice(1)) : null); if (n && n.eff) a[n.eff.kind] += n.eff.v; }
   MINOR_AGG[layer] = { v: MINOR_VER, S, a };
   return a;
 }
 const minorSum = k => minorAgg('q')[k] + minorAgg('s')[k];
+const isBig = n => !!n && (n.type === 'notable' || n.type === 'root' || n.type === 'arch');
+// connector bonus node c<i> sits between an Architect idea a<i> and the big node it grows from
+function connectorNode(layer, i) {
+  const u = S.forge[layer][i]; if (!u) return null;
+  const br = WEB_DEF[layer].branches[u.branch];
+  return { id: 'c' + i, type: 'minor', connector: i, br: u.branch, parent: u.parent, eff: br ? br.minor : WEB_DEF[layer].ring, costLog: procCost(layer, i) - 0.5 };
+}
+// older saves may have an idea attached to a small node: move it to the nearest big node
+function bigParent(layer, pid) {
+  const st = webStatic(layer);
+  if (/^a\d+$/.test(pid) || !st.nodes[pid] || isBig(st.nodes[pid])) return st.nodes[pid] || /^a\d+$/.test(pid) ? pid : WEB_DEF[layer].root;
+  const seen = { [pid]: 1 }, q = [pid];
+  while (q.length) { const id = q.shift(); for (const nb of st.adj[id]) if (!seen[nb]) { if (isBig(st.nodes[nb])) return nb; seen[nb] = 1; q.push(nb); } }
+  return WEB_DEF[layer].root;
+}
 function webNode(layer, id) {
-  if (id[0] === 'a' && id[1] !== undefined && /^a\d+$/.test(id)) { const i = +id.slice(1), u = S.forge[layer][i]; return u ? { id, type: 'arch', arch: i, br: u.branch, parent: u.parent } : null; }
+  if (/^a\d+$/.test(id)) { const i = +id.slice(1), u = S.forge[layer][i]; return u ? { id, type: 'arch', arch: i, br: u.branch, parent: u.parent } : null; }
+  if (/^c\d+$/.test(id)) return connectorNode(layer, +id.slice(1));
   return webStatic(layer).nodes[id] || null;
 }
 function webOwned(layer, n) {
@@ -1983,6 +1997,7 @@ function webAvail(layer, n) {
   if (webOwned(layer, n) || webForked(layer, n)) return false;
   if (n.type === 'root') return true;
   if (n.type === 'arch') { const p = webNode(layer, n.parent || WEB_DEF[layer].root); return n.arch === S.proc[layer] && !!p && webOwned(layer, p); }
+  if (n.connector !== undefined) { if (n.connector > S.proc[layer]) return false; const p = webNode(layer, n.parent || WEB_DEF[layer].root), a = webNode(layer, 'a' + n.connector); return (!!p && webOwned(layer, p)) || (!!a && webOwned(layer, a)); }
   const st = webStatic(layer);
   for (const nb of st.adj[n.id]) if (webOwned(layer, st.nodes[nb])) return true;
   return false;
@@ -2000,7 +2015,8 @@ function webBuy(layer, id) {
 function webFrontier(layer) {
   const st = webStatic(layer), out = [];
   for (const id in st.nodes) { const n = st.nodes[id]; if (webAvail(layer, n)) out.push(n); }
-  if (S.forge[layer].length > S.proc[layer] || layer !== 'e') { const a = webNode(layer, 'a' + S.proc[layer]); if (a && webAvail(layer, a)) out.push(a); }
+  for (let i = 0; i <= S.proc[layer]; i++) { const x = webNode(layer, 'c' + i); if (x && webAvail(layer, x)) out.push(x); }
+  { const x = webNode(layer, 'a' + S.proc[layer]); if (x && webAvail(layer, x)) out.push(x); }
   return out;
 }
 // buy the cheapest affordable nodes next to what you own (used by the Quanta upgrade autobuyer)
@@ -2019,7 +2035,7 @@ function webAutoBuy(layer, max = 40) {
 function pickParentWeb(layer, b) {
   const W = WEB_DEF[layer]; if (!W) return null;
   const st = webStatic(layer), cands = [];
-  for (const id in st.nodes) { const n = st.nodes[id]; if (n.br === b && webOwned(layer, n)) cands.push(id); }
+  for (const id in st.nodes) { const n = st.nodes[id]; if (n.br === b && isBig(n) && webOwned(layer, n)) cands.push(id); }
   const list = S.forge[layer];
   for (let i = 0; i < list.length && i < S.proc[layer]; i++) if (list[i].branch === b) cands.push('a' + i);
   if (!cands.length) return W.root;
@@ -2040,13 +2056,17 @@ function webGraph(layer) {
   for (let i = 0; i < nArch; i++) {
     const u = S.forge[layer][i];
     if (u.branch === undefined) { u.branch = ARCH_BRANCH[layer](u.kind); u.parent = W.root; }
-    const id = 'a' + i, parent = nodes[u.parent] ? u.parent : W.root;
+    const id = 'a' + i, cid = 'c' + i;
+    u.parent = bigParent(layer, nodes[u.parent] ? u.parent : W.root);
+    const parent = nodes[u.parent] ? u.parent : W.root;
+    nodes[cid] = connectorNode(layer, i); nodes[cid].parent = parent;
     nodes[id] = { id, type: 'arch', arch: i, br: u.branch, parent };
-    edges.push([parent, id]);
+    edges.push([parent, id], [parent, cid], [cid, id]);
     if (!pos[id]) {
       const pp = pos[parent] || [0, 0], rng = seeded(hashStr(layer + id));
       const base = (pp[0] || pp[1]) ? Math.atan2(pp[1], pp[0]) : W.branches[u.branch].angle * Math.PI / 180, a = base + (rng() - 0.5) * 1.5;
-      pos[id] = [pp[0] + Math.cos(a) * 90, pp[1] + Math.sin(a) * 90];
+      pos[id] = [pp[0] + Math.cos(a) * 125, pp[1] + Math.sin(a) * 125];
+      pos[cid] = [pp[0] + Math.cos(a + 0.55) * 75, pp[1] + Math.sin(a + 0.55) * 75];
       grew = true;
     }
   }
@@ -2083,7 +2103,7 @@ function webPath(layer, targetId) {
 function webInfo(layer, n) {
   const W = WEB_DEF[layer], br = W.branches[n.br];
   if (n.type === 'arch') { const u = S.forge[layer][n.arch]; return { name: u.name, label: 'The Architect\u2019s idea' + (br ? ' · ' + br.name : ''), desc: forgeDesc(u), reason: u.reason }; }
-  if (n.type === 'minor') return { name: n.eff.text, label: 'Minor node' + (br ? ' · ' + br.name : ''), desc: n.eff.text + '.' };
+  if (n.type === 'minor') return { name: n.eff.text, label: (n.connector !== undefined ? 'Bonus node, grown by the Architect' : 'Bonus node') + (br ? ' · ' + br.name : ''), desc: n.eff.text + '.' };
   const u = layer === 'q' ? QBY[n.upg] : SBY[n.upg];
   return { name: u.name, label: n.type === 'root' ? 'The root' : 'Notable · ' + (br ? br.name : ''), desc: u.desc, eff: u.eff };
 }
@@ -2167,13 +2187,13 @@ function buildWebView(T, layer, tabId) {
       body.append(shape);
       if (n.type !== 'minor') { body.append(sv('circle', { class: 'tcore', r: n.type === 'root' ? 9 : 5 })); const lbl = sv('text', { class: 'tl', y: r + 16 }); lbl.textContent = webInfo(layer, n).name; body.append(lbl); }
       g.append(body);
-      if (grown && n.type === 'arch' && n.arch === G.nArch - 1) g.classList.add('fresh');
+      if (grown && ((n.type === 'arch' && n.arch === G.nArch - 1) || n.connector === G.nArch - 1)) g.classList.add('fresh');
       g.addEventListener('click', e => { e.stopPropagation(); sel = id; });
       g.addEventListener('dblclick', e => { e.stopPropagation(); sel = id; sfx(buyPath(id) ? 'upgrade' : 'fail'); });
       g.addEventListener('pointerenter', () => { hover = id; });
       g.addEventListener('pointerleave', () => { if (hover === id) hover = null; });
       gN.append(g); els[id] = g;
-      if (!shown[id]) { const par = n.type === 'arch' ? shown[n.parent] : null; shown[id] = (par || G.pos[id]).slice(); }
+      if (!shown[id]) { const par = (n.type === 'arch' || n.connector !== undefined) ? shown[n.parent] : null; shown[id] = (par || G.pos[id]).slice(); }
     }
     placeAll(); tween();
   }
@@ -2338,7 +2358,7 @@ function buildUpgTab() {
   T.append(h('h2', {}, 'Upgrade web'));
   const note = h('div', { class: 'muted', style: 'margin:-2px 0 8px' }); T.append(note);
   buildWebView(T, 'q', 'upg');
-  up(() => setT(note, 'Buy any node next to one you own. Big nodes are upgrades, small ones are small bonuses, diamonds are the Architect’s ideas. ' + (hasS('s2') ? 'Memory keeps this web through Collapses.' : 'The web resets when you Collapse until you own Memory (Shard web).')), 'upg');
+  up(() => setT(note, 'Buy any node next to one you own. Big upgrades link straight to each other; the small bonus nodes between them are optional detours. Diamonds are the Architect’s ideas. ' + (hasS('s2') ? 'Memory keeps this web through Collapses.' : 'The web resets when you Collapse until you own Memory (Shard web).')), 'upg');
   const relHead = h('h2', {}, 'Relics');
   const relNote = h('div', { class: 'muted', style: 'margin:-4px 0 8px' }, 'Found through secret achievements. Once bought, a Relic is yours forever.');
   const relGrid = h('div', { class: 'cards' });
@@ -2460,6 +2480,7 @@ function buildAchTab() {
     grid.append(el); up(() => setC(el, 'got', !!S.ach[id]), 'ach');
   }
   T.append(h('h2', {}, 'Secret achievements'));
+  T.append(h('div', { class: 'muted', style: 'margin:-4px 0 8px' }, 'Some secrets need very specific circumstances. A few can only be done at certain points in a game, and may not be possible without starting a new game.'));
   const sgrid = h('div', { class: 'ach-grid' }); T.append(sgrid);
   for (const s of SECRETS) {
     const n = h('div', { class: 'n' }), d = h('div'), rw = h('div', { class: 'rwd' });

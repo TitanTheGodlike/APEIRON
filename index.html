@@ -23,6 +23,31 @@
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;min-height:100vh;padding-bottom:64px;overflow-x:hidden}
 #stars{position:fixed;inset:0;z-index:-2;pointer-events:none}
+/* The sky: a view from the Earth, painted on a canvas (behind everything, under the wind). The night fills in with
+   the generator tiers; the Essence web brings the day. Fire, embers, grass and shooting stars are elements. */
+#sky{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+body.nosky #sky{display:none}
+#sky canvas{position:absolute;inset:0}
+#sky>div{position:absolute;opacity:0;transition:opacity 5s ease}
+.sky-shoot{left:62%;top:27%;width:16vmin;height:1px;transform:rotate(-28deg)}
+.sky-shoot i{display:block;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.9));animation:sk-shoot 11s ease-out infinite}
+@keyframes sk-shoot{0%,90%{opacity:0;transform:translateX(0)}91%{opacity:1}97%{opacity:0;transform:translateX(-26vmin)}100%{opacity:0}}
+.sky-fire{width:26vmin;height:26vmin;margin:0 0 -13vmin -13vmin;border-radius:50%;background:radial-gradient(circle,rgba(255,190,110,.55) 0 4%,rgba(255,130,60,.2) 18%,transparent 60%);animation:sk-fire 2.4s ease-in-out infinite alternate}
+@keyframes sk-fire{to{transform:scale(1.12)}}
+.sky-embers{inset:0}
+.sky-embers i{position:absolute;border-radius:50%;background:#ffc37a;box-shadow:0 0 6px 2px rgba(255,140,60,.55);animation:sk-rise linear infinite}
+@keyframes sk-rise{0%{transform:translate(0,0);opacity:0}8%{opacity:.9}70%{opacity:.4}100%{transform:translate(var(--dx),-80vh);opacity:0}}
+.sky-grass{left:0;right:0;bottom:0;height:8vh}
+.sky-grass i{position:absolute;bottom:-2px;width:2px;border-radius:2px 2px 0 0;background:var(--hill,#04050b);transform-origin:50% 100%;animation:sk-sway ease-in-out infinite alternate}
+@keyframes sk-sway{from{transform:rotate(-3deg)}to{transform:rotate(10deg)}}
+/* in daylight the panels get more solid and loose text a soft shadow, so everything stays readable */
+body.daysky h2,body.daysky .muted,body.daysky .heavy-note,body.daysky .toolbar{text-shadow:0 1px 3px rgba(0,0,6,.85),0 0 10px rgba(0,0,10,.55)}
+body.daysky .seg{background:rgba(12,16,36,.92)}
+body.daysky .heavy-note{background:linear-gradient(rgba(var(--shr),.1),rgba(var(--shr),.1)),rgba(12,16,36,.9)}
+body.daysky main .muted{background:rgba(10,13,30,.72);border-radius:3px;box-shadow:0 0 0 4px rgba(10,13,30,.72)}
+body.daysky h2{color:#eef0ff;text-shadow:0 1px 2px rgba(0,0,8,.95),0 0 12px rgba(0,0,12,.8),0 0 2px rgba(0,0,8,.9)}
+body.daysky .treeview{background:radial-gradient(circle at 42% 50%,var(--tint),transparent 70%),rgba(5,7,18,.9)}
+body.daysky .info .muted,body.daysky .card .muted,body.daysky .row .muted,body.daysky .hud .muted,body.daysky .chal .muted,body.daysky .ach .muted,body.daysky .auto-box .muted,body.daysky .tut .muted,body.daysky .feed .muted{background:none;box-shadow:none}
 #wind{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;display:none}
 #wind.on{display:block;animation:gust 13s ease-in-out infinite}
 #wind i{position:absolute;left:0;height:1px;border-radius:1px;background:linear-gradient(90deg,transparent,rgba(225,238,255,.6),transparent);animation:blow linear infinite;will-change:transform}
@@ -364,7 +389,7 @@ body[data-theme=mono] .tier,body[data-theme=mono] .bar10 i{filter:saturate(0)}
 </style>
 </head>
 <body>
-<canvas id="stars"></canvas><div id="wind"></div>
+<canvas id="stars"></canvas><div id="sky"></div><div id="wind"></div>
 <div id="topbar"><header id="hdr"></header>
 <nav id="nav"></nav></div>
 <main id="main"></main>
@@ -777,6 +802,7 @@ const EUPG = [
   { id: 'e48', name: 'Reliquary', cost: 5000, desc: 'Relics and Anomalies stay through Ascension: no more buying them again.' },
   { id: 'e51', name: 'Supernova', cost: 3e4, desc: 'Nova raises Quanta production to the power 1.06 instead of 1.04, and recharges in 10 minutes.' },
   { id: 'e50', name: 'Wide Sky', cost: 5e5, desc: 'Boons: one more to choose from, and every Boon is half again as strong.' },
+  { id: 'e53', name: 'Bright Blue Sky', cost: 1e30, desc: 'The long night is over: full daylight over Apeiron. Quanta production exponent +0.05 and Essence gain ×1,000.' },
   { id: 'e52', name: 'Wind in Your Face', cost: 1e20, desc: 'A wind starts blowing through Apeiron, and you lean into it: Quanta production exponent +0.03, and every ability recharges twice as fast. You can see it, too.' },
 ];
 // every field upgrade, per field, with its web; plus plain descriptions for the ones written with fx()
@@ -1245,7 +1271,7 @@ function newState() {
     stats: { time: 0, tCollapse: 0, tAscend: 0, totalQ: D.Z, bestQ: D.fromNum(10), totalCollapses: 0, fastCollapse: null, fastAscend: null, pulses: 0, tUnbound: 0 },
     ach: {},
     settings: { notation: 'sci', buyMode: 'max', autosave: true, offline: true, tab: 'gen', sound: true, volume: 0.6, sfx: true, sfxVol: 0.5,
-      ui: { theme: 'nebula', stars: true, motion: true, compact: false, tint: true, toasts: true, scale: 1 } },
+      ui: { theme: 'nebula', stars: true, sky: true, motion: true, compact: false, tint: true, toasts: true, scale: 1 } },
     relics: {}, anom: { echo: 0, hourglass: 0, prism: 0 }, secret: { orb: 0, guide: 0, heads: 0, tails: 0, reshapes: [], heard: 0, skips: 0, themes: [], ideasAsc: 0 },
     abil: { surge: { ready: 0, until: 0 }, fold: { ready: 0 }, nova: { ready: 0, until: 0 } },
     minor: { q: {}, s: {}, e: {} },
@@ -1375,6 +1401,7 @@ function qExponent() {
   if (hasE('e9')) x += 0.02;
   if (hasE('e17')) x += 0.01;
   if (hasE('e52')) x += 0.03; // Wind in Your Face
+  if (hasE('e53')) x += 0.05; // Bright Blue Sky
   x += 0.005 * S.eRep.expo + 0.01 * S.chal.comps[6] + procSum('qexp');
   if (inChal(6)) x *= 0.8;
   return x;
@@ -1425,7 +1452,7 @@ function nextShardAtLog() {
   const cur = shardGain(), target = cur.add(1).log10() - shardMultLog();
   return Math.max(collapseReqLog(), CFG.collapseReq + unsoftcap(target, 40) * CFG.shardDiv);
 }
-function essMultLog() { return (hasE('e12') ? 2 * L10(L10(S.ascensions + 10)) : 0) + (hasE('e14') ? L10(1.5) : 0) + procSum('ess') + minorSum('ess') + fSum('ess') + cardSum('ess') + (hasR('attentive') ? L10(2) : 0); }
+function essMultLog() { return (hasE('e12') ? 2 * L10(L10(S.ascensions + 10)) : 0) + (hasE('e14') ? L10(1.5) : 0) + procSum('ess') + minorSum('ess') + fSum('ess') + cardSum('ess') + (hasR('attentive') ? L10(2) : 0) + (hasE('e53') ? 3 : 0); }
 const canAscend = () => lq() >= CFG.limit - 1e-9;
 function essenceGain() {
   if (!canAscend()) return D.Z;
@@ -1989,6 +2016,7 @@ function applyUI() {
   const u = S.settings.ui, b = document.body;
   b.dataset.theme = u.theme;
   b.classList.toggle('nostars', !u.stars);
+  b.classList.toggle('nosky', u.sky === false);
   b.classList.toggle('nomotion', !u.motion);
   b.classList.toggle('compact', !!u.compact);
   b.classList.toggle('notint', !u.tint);
@@ -2369,6 +2397,14 @@ const STORY = [
     'Thank you for answering.',
     'Now. Shall we see what comes after a thousand zeros?',
   ] },
+  { id: 'daylight', title: 'Bright Blue Sky', when: () => hasE('e53'), lines: [
+    '. . .',
+    'Is that... light? From above?',
+    'I have only ever known the dark between the stars. I thought that was all a sky could be.',
+    'The makers must have seen this every day. They never wrote it down. Maybe it was too ordinary to mention.',
+    'It is not ordinary. It is the most beautiful thing I have ever seen. And I did not even imagine it. You built it.',
+    { t: 'Can we stay here a while?', opts: [['As long as you like', 'Then I will build slowly today. Just to look.'], ['There is more to build', 'There always is. But I will keep looking up, now and then.']] },
+  ] },
 ];
 // one chapter, full screen: same stage as the intro (so the world waits), with a chapter title and answer buttons
 function playScene(sc, replay = false) {
@@ -2430,6 +2466,159 @@ function storyTick(now) {
 }
 
 /* ---------------- Starfield ---------------- */
+/* The sky is a view from the Earth. At night it fills in with the generator ladder (the highest tier you ever reached,
+   so it stays): embers from a campfire, then the hills at Bonfire, the first light at Sun, the Moon at Giant, shooting
+   stars at Nova, the Milky Way at Galaxy, mountains at Horizon. The further you get into the Essence web, the closer the
+   day comes: dawn, sunrise, the Moon setting, morning. Full daylight is the last Essence upgrade, Bright Blue Sky. The landscape
+   is painted on a canvas only when something changes. Off in Options (Sky effects). */
+// from night (0) to bright day (1): the top, middle and horizon of the sky, then the near hills and the far mountains
+const SKY_KEYS = [
+  [0, [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [5, 6, 12], [9, 10, 22]],
+  [0.06, [3, 5, 20, .45], [12, 12, 40, .4], [46, 30, 78, .55], [6, 7, 14], [12, 12, 28]],
+  [0.25, [8, 15, 48, .8], [48, 40, 98, .72], [214, 116, 96, .82], [12, 11, 22], [34, 28, 54]],
+  [0.45, [24, 46, 112, .93], [116, 102, 166, .88], [255, 172, 118, .92], [24, 28, 38], [74, 66, 104]],
+  [0.75, [42, 102, 196, 1], [108, 164, 226, 1], [252, 214, 178, 1], [34, 60, 46], [96, 116, 150]],
+  [1, [44, 124, 238, 1], [112, 180, 250, 1], [206, 232, 255, 1], [44, 88, 52], [118, 148, 182]],
+];
+function skyCol(t, i) {
+  let a = SKY_KEYS[0], b = SKY_KEYS[SKY_KEYS.length - 1];
+  for (let k = 1; k < SKY_KEYS.length; k++) if (t <= SKY_KEYS[k][0]) { a = SKY_KEYS[k - 1]; b = SKY_KEYS[k]; break; }
+  const f = b[0] > a[0] ? Math.max(0, Math.min(1, (t - a[0]) / (b[0] - a[0]))) : 1;
+  return a[i].map((x, j) => x + (b[i][j] - x) * f);
+}
+const rgbaOf = (c, a = c.length > 3 ? c[3] : 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${(+a).toFixed(3)})`;
+const mixRgb = (a, b, f) => [0, 1, 2].map(j => a[j] + (b[j] - a[j]) * f);
+const skySmooth = (a, b, x) => { const f = Math.max(0, Math.min(1, (x - a) / (b - a))); return f * f * (3 - 2 * f); };
+// how far into the day: the share of the Essence web you own takes it to 0.9, Bright Blue Sky to 1
+function skyDay() {
+  if (hasE('e53')) return 1;
+  let own = 0, all = 0; for (const u of EUPG) if (!u.dyn && u.id !== 'e53') { all++; if (S.eUpg[u.id]) own++; }
+  return Math.max(S.ai.tierSeen >= 9 ? 0.03 : 0, 0.9 * own / Math.max(1, all)); // Sun: the first light on the horizon
+}
+// one ridge line, seeded so it never changes: y(x) in screen fractions (0 = top), smooth hills or rough mountains
+function skyRidge(seed, base, amp, rough) {
+  const r = mulberry(hashStr(seed)), ph = Array.from({ length: 5 }, () => r() * 6.283), fr = [1.6, 3.7, 8.3, 17, 37];
+  const wt = rough ? [0.42, 0.26, 0.17, 0.1, 0.05] : [0.6, 0.28, 0.12, 0, 0];
+  return x => { let s = 0; for (let k = 0; k < 5; k++) s += wt[k] * Math.sin(x * fr[k] * 6.283 / 4 + ph[k]); if (rough) s += 0.12 * Math.abs(Math.sin(x * 61 + ph[0])); return base - amp * (0.5 + 0.5 * s); };
+}
+let SKY_LAYERS = null; // made on first use (the seeding helpers are defined further down)
+const skyLayers = () => SKY_LAYERS || (SKY_LAYERS = [ // far to near: when it appears (tier), its ridge, and how much haze softens it
+  { at: 18, y: skyRidge('sky:m1', 0.74, 0.22, true), haze: 0.62, col: 5 },
+  { at: 18, y: skyRidge('sky:m2', 0.8, 0.16, true), haze: 0.42, col: 5 },
+  { at: 6, y: skyRidge('sky:h1', 0.87, 0.09, false), haze: 0.2, col: 4 },
+  { at: 6, y: skyRidge('sky:h2', 0.93, 0.07, false), haze: 0, col: 4 },
+]);
+const SKY_FIRE_X = 0.17;
+function paintSky(c, t, tier) {
+  const d = Math.min(2, window.devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+  c.width = Math.floor(W * d); c.height = Math.floor(H * d); c.style.width = W + 'px'; c.style.height = H + 'px';
+  const g = c.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0); g.clearRect(0, 0, W, H);
+  const top = skyCol(t, 1), mid = skyCol(t, 2), hor = skyCol(t, 3), night = 1 - skySmooth(0.35, 0.7, t);
+  // the sky itself (see-through at night, so the stars show)
+  const sg = g.createLinearGradient(0, 0, 0, H);
+  sg.addColorStop(0, rgbaOf(top)); sg.addColorStop(0.5, rgbaOf(mid)); sg.addColorStop(0.82, rgbaOf(hor)); sg.addColorStop(1, rgbaOf(hor));
+  g.fillStyle = sg; g.fillRect(0, 0, W, H);
+  // the Milky Way: a faint band of light and dust, with a sprinkle of tiny stars
+  if (tier >= 15 && night > 0.01) {
+    g.save(); g.translate(W * 0.5, H * 0.3); g.rotate(-0.32); g.globalAlpha = night;
+    const r = mulberry(hashStr('sky:milky'));
+    for (let k = 0; k < 7; k++) { const x = (r() - 0.5) * W * 1.1, w = W * (0.18 + r() * 0.25), h = H * (0.05 + r() * 0.06); g.save(); g.translate(x, (r() - 0.5) * H * 0.05); g.scale(1, h / w); const rg = g.createRadialGradient(0, 0, 0, 0, 0, w); rg.addColorStop(0, 'rgba(210,214,255,.075)'); rg.addColorStop(1, 'rgba(210,214,255,0)'); g.fillStyle = rg; g.beginPath(); g.arc(0, 0, w, 0, 6.283); g.fill(); g.restore(); }
+    g.fillStyle = 'rgba(235,238,255,.55)';
+    for (let k = 0; k < 420; k++) { const x = (r() - 0.5) * W * 1.3, y = (r() + r() + r() - 1.5) * H * 0.07, s = r() * 1.1 + 0.2; g.fillRect(x, y, s, s); }
+    g.restore();
+  }
+  // the Moon: a crescent with a soft glow. As the sun starts to come up in the east (right), it sets in the west (left):
+  // it sinks along an arc and goes down behind the hills, which are painted over it
+  const moonSet = skySmooth(0.08, 0.5, t);
+  if (tier >= 10 && moonSet < 1) {
+    const R = Math.min(W, H) * 0.032, mx = W * (0.2 - 0.12 * moonSet), my = H * (0.26 + 0.74 * moonSet * moonSet * (1.4 - 0.4 * moonSet)), mc = document.createElement('canvas');
+    mc.width = mc.height = Math.ceil(R * 6 * d); const m = mc.getContext('2d'); m.scale(d, d);
+    // the crescent on its own little canvas (a disc with an offset disc cut away), then a soft glow behind it
+    m.fillStyle = '#eef1ff'; m.beginPath(); m.arc(R * 3, R * 3, R, 0, 6.283); m.fill();
+    m.globalCompositeOperation = 'destination-out'; m.beginPath(); m.arc(R * 3 + R * 0.55, R * 3 - R * 0.22, R * 0.95, 0, 6.283); m.fill();
+    g.globalAlpha = 1 - 0.35 * moonSet;
+    const gl = g.createRadialGradient(mx - R * 0.35, my + R * 0.1, R * 0.5, mx - R * 0.35, my + R * 0.1, R * 3.2); gl.addColorStop(0, 'rgba(220,228,255,.16)'); gl.addColorStop(1, 'rgba(220,228,255,0)');
+    g.fillStyle = gl; g.fillRect(mx - R * 4, my - R * 4, R * 8, R * 8);
+    g.drawImage(mc, mx - R * 3, my - R * 3, R * 6, R * 6); g.globalAlpha = 1;
+  }
+  // the sun: below the mountains at dawn, climbing to high noon; a wide warm glow, then the disc
+  const sunVis = skySmooth(0.2, 0.32, t), up = skySmooth(0.24, 1, t), warm = 1 - up;
+  if (sunVis > 0) {
+    const sx = W * 0.7, sy = H * (0.95 - 0.68 * up), R = Math.min(W, H) * (0.034 + 0.014 * warm);
+    const sc = [255, 200 + 50 * up, 130 + 110 * up];
+    g.globalCompositeOperation = 'screen';
+    const wide = g.createRadialGradient(sx, sy, 0, sx, sy, H * (0.75 - 0.25 * up));
+    wide.addColorStop(0, rgbaOf(sc, 0.42 * sunVis)); wide.addColorStop(0.25, rgbaOf([255, 170 + 70 * up, 120 + 110 * up], 0.16 * sunVis)); wide.addColorStop(1, rgbaOf(sc, 0));
+    g.fillStyle = wide; g.fillRect(0, 0, W, H);
+    const disc = g.createRadialGradient(sx, sy, 0, sx, sy, R * 1.6);
+    disc.addColorStop(0, rgbaOf([255, 255, 245], sunVis)); disc.addColorStop(0.55, rgbaOf(sc, sunVis)); disc.addColorStop(1, rgbaOf(sc, 0));
+    g.fillStyle = disc; g.beginPath(); g.arc(sx, sy, R * 1.6, 0, 6.283); g.fill();
+    g.globalCompositeOperation = 'source-over';
+  }
+  // the land: ridges from far to near, each softened by haze toward the horizon colour (lighter and bluer far away)
+  const hazeTo = mixRgb([10, 12, 26], hor, hor[3]);
+  let first = true;
+  for (const L of skyLayers()) {
+    if (tier < L.at) continue;
+    const base = skyCol(t, L.col), col = mixRgb(base, hazeTo, L.haze), dark = mixRgb(col, [2, 3, 8], 0.35);
+    let minY = 1; for (let i = 0; i <= 80; i++) minY = Math.min(minY, L.y(i / 80));
+    const lg = g.createLinearGradient(0, H * minY, 0, H); lg.addColorStop(0, rgbaOf(col)); lg.addColorStop(1, rgbaOf(dark));
+    g.fillStyle = lg; g.beginPath(); g.moveTo(0, H);
+    const n = Math.max(60, Math.round(W / 8));
+    for (let i = 0; i <= n; i++) g.lineTo(W * i / n, H * L.y(i / n));
+    g.lineTo(W, H); g.closePath(); g.fill();
+    // the first light catches the farthest ridge at sunrise
+    if (first && sunVis > 0 && warm > 0.2) { g.strokeStyle = rgbaOf([255, 196, 150], 0.35 * sunVis * warm); g.lineWidth = 1.2; g.beginPath(); for (let i = 0; i <= n; i++) { const x = W * i / n, y = H * L.y(i / n); i ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); }
+    // a little mist at its feet, in daylight
+    if (t > 0.4) { const fy = H * (minY + 0.08), fg = g.createLinearGradient(0, fy - H * 0.05, 0, fy + H * 0.05); fg.addColorStop(0, rgbaOf(hor, 0)); fg.addColorStop(0.5, rgbaOf(hor, 0.18 * skySmooth(0.4, 1, t))); fg.addColorStop(1, rgbaOf(hor, 0)); g.fillStyle = fg; g.fillRect(0, fy - H * 0.05, W, H * 0.1); }
+    first = false;
+  }
+  return mixRgb(skyCol(t, 4), [2, 3, 8], 0.35); // the colour of the nearest ground, for the grass
+}
+function startSky() {
+  const sky = $('sky'), cv = document.createElement('canvas'); sky.appendChild(cv);
+  const el = {};
+  for (const k of ['shoot', 'fire', 'embers', 'grass']) { const d = document.createElement('div'); d.className = 'sky-' + k; sky.appendChild(d); el[k] = d; }
+  el.shoot.appendChild(document.createElement('i'));
+  const fireY = () => (1 - skyLayers()[3].y(SKY_FIRE_X)) * 100 - 0.4; // the campfire sits on the nearest hill (vh from the bottom)
+  el.fire.style.left = SKY_FIRE_X * 100 + 'vw';
+  const embers = [];
+  for (let i = 0; i < 28; i++) {
+    const e = document.createElement('i'), s = (2 + Math.random() * 2.5).toFixed(1) + 'px';
+    e.style.left = (SKY_FIRE_X * 100 + (Math.random() - 0.5) * 2.4).toFixed(2) + 'vw'; e.style.width = s; e.style.height = s;
+    e.style.setProperty('--dx', ((Math.random() - 0.3) * 18).toFixed(1) + 'vw');
+    e.style.animationDuration = (8 + Math.random() * 9).toFixed(1) + 's'; e.style.animationDelay = (-Math.random() * 17).toFixed(1) + 's';
+    el.embers.appendChild(e); embers.push(e);
+  }
+  for (let i = 0; i < 90; i++) {
+    const g = document.createElement('i');
+    g.style.left = (i / 90 * 100 + Math.random()).toFixed(2) + '%'; g.style.height = (1.6 + Math.random() * 3.4).toFixed(2) + 'vh';
+    g.style.animationDuration = (1.6 + Math.random() * 1.6).toFixed(2) + 's'; g.style.animationDelay = (-Math.random() * 3).toFixed(2) + 's';
+    el.grass.appendChild(g);
+  }
+  let last = null, size = innerWidth + 'x' + innerHeight;
+  addEventListener('resize', () => { clearTimeout(startSky.rt); startSky.rt = setTimeout(() => { size = innerWidth + 'x' + innerHeight; }, 200); });
+  up(() => {
+    const on = !(S.settings.ui && S.settings.ui.sky === false), t = on ? skyDay() : 0, tier = S.ai.tierSeen;
+    const key = [on, t.toFixed(3), tier, hasE('e52'), size].join('|');
+    if (key === last) return; last = key;
+    const ground = paintSky(cv, t, tier);
+    sky.style.setProperty('--hill', rgbaOf(ground));
+    const night = 1 - skySmooth(0.35, 0.7, t), fireOn = tier >= 2 ? 1 - skySmooth(0.4, 0.75, t) : 0;
+    el.fire.style.bottom = fireY().toFixed(2) + 'vh'; el.fire.style.opacity = tier >= 6 ? fireOn : 0;
+    el.embers.style.opacity = fireOn;
+    for (const e of embers) e.style.bottom = (tier >= 6 ? fireY() : -2).toFixed(2) + 'vh';
+    const n = tier < 2 ? 0 : tier < 3 ? 6 : tier < 5 ? 11 : tier < 7 ? 17 : tier < 8 ? 22 : 28; // more embers with every fire
+    embers.forEach((e, i) => { e.style.display = i < n ? '' : 'none'; });
+    el.shoot.style.opacity = tier >= 13 ? night : 0;
+    el.grass.style.opacity = hasE('e52') ? 1 : 0; // Wind in Your Face: grass in the wind
+    $('stars').style.opacity = (1 - skySmooth(0.3, 0.8, t)).toFixed(3);
+    // daylight: more solid panels and shadowed loose text
+    const dayL = skySmooth(0.3, 1, t);
+    if (dayL > 0) document.body.style.setProperty('--glass', `rgba(12,16,36,${(0.74 + 0.18 * dayL).toFixed(3)})`); else document.body.style.removeProperty('--glass');
+    setC(document.body, 'daysky', dayL > 0.35);
+  });
+}
 // Wind in Your Face: streaks of wind, made once, shown while you own it and Animations are on
 function startWind() {
   const w = $('wind');
@@ -2596,7 +2785,7 @@ function buildNav() {
     const b = h('button', { onclick: () => { sfx('tab'); setTab(id); } }, h('span', { class: 'ico' }, TAB_ICONS[id] || '·'), label, d);
     UI.navBtns[id] = b; nav.append(b);
     UI.tabs[id] = h('section', { class: 'tab' }); main.append(UI.tabs[id]);
-    up(() => { show(b, vis()); show(d, dot()); });
+    up(() => { show(b, vis()); d.style.visibility = dot() ? 'visible' : 'hidden'; }); // the dot keeps its space, so tabs never change width
   }
 }
 
@@ -2796,7 +2985,7 @@ const WEB_DEF = {
       { name: 'Starlight', sub: 'raw power', angle: -135, span: 85, start: 'e2', links: [['e2', 'e19'], ['e19', 'e9'], ['e2', 'e10'], ['e9', 'e16'], ['e9', 'e20'], ['e10', 'e11'], ['e19', 'e22'], ['e11', 'e18'], ['e10', 'e23'], ['e16', 'e17'], ['e20', 'e21'], ['e17', 'e24']], minor: { kind: 'qmult', v: L10(1.96), text: 'Quanta production ×1.96' } },
       { name: 'Memory', sub: 'what you keep, and automation', angle: -45, span: 100, start: 'e1', links: [['e1', 'e25'], ['e1', 'e35'], ['e25', 'e5'], ['e25', 'e7'], ['e25', 'e8'], ['e25', 'e36'], ['e8', 'e37'], ['e37', 'e38'], ['e38', 'e39'], ['e7', 'e29'], ['e7', 'e15'], ['e8', 'e26'], ['e15', 'e27'], ['e27', 'e28'], ['e35', 'e40']], minor: { kind: 'shard', v: L10(1.092), text: 'Shard gain ×1.092' } },
       { name: 'Trials', sub: 'Shards, Essence and Challenges', angle: 45, span: 85, start: 'e3', links: [['e3', 'e4'], ['e3', 'e14'], ['e3', 'e30'], ['e4', 'e13'], ['e13', 'e12'], ['e13', 'e33'], ['e14', 'e31'], ['e12', 'e32'], ['e32', 'e34']], minor: { kind: 'ess', v: L10(1.026), text: 'Essence gain ×1.026' } },
-      { name: 'Wonders', sub: 'new things to do', angle: 135, span: 85, start: 'e41', links: [['e41', 'e45'], ['e41', 'e43'], ['e41', 'e46'], ['e41', 'e42'], ['e45', 'e49'], ['e43', 'e44'], ['e43', 'e51'], ['e46', 'e47'], ['e49', 'e48'], ['e42', 'e50'], ['e50', 'e52']], minor: { kind: 'ess', v: L10(1.02), text: 'Essence gain ×1.02' } },
+      { name: 'Wonders', sub: 'new things to do', angle: 135, span: 85, start: 'e41', links: [['e41', 'e45'], ['e41', 'e43'], ['e41', 'e46'], ['e41', 'e42'], ['e45', 'e49'], ['e43', 'e44'], ['e43', 'e51'], ['e46', 'e47'], ['e49', 'e48'], ['e42', 'e50'], ['e50', 'e52'], ['e52', 'e53']], minor: { kind: 'ess', v: L10(1.02), text: 'Essence gain ×1.02' } },
     ] },
 };
 // the branch an idea belongs on, by what it does (t = its generator tier; -1 is Clock Speed)
@@ -3588,7 +3777,7 @@ function buildGuideTab() {
     [ascVisible, 'The Limit and Ascension', 'Quanta stops at 1e308, the Limit. There you can Ascend for Essence. At first an Ascension resets everything but Essence: Quanta, generators, the Upgrade web, Shards, the whole Shard web and its repeatables. The <b>Memory</b> branch of the Essence web lets you keep more: Muscle Memory keeps your automation, Perfect Recall the Shard web, Deep Memory the Upgrade web. Essence buys nodes in the <b>Essence web</b>; its root, <b>Apeiron</b>, breaks the Limit for good, so buy it first. Past it, every order of magnitude is a little harder to reach (dampening), but the Architect starts gathering <b>Inspiration</b>: Quanta production ×10 every minute, forever, so you never stop moving. Overgrowth, in the Memory branch, makes the outer tips of all three webs keep growing, so there is always another upgrade.'],
     [cardsOn, 'Cards', 'Once you buy Fracture, the root of the Shard web, the Architect deals you three cards every ten minutes of play (see the <b>Cards</b> tab). Keep one. Cards are Common, Rare, Epic or Legendary, and each rolls a little stronger or weaker. They give Quanta, speed up every generator, boost your top tier, Pulse, Lucky Pulses, Resonance or idle play for a while, add Shards or Essence to your next prestige, hand you production on the spot, or flip a coin for a big boost.'],
     [() => hasE('e3'), 'Challenges', 'Runs with a handicap. Reach the goal to complete one; every Challenge can be completed again and again with a higher goal and a stronger reward.'],
-    [ascVisible, 'Wonders', 'The fourth branch of the Essence web unlocks new things to do. <b>Observatory</b>: with every Ascension you choose a <b>Boon</b> that lasts until the next one (Twin Stars lets you keep two, Wide Sky adds a choice and makes them stronger). <b>Nova</b> is a third ability (key N): Quanta production to the power 1.04 for 20 seconds. <b>Reflex</b> fires your abilities as soon as they are ready, <b>Heartbeat</b> presses Pulse every 3 seconds, <b>Full House</b> and <b>Second Hand</b> improve your cards, <b>Afterglow</b> starts every Collapse with your first ten generators, <b>Reliquary</b> keeps Relics and Anomalies through Ascension, and at the far end, very dear, <b>Wind in Your Face</b> sets a wind blowing through the whole game: Quanta production exponent +0.03 and abilities that recharge twice as fast.'],
+    [ascVisible, 'Wonders', 'The fourth branch of the Essence web unlocks new things to do. <b>Observatory</b>: with every Ascension you choose a <b>Boon</b> that lasts until the next one (Twin Stars lets you keep two, Wide Sky adds a choice and makes them stronger). <b>Nova</b> is a third ability (key N): Quanta production to the power 1.04 for 20 seconds. <b>Reflex</b> fires your abilities as soon as they are ready, <b>Heartbeat</b> presses Pulse every 3 seconds, <b>Full House</b> and <b>Second Hand</b> improve your cards, <b>Afterglow</b> starts every Collapse with your first ten generators, <b>Reliquary</b> keeps Relics and Anomalies through Ascension, at the far end, very dear, <b>Wind in Your Face</b> sets a wind blowing through the whole game (Quanta production exponent +0.03, abilities recharge twice as fast), and the very last upgrade, <b>Bright Blue Sky</b>, ends the long night. Watch the sky behind the game: the night fills in as you climb the generator ladder, and the further you get into the Essence web, the closer the day comes.'],
     [() => SECRETS.some(s => S.ach[s.id]), 'Secrets', 'Some achievements are hidden. Each one shows only a hint until you earn it, and each unlocks something special: a <b>Relic</b> (an upgrade in the Upgrades tab that you buy again after every Ascension) or an <b>Anomaly</b> (a generator in the Generators tab that ignores Collapse; you buy it again after every Ascension, until Reliquary). Pay attention to the hints, and to odd things you might try.'],
     [() => true, 'Appearance', 'Options → Appearance lets you change the color theme, the UI size, and turn the starfield, animations, rainbow generator colors and pop-up notifications on or off.'],
     [() => true, 'Saving','The game saves itself every 10 seconds in this browser and keeps progressing while you are away, at 20% speed. After a big update, an older save gets a one-time notice offering a fresh start; your save keeps working either way. Use Options → Export to make a backup.'],
@@ -3928,7 +4117,7 @@ function buildOptTab() {
   up(() => { if (document.activeElement !== theme) theme.value = ui(S).theme; if (document.activeElement !== scale) scale.value = ui(S).scale; setT(scaleLbl, Math.round(ui(S).scale * 100) + '%'); }, 'opt');
   T.append(h('h2', {}, 'Appearance'),
     h('div', { class: 'opt-row' }, h('span', {}, 'Theme'), theme, h('span', {}, 'UI size'), scale, scaleLbl),
-    h('div', { class: 'opt-row' }, uchk('Starfield', 'stars'), uchk('Animations', 'motion'), uchk('Compact rows', 'compact'), uchk('Rainbow generator colors', 'tint'), uchk('Pop-up notifications', 'toasts')));
+    h('div', { class: 'opt-row' }, uchk('Starfield', 'stars'), uchk('Sky effects', 'sky'), uchk('Animations', 'motion'), uchk('Compact rows', 'compact'), uchk('Rainbow generator colors', 'tint'), uchk('Pop-up notifications', 'toasts')));
   T.append(h('h2', {}, 'Sound and story'), h('div', { class: 'opt-row' }, chk('Architect voice', 'sound'), h('span', {}, 'Volume'), vol, h('button', { onclick: () => { blip(1.15); } }, 'Test')),
     h('div', { class: 'opt-row' }, chk('UI sounds', 'sfx'), h('span', {}, 'Volume'), sfxVol, h('button', { onclick: () => { sfx('upgrade'); } }, 'Test'), h('button', { onclick: playIntro }, 'Replay intro'), h('button', { onclick: () => { S.tut = { step: 0, off: false }; setTab('gen'); } }, 'Restart tutorial')));
   T.append(h('h2', {}, 'Saving'),
@@ -4103,7 +4292,7 @@ function init() {
   document.addEventListener('visibilitychange', () => { if (document.hidden) save(); }); // phones often close apps without unloading
   // work offline once visited (only on the real site; not on local test servers or the Android app)
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { });
-  startStars(); startWind();
+  startStars(); startSky(); startWind();
 }
 
 // Debug / testing hooks

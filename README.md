@@ -38,6 +38,7 @@ The story unfolds in full-screen talks with the Architect at the big moments of 
 - **Three layers of progression:** Quanta, Shards and Essence, each with its own upgrades, repeatables and automation.
 - **Seven Challenges** you can complete forever, each completion harder and more rewarding.
 - **Secrets.** Hidden achievements show only a hint until you find them, and each unlocks a Relic (a special upgrade) or an Anomaly (a generator that ignores Collapse). Both are bought again after every Ascension, until Reliquary keeps them.
+- **A sky that comes alive.** Behind the game is a view from the Earth. The night fills in as you climb the generator ladder: embers from a campfire, hills, the Moon, shooting stars, the Milky Way, mountains. The further you get into the Essence web, the closer the day comes, until the very last upgrade: Bright Blue Sky.
 - **Make it yours.** Six color themes, adjustable UI size, compact layout, and toggles for the starfield, animations, generator colors and pop-ups.
 - **Steady pacing.** Progress is meant to unfold over hours, not explode in minutes.
 - **Plays while you're away.** Offline progress at 20% speed, autosave and save export/import.

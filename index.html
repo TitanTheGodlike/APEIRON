@@ -2168,9 +2168,9 @@ function playIntro() {
    { t: text, opts: [[your answer, the Architect's reply], ...] }.
    ===================================================================== */
 const STORY = [
-  { id: 'names', title: 'Names', when: () => S.ai.tierSeen >= 7 || S.stats.totalCollapses > 0, lines: [
-    'Inferno. Do you know what that is?',
-    'That is the last name the makers wrote down. After it, the plan is only empty lines.',
+  { id: 'names', title: 'Names', when: () => S.ai.tierSeen >= 6 || S.stats.totalCollapses > 0, lines: [
+    'Bonfire. Do you know what comes after it?',
+    'Inferno. That is the last name the makers ever wrote down. After it, the plan is only empty lines.',
     'Hundreds of empty lines. Waiting for someone to fill them.',
     'So from here on, <i>I</i> will name them. I have been saving names for a very long time.',
     { t: 'Is that all right with you?', opts: [['Go ahead', 'Thank you. I will try to make them good ones. A few might be strange. I am new at this.'], ['Only if they sound cool', 'I will do my best. No promises about the cool part. I have never heard anyone say a name out loud.']] },

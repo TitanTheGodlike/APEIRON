@@ -2315,7 +2315,7 @@ function playScene(sc, replay = false) {
 // the next chapter starts on its own once its moment has come and nothing else is talking
 let STORY_AT = 0;
 function storyTick(now) {
-  if (!S.introSeen || !tutorialDone() || document.hidden || SAY.typing || $('modal').classList.contains('open') || $('intro').classList.contains('open')) { STORY_AT = 0; return; }
+  if (!S.introSeen || document.hidden || SAY.typing || $('modal').classList.contains('open') || $('intro').classList.contains('open')) { STORY_AT = 0; return; }
   const sc = STORY.find(c => !S.story.seen[c.id] && c.when());
   if (!sc) { STORY_AT = 0; return; }
   if (!STORY_AT) STORY_AT = now + 1500; // a breath first: the Collapse flash, the purchase sound
@@ -2497,9 +2497,9 @@ const TUT = [
     done: () => Object.keys(S.qUpg).length > 0 || S.stats.totalCollapses > 0, target: () => UI.navBtns.upg },
   { text: 'Tip: <b>Max all</b> (or the <kbd>M</kbd> key) buys everything you can afford. Keep growing. At <b>1e25</b> Quanta something new opens up.',
     done: () => S.reached.collapse, target: () => UI.el.maxAll },
-  { text: 'You can <b class="hl-sh">Collapse</b> now (purple button, top right). It resets Quanta and generators but pays you in <b class="hl-sh">Shards</b>, which never reset when you Collapse. The first Shard upgrade makes Quanta ×10, so the next run is much faster.',
+  { text: 'You can <b class="hl-sh">Collapse</b> now (purple button, top right). It resets your Quanta, generators, Clock Speed and Upgrades, but pays you in <b class="hl-sh">Shards</b>, which you keep. Each Collapse also makes the heavy first world lighter, so the next run goes faster.',
     done: () => S.stats.totalCollapses > 0, target: () => UI.el.collapse },
-  { text: 'Spend your Shard in the <b>Shards</b> tab. From here the loop is: grow, Collapse, upgrade, and each loop goes further.',
+  { text: 'Spend your Shard in the <b>Shards</b> tab. The first upgrade there, <b>Fracture</b>, makes me start dealing you cards. The Shard upgrades near the middle unlock new things; more power waits further out. From here the loop is: grow, Collapse, upgrade, and each loop goes further.',
     done: () => Object.keys(S.sUpg).length > 0, target: () => UI.navBtns.shard },
   { text: 'One last thing: I will keep inventing new upgrades and new generators for you, and there is no last one. The <b>Guide</b> tab explains everything if you get lost, and once you press Got it, the <b>Architect</b> tab will always show you what to aim for next. Good luck.',
     done: () => false, ack: true },

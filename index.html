@@ -56,8 +56,8 @@ header{background:linear-gradient(180deg,rgba(6,8,20,.94),rgba(6,8,20,.82));back
 .res.es{border-left-color:rgba(var(--esr),.6)}.res.es .v{color:var(--es);text-shadow:0 0 16px rgba(var(--esr),.45)}
 .spacer{flex:1}
 .prestige{display:flex;gap:8px;flex-wrap:wrap}
-button{font:inherit;color:var(--ink);background:linear-gradient(180deg,rgba(40,50,100,.55),rgba(20,26,58,.75));border:1px solid var(--edge2);border-radius:3px;padding:6px 13px;cursor:pointer;transition:border-color .12s,box-shadow .12s,background .12s,transform .06s;letter-spacing:.02em}
-button:hover:not(:disabled){border-color:rgba(160,190,255,.7);box-shadow:0 0 12px rgba(127,170,255,.25)}
+button,a.btnlink{font:inherit;color:var(--ink);background:linear-gradient(180deg,rgba(40,50,100,.55),rgba(20,26,58,.75));border:1px solid var(--edge2);border-radius:3px;padding:6px 13px;cursor:pointer;text-decoration:none;transition:border-color .12s,box-shadow .12s,background .12s,transform .06s;letter-spacing:.02em}
+a.btnlink:hover,button:hover:not(:disabled){border-color:rgba(160,190,255,.7);box-shadow:0 0 12px rgba(127,170,255,.25)}
 button:active:not(:disabled){transform:translateY(1px)}
 button:disabled{opacity:.38;cursor:default}
 button.can{border-color:var(--q);box-shadow:0 0 10px rgba(var(--qr),.22),inset 0 0 12px rgba(var(--qr),.08);color:#eaffff}
@@ -532,7 +532,7 @@ const CFG = {
   damp: 0.82,         // past the Limit every order of magnitude is harder: the part above 1e308 is raised to this power
   clock0: 1.7,        // log10 first Clock Speed cost (50)
   offlineRate: 0.2,   // time away (game closed, or a paused phone app) counts at 20% speed
-  keeperCd: 15,       // seconds between purchases of each Upgrade-web keeper (Lightkeeper, Harmonist, Cascader)
+  keeperCd: 5,        // seconds between purchases of each Upgrade-web keeper (Lightkeeper, Harmonist, Cascader)
   clockScale: 12,     // Clock cost growth doubles every 12 levels
   genScale: 60,       // generator cost growth doubles every 60 bought
   clockBase: 1.1,
@@ -666,11 +666,11 @@ const SUPG = [
   { id: 'ab2', name: 'Automata III', cost: 60, auto: true, desc: 'An autobuyer for Embers.' },
   { id: 'ab3', name: 'Automata IV', cost: 300, auto: true, desc: 'An autobuyer for Flames.' },
   { id: 'ab4', name: 'Automata V', cost: 2000, auto: true, desc: 'An autobuyer for Flares.' },
-  { id: 'abL', name: 'Lightkeeper', cost: 8000, auto: true, desc: 'Automatically buys the cheapest node in the Light branch of the Upgrade web, one every 15 seconds.' },
+  { id: 'abL', name: 'Lightkeeper', cost: 8000, auto: true, desc: 'Automatically buys the cheapest node in the Light branch of the Upgrade web, one every 5 seconds.' },
   { id: 'ab5', name: 'Automata VI', cost: 1.5e4, auto: true, desc: 'An autobuyer for Blazes.' },
-  { id: 'abH', name: 'Harmonist', cost: 6e4, auto: true, desc: 'Automatically buys the cheapest node in the Harmony branch of the Upgrade web, one every 15 seconds.' },
+  { id: 'abH', name: 'Harmonist', cost: 6e4, auto: true, desc: 'Automatically buys the cheapest node in the Harmony branch of the Upgrade web, one every 5 seconds.' },
   { id: 'ab6', name: 'Automata VII', cost: 1.2e5, auto: true, desc: 'An autobuyer for Bonfires.' },
-  { id: 'abK', name: 'Cascader', cost: 4e5, auto: true, desc: 'Automatically buys the cheapest node in the Cascade branch of the Upgrade web, one every 15 seconds.' },
+  { id: 'abK', name: 'Cascader', cost: 4e5, auto: true, desc: 'Automatically buys the cheapest node in the Cascade branch of the Upgrade web, one every 5 seconds.' },
   { id: 'ab7', name: 'Automata VIII', cost: 1e6, auto: true, desc: 'An autobuyer for Infernos.' },
   { id: 'ab8', name: 'Automata IX', cost: 2e7, auto: true, desc: 'An autobuyer for Firestorms. Every Automata you own adds the next one, for the next generator.' },
   { id: 's11', name: 'Starseed', cost: 6e6, auto: true, desc: 'Start every Collapse with 1e6 Quanta.' },
@@ -715,7 +715,10 @@ const sForkTaken = id => !!(SFORK[id] && S.sUpg[SFORK[id]]);
 const ABIL = {
   surge: { name: 'Surge', node: 's25', dur: () => (hasS('s30') ? 60 : 30) + procSum('surge'), cd: () => hasS('s30') ? 180 : 300 },
   fold: { name: 'Time Fold', node: 's26', dur: () => 0, cd: () => 1200 * cdMult('fold') },
+  nova: { name: 'Nova', node: 'e43', dur: () => 20, cd: () => hasE('e51') ? 600 : 900 },
 };
+const abilOn = k => { const n = ABIL[k].node; return n[0] === 'e' ? hasE(n) : hasS(n); };
+const novaActive = () => hasE('e43') && S.stats.time < (S.abil.nova.until || 0);
 const abilReady = k => S.stats.time >= (S.abil[k].ready || 0);
 const surgeActive = () => hasS('s25') && S.stats.time < (S.abil.surge.until || 0);
 const busyActive = () => hasS('s22') && S.ai.pulses.length > 0 && S.stats.time - S.ai.pulses[S.ai.pulses.length - 1] <= 3;
@@ -733,9 +736,9 @@ const EUPG = [
   { id: 'e3', name: 'Trials', cost: 3, desc: 'Unlock Challenges.' },
   { id: 'e4', name: 'Bloom', cost: 5, desc: 'Shard gain ×(1 + Ascensions).', eff: () => '×' + fmt(1 + S.ascensions) },
   { id: 'e5', name: 'Perfect Recall', cost: 1e4, desc: 'Keep the whole Shard web when you Ascend: its upgrades, bonus nodes and the Architect’s Shard ideas.' },
-  { id: 'e37', name: 'Prism Steward', cost: 1e7, desc: 'Automatically buys the cheapest node in the Radiance branch of the Shard web, one every 15 seconds. Path choices are left to you.' },
-  { id: 'e38', name: 'Gear Steward', cost: 1e10, desc: 'Automatically buys the cheapest node in the Clockwork branch of the Shard web, one every 15 seconds. Path choices are left to you.' },
-  { id: 'e39', name: 'Echo Steward', cost: 1e13, desc: 'Automatically buys the cheapest node in the Echoes branch of the Shard web, one every 15 seconds. Path choices are left to you.' },
+  { id: 'e37', name: 'Prism Steward', cost: 1e7, desc: 'Automatically buys the cheapest node in the Radiance branch of the Shard web, one every 5 seconds. Path choices are left to you.' },
+  { id: 'e38', name: 'Gear Steward', cost: 1e10, desc: 'Automatically buys the cheapest node in the Clockwork branch of the Shard web, one every 5 seconds. Path choices are left to you.' },
+  { id: 'e39', name: 'Echo Steward', cost: 1e13, desc: 'Automatically buys the cheapest node in the Echoes branch of the Shard web, one every 5 seconds. Path choices are left to you.' },
   { id: 'e36', name: 'Overgrowth', cost: 40, desc: 'The webs never end: the outer tips of the Upgrade, Shard and Essence webs keep growing. Every node you buy at a tip sprouts the next one, and the lines keep forking into new branches.' },
   { id: 'e40', name: 'Shard Wholesale', cost: 4, desc: 'Adds a Buy all button to the Shard web (key B): one press buys every Shard upgrade you can afford, cheapest first. It never makes a path choice for you.' },
   { id: 'e35', name: 'Muscle Memory', cost: 2, desc: 'Keep Wholesale, Memory, the Automata, Clockmaker, the three branch keepers, Starseed and Self-Collapse when you Ascend.' },
@@ -757,6 +760,18 @@ const EUPG = [
   kx('e27', 'Long Memory', 5000, 'thrift', 0.1, 7), fx('e28', 'Archive', 5e5, 'shard', 1.73),
   fx('e30', 'Proving Ground', 8, 'ess', 1.02), fx('e33', 'Gauntlet', 300, 'shard', 1.73), fx('e31', 'Stillwater', 400, 'ess', 1.05),
   kx('e32', 'Crucible', 1e5, 'surge', 20), fx('e34', 'Apotheosis', 1e7, 'ess', 1.07),
+  // Wonders, the fourth branch: only unlocks, new things to do rather than more of the same
+  { id: 'e41', name: 'Observatory', cost: 3, desc: 'Unlock Boons: with every Ascension I show you three Boons and you choose one. It lasts until your next Ascension (Ascension tab).' },
+  { id: 'e45', name: 'Heartbeat', cost: 12, desc: 'Pulse presses itself every 3 seconds, even while you are away (switch it off in Automation).' },
+  { id: 'e43', name: 'Nova', cost: 25, desc: 'Unlock the Nova ability (key N): for 20 seconds Quanta production is raised to the power 1.04. Recharges in 15 minutes.' },
+  { id: 'e46', name: 'Full House', cost: 50, desc: 'I deal four cards to a hand instead of three, and a new hand comes every 7 minutes instead of 10.' },
+  { id: 'e49', name: 'Afterglow', cost: 150, desc: 'Every Collapse starts with one of each of your first ten generators already there (not inside Challenges).' },
+  { id: 'e44', name: 'Reflex', cost: 250, desc: 'Surge, Time Fold and Nova fire on their own whenever they are ready (switch it off in Automation).' },
+  { id: 'e42', name: 'Twin Stars', cost: 800, desc: 'Boons: I show you four, and you keep two.' },
+  { id: 'e47', name: 'Second Hand', cost: 2000, desc: 'Keep two cards from every hand instead of one.' },
+  { id: 'e48', name: 'Reliquary', cost: 5000, desc: 'Relics and Anomalies stay through Ascension: no more buying them again.' },
+  { id: 'e51', name: 'Supernova', cost: 3e4, desc: 'Nova raises Quanta production to the power 1.06 instead of 1.04, and recharges in 10 minutes.' },
+  { id: 'e50', name: 'Wide Sky', cost: 5e5, desc: 'Boons: one more to choose from, and every Boon is half again as strong.' },
 ];
 // every field upgrade, per field, with its web; plus plain descriptions for the ones written with fx()
 const FU = {};
@@ -1226,10 +1241,11 @@ function newState() {
     settings: { notation: 'sci', buyMode: 'max', autosave: true, offline: true, tab: 'gen', sound: true, volume: 0.6, sfx: true, sfxVol: 0.5,
       ui: { theme: 'nebula', stars: true, motion: true, compact: false, tint: true, toasts: true, scale: 1 } },
     relics: {}, anom: { echo: 0, hourglass: 0, prism: 0 }, secret: { orb: 0, guide: 0, heads: 0, tails: 0, reshapes: [], heard: 0, skips: 0, themes: [], ideasAsc: 0 },
-    abil: { surge: { ready: 0, until: 0 }, fold: { ready: 0 } },
+    abil: { surge: { ready: 0, until: 0 }, fold: { ready: 0 }, nova: { ready: 0, until: 0 } },
     minor: { q: {}, s: {}, e: {} },
     hist: { every: 30, next: 0, t: [], q: [], best: [], sh: [], es: [] },
-    cards: { hand: null, active: [], next: 0, drawn: 0, by: [0, 0, 0, 0], seq: 0 },
+    cards: { hand: null, active: [], next: 0, drawn: 0, by: [0, 0, 0, 0], seq: 0, kept: 0 },
+    boon: { hand: null, active: [], left: 0 }, // Boons (Observatory): the choice waiting, and what works this Ascension
     introSeen: false,
     last: Date.now(),
   };
@@ -1359,7 +1375,7 @@ function qExponent() {
 function qpsLog(gl = globalMultLog()) {
   const a = S.gens[0].amt; if (a.m <= 0) return -Infinity;
   const raw = a.log10() + tierMultLog(0, gl);
-  const L = raw > 0 ? raw * qExponent() : raw;
+  const L = raw > 0 ? raw * qExponent() * (novaActive() ? (hasE('e51') ? 1.06 : 1.04) : 1) : raw; // Nova: production to a power
   return dampen(L);
 }
 // slows the first run to about half an hour; each lifetime Collapse halves it, so it fades out over the next few
@@ -1498,10 +1514,11 @@ function reshapeTree() {
 }
 function useAbility(k) {
   const a = ABIL[k];
-  if (!hasS(a.node) || !abilReady(k)) return false;
+  if (!abilOn(k) || !abilReady(k)) return false;
   const now = S.stats.time;
-  S.abil[k].ready = now + a.cd();
+  S.abil[k].ready = now + a.cd() * (boonHas('abilcd') ? 0.5 : 1);
   if (k === 'surge') S.abil.surge.until = now + a.dur();
+  if (k === 'nova') S.abil.nova.until = now + a.dur();
   if (k === 'fold') { const p = qpsLog(); if (p > -Infinity) { S.q = S.q.add(D.fromLog(p + L10(600))); capQ(); } }
   S.run.abil++;
   return true;
@@ -1511,6 +1528,7 @@ function buyE(id) {
   if (S.eUpg[id] || S.essence.lt(u.cost)) return false;
   S.essence = S.essence.sub(u.cost).max0(); S.eUpg[id] = true; UPG_VER++;
   if (id === 'e6') { toast('Apeiron: the Limit is broken. Quanta can grow forever.', 'es'); aiEvent('unbound'); }
+  if (id === 'e41') dealBoons(); // the first hand of Boons comes right away
   return true;
 }
 const repCostLog = (def, L, n = 1) => quadSumLog(L10(def.c0), L10(def.r), def.q, L, n);
@@ -1526,7 +1544,8 @@ function buyRep(def, store, cur, mode) {
 
 function resetQLayer() {
   S.q = D.fromLog(headStartLog());
-  S.gens = [newGen()];
+  // Afterglow: one of each of the first ten generators is already there (not inside Challenges)
+  S.gens = hasE('e49') && S.chal.active < 0 ? Array.from({ length: 10 }, () => ({ amt: D.fromNum(1), bought: 0 })) : [newGen()];
   S.clock = 0;
   if (!hasS('s2')) { S.qUpg = {}; S.proc.q = 0; for (const u of S.forge.q) u.own = false; S.minor.q = {}; MINOR_VER++; }
   S.stats.tCollapse = 0;
@@ -1571,7 +1590,9 @@ function doAscend(quiet = false) {
   else { S.qUpg = {}; S.proc.q = 0; for (const u of S.forge.q) u.own = false; S.minor.q = {}; }
   MINOR_VER++;
   S.stats.tAscend = 0; S.secret.ideasAsc = 0;
-  S.relics = {}; // relics are bought again after every Ascension (the secrets keep them unlocked)
+  // Relics and Anomalies are bought again after every Ascension (the secrets keep them unlocked), unless Reliquary
+  if (!hasE('e48')) { S.relics = {}; for (const k in S.anom) S.anom[k] = 0; }
+  S.boon.active = []; S.boon.hand = null; S.boon.left = 0; if (boonOn()) dealBoons();
   S.cards.active = S.cards.active.filter(c => c.until >= 0); // Ascension uses up every until-the-next card
   aiEvent('ascend', gain);
   if (!quiet) { flash('rgba(255,210,122,.55)'); sfx('ascend'); if (S.ascensions === 1) toast('You Ascended. Spend Essence in the Ascension tab.', 'es'); }
@@ -1581,6 +1602,7 @@ function startChal(i) {
   if (S.chal.active === i) return;
   if (!doCollapse(true)) resetQLayer();
   S.chal.active = i;
+  if (hasE('e49')) S.gens = [newGen()]; // no Afterglow inside a Challenge
   flash('rgba(255,123,139,.4)'); sfx('chal');
 }
 function leaveChal() {
@@ -1600,6 +1622,7 @@ function completeChal() {
 
 /* ---------------- Automation ---------------- */
 function runAuto() {
+  if (hasE('e44') && S.auto.reflex !== false) for (const k in ABIL) if (abilOn(k) && abilReady(k)) useAbility(k); // Reflex
   if (S.sUpg.abC && S.auto.clock) buyClock('max');
   for (let i = S.gens.length - 1; i >= 0; i--) {
     if (S.sUpg['ab' + i] && S.auto.gens[i] !== false) buyGen(i, 'max');
@@ -1633,10 +1656,12 @@ function checkAch() { for (const a of ACH) if (!S.ach[a[0]] && a[3] && a[3]()) g
 /* =====================================================================
    SIMULATION TICK
    ===================================================================== */
+let HEART = 0; // Heartbeat: seconds since its last Pulse
 function tick(dt) {
   if (!(dt > 0)) return;
   const st = S.stats;
   st.time += dt; st.tCollapse += dt; st.tAscend += dt;
+  if (hasE('e45') && S.auto.heart !== false && (HEART += dt) >= 3) { const n = Math.floor(HEART / 3); HEART -= 3 * n; S.q = S.q.add(pulseGain().mul(D.fromNum(n))); capQ(); }
   if (S.eUpg.e6) st.tUnbound += dt;
   const gl = globalMultLog(), ldt = L10(dt);
   for (let i = S.gens.length - 1; i >= 1; i--) {
@@ -1679,6 +1704,9 @@ const RARITY = [
   { id: 'legend', name: 'Legendary', w: 2, p: 6 },
 ];
 const DEAL_EVERY = 600; // seconds of game time between hands
+const dealEvery = () => (hasE('e46') ? 420 : DEAL_EVERY) * (boonHas('deal') ? 0.5 : 1); // Full House, the Dealer Boon
+const handSize = () => hasE('e46') ? 4 : 3;
+const NUMW = ['no', 'one', 'two', 'three', 'four', 'five'];
 const cardsOn = () => !!S.sUpg.s1; // Fracture, the root of the Shard web, starts the deck
 const cardScale = () => 0.6 + Math.max(0, runBestLog()) / 120; // a card matters early and late
 const durTxt = s => s % 60 === 0 && s >= 60 ? (s / 60) + (s === 60 ? ' minute' : ' minutes') : fmtTime(s); // 300 → '5 minutes'
@@ -1694,15 +1722,47 @@ const CARD_KINDS = {
   time: { w: 1.5, g: '⌛', names: ['Borrowed Time', 'Lost Hour', 'Stopped Clock', 'Time Capsule'], instant: true, val: p => 120 * p, text: c => 'Right now: gain ' + durTxt(Math.round(c.v / 60) * 60) + ' of Quanta production.' },
   shard: { w: 1.5, req: () => S.collapses > 0 || S.ascensions > 0, g: '◆', names: ['Fault Line', 'Geode', 'Cracked Mirror', 'Shard Storm'], dur: -1, val: p => L10(1 + p), text: c => 'Your next Collapse gives ' + fmtMult(c.v) + ' Shards.' },
   ess: { w: 1, req: () => S.ascensions > 0, g: '✧', names: ['Distilled Light', 'Halo', 'Vesper', 'Last Ember'], dur: -1, val: p => L10(1 + 0.5 * p), text: c => 'Your next Ascension gives ' + fmtMult(c.v) + ' Essence.' },
-  abil: { w: 0.8, req: () => hasS('s25') || hasS('s26'), g: '↻', names: ['Second Wind', 'Rewind', 'Encore'], instant: true, val: () => 1, text: () => 'Right now: Surge and Time Fold recharge.' },
+  abil: { w: 0.8, req: () => hasS('s25') || hasS('s26') || hasE('e43'), g: '↻', names: ['Second Wind', 'Rewind', 'Encore'], instant: true, val: () => 1, text: () => 'Right now: your abilities recharge (Surge, Time Fold, Nova).' },
   ideas: { w: 0.8, g: '✦', names: ['Inspiration', 'Sketchbook', 'Bright Idea', 'Muse'], dur: 600, val: p => p, text: c => 'The Architect’s ideas cost ÷' + fmt(D.fromLog(c.v)) + ' ' + untilTxt(c) + '.' },
   gamble: { w: 0.7, g: '⚀', names: ['Coin Flip', 'Double or Nothing', 'Wild Card'], val: (p, s) => 2 * p * s, text: c => 'A coin flip when you keep it: heads, Quanta production ' + fmtMult(c.v) + ' for 10 minutes; tails, nothing.' },
 };
-const cardSum = k => { let s = 0; for (const c of S.cards.active) if (c.k === k) s += c.v; return s; };
-const cardHas = k => S.cards.active.some(c => c.k === k);
+// Boons add to the same effects as the cards, so they work everywhere a card of that kind would
+const cardSum = k => { let s = 0; for (const c of S.cards.active) if (c.k === k) s += c.v; for (const b of S.boon.active) if (b.k === k) s += b.v; return s; };
+const cardHas = k => S.cards.active.some(c => c.k === k) || S.boon.active.some(b => b.k === k);
+/* Boons (Observatory, Wonders branch): with every Ascension I show you a few and you keep one (Twin Stars: two).
+   A Boon lasts until the next Ascension. Its strength is set when it is dealt, from the best Quanta you ever had,
+   about a very lucky Legendary card's worth; Wide Sky makes them half again as strong. */
+const BOON_KINDS = {
+  qmult: { g: '☀', names: ['The Sun', 'Gilded Sky', 'Noon'], val: s => CARD_KINDS.qmult.val(9, s), text: v => 'Quanta production ' + fmtMult(v) + '.' },
+  top: { g: '▲', names: ['The Tower', 'High Star', 'Summit'], val: s => CARD_KINDS.top.val(9, s), text: v => 'Your highest generator ' + fmtMult(v) + '.' },
+  idle: { g: '☾', names: ['The Moon', 'Long Night', 'Deep Sleep'], val: s => CARD_KINDS.idle.val(9, s), text: v => 'While you have not touched the game for a minute, Quanta production ' + fmtMult(v) + '.' },
+  pulse: { g: '✋', names: ['The Hand', 'Drumbeat'], val: () => CARD_KINDS.pulse.val(9), text: v => 'Pulse ' + fmtMult(v) + ', and it recharges twice as fast.' },
+  lucky: { g: '✧', names: ['The Wheel', 'Fortune'], val: () => CARD_KINDS.lucky.val(3), text: v => 'Lucky Pulse chance +' + pct(v) + '.' },
+  shard: { g: '◆', names: ['The Quarry', 'Broken Crown'], val: () => L10(30), text: v => 'Every Collapse gives ' + fmtMult(v) + ' Shards.' },
+  ess: { g: '✧', names: ['The Chalice', 'Distiller'], val: () => L10(3), text: v => 'Your next Ascension gives ' + fmtMult(v) + ' Essence.' },
+  ideas: { g: '✦', names: ['The Muse', 'Open Book'], val: () => 6, text: v => 'The Architect’s ideas cost ÷' + fmt(D.fromLog(v)) + '.' },
+  abilcd: { g: '↻', names: ['The Wind', 'Quick Breath'], req: () => hasS('s25') || hasS('s26') || hasE('e43'), val: () => 0, text: () => 'Surge, Time Fold and Nova recharge twice as fast.' },
+  deal: { g: '♢', names: ['The Dealer', 'Open Hand'], req: () => cardsOn(), val: () => 0, text: () => 'Hands of cards come twice as often.' },
+};
+const boonOn = () => hasE('e41');
+const boonHas = k => S.boon.active.some(b => b.k === k);
+function dealBoons() {
+  const n = (hasE('e42') ? 4 : 3) + (hasE('e50') ? 1 : 0), s = 0.6 + Math.max(0, S.stats.bestQ.log10()) / 120, x = hasE('e50') ? 1.5 : 1;
+  const pool = Object.keys(BOON_KINDS).filter(k => !BOON_KINDS[k].req || BOON_KINDS[k].req()), hand = [];
+  while (hand.length < n && pool.length) { const k = pool.splice(Math.floor(Math.random() * pool.length), 1)[0], d = BOON_KINDS[k]; hand.push({ k, v: d.val(s) * x, name: rnd(d.names), id: ++S.cards.seq }); }
+  S.boon.hand = hand; S.boon.left = hasE('e42') ? 2 : 1;
+  aiSay(rnd(['The stars have turned. Choose a Boon in the Ascension tab.', 'A new sky, a new Boon. It waits in the Ascension tab.', 'I read the stars for you. Pick a Boon in the Ascension tab.']));
+}
+function pickBoon(i) {
+  const B = S.boon, b = B.hand && B.hand[i]; if (!b) return false;
+  B.active.push({ k: b.k, v: b.v, name: b.name });
+  B.hand = B.hand.filter((_, j) => j !== i);
+  if (--B.left <= 0 || !B.hand.length) { B.hand = null; B.left = 0; }
+  return true;
+}
 function dealCards() {
   const hand = [], used = new Set(), s = cardScale();
-  for (let n = 0; n < 3; n++) {
+  for (let n = 0; n < handSize(); n++) {
     let tot = 0; const pool = [];
     for (const k in CARD_KINDS) { const d = CARD_KINDS[k]; if (used.has(k) || (d.req && !d.req())) continue; pool.push(k); tot += d.w; }
     let r = Math.random() * tot, k = pool[0];
@@ -1713,14 +1773,17 @@ function dealCards() {
     hand.push({ k, r: ri, v: d.val(p, s), dur: d.dur === undefined ? 0 : d.dur, name: rnd(d.names), id: ++S.cards.seq });
   }
   S.cards.hand = hand;
-  aiSay(rnd(['I drew three cards for you. Keep one.', 'Your hand is dealt. Choose.', 'Three cards, one choice. The others go back in the deck.', 'Fortune is a kind of Quanta too. Pick a card.']));
+  aiSay(rnd(['I drew ' + NUMW[hand.length] + ' cards for you. Keep ' + (hasE('e47') ? 'two' : 'one') + '.', 'Your hand is dealt. Choose.', 'Fortune is a kind of Quanta too. Pick a card.', 'Cards on the table. Keep what you like.']));
 }
 function keepCard(i) {
   const hand = S.cards.hand; if (!hand || !hand[i]) return false;
   const c = hand[i], d = CARD_KINDS[c.k], t = S.stats.time;
-  S.cards.hand = null; S.cards.next = t + DEAL_EVERY; S.cards.drawn++; S.cards.by[c.r]++;
+  // Second Hand: the first card you keep leaves the rest of the hand on the table for one more
+  if (hasE('e47') && !S.cards.kept && hand.length > 1) { S.cards.kept = 1; S.cards.hand = hand.filter((_, j) => j !== i); }
+  else { S.cards.hand = null; S.cards.kept = 0; S.cards.next = t + dealEvery(); }
+  S.cards.drawn++; S.cards.by[c.r]++;
   if (c.k === 'time') { const p = qpsLog(); if (p > -Infinity) { S.q = S.q.add(D.fromLog(p + L10(c.v))); capQ(); } }
-  else if (c.k === 'abil') { S.abil.surge.ready = 0; S.abil.fold.ready = 0; }
+  else if (c.k === 'abil') { S.abil.surge.ready = 0; S.abil.fold.ready = 0; S.abil.nova.ready = 0; }
   else if (c.k === 'gamble') {
     if (Math.random() < (hasR('consolation') ? 2 / 3 : 0.5)) { S.cards.active.push({ k: 'qmult', v: c.v, dur: 600, until: t + 600, name: c.name + ' (heads)', r: c.r }); aiSay('Heads. Enjoy it.'); S.secret.heads++; S.secret.tails = 0; if (S.secret.heads >= 5) grantSecret('x16'); }
     else { aiSay(rnd(['Tails. The deck owes you one.', 'Tails. Nothing this time.'])); S.secret.tails++; S.secret.heads = 0; if (S.secret.tails >= 5) grantSecret('x15'); }
@@ -1745,10 +1808,11 @@ function simulate(total, maxTicks = 2000) {
    ===================================================================== */
 const SAVE_KEY = 'apeiron.save.v1';
 // Big updates bump SAVE_VER and add a line here. A save from before one gets a one-time notice offering a fresh start.
-const SAVE_VER = 3;
+const SAVE_VER = 4;
 const BIG_UPDATES = [
   { v: 2, what: 'over 400 upgrades across the three webs, cards from the Architect, a much slower opening, a Shard web that starts with unlocks, upgrades that come one at a time, Ascension that resets the Shard web, and offline progress at 20% speed' },
   { v: 3, what: 'the story: full-screen chapters with the Architect at the big moments (hear them again in the Architect tab, under Story), and Overgrowth that branches into many more lines' },
+  { v: 4, what: 'Wonders, a fourth branch of the Essence web full of unlocks (Boons each Ascension, the Nova ability, Reflex, Heartbeat, bigger hands of cards, Afterglow, Reliquary), Anomalies bought again after every Ascension like Relics, and upgrade keepers that buy every 5 seconds' },
 ];
 const reviver = (k, v) => typeof v === 'string' && v.startsWith('D:') ? D.fromStr(v.slice(2)) : v;
 function merge(def, sav) {
@@ -1777,7 +1841,7 @@ const decodeSave = str => loadFrom(decodeURIComponent(escape(atob(str.trim()))))
 
 /* =====================================================================
    SECRETS — hidden achievements that unlock Relics (special upgrades)
-   and Anomalies (special generators). Neither ever resets.
+   and Anomalies (special generators). Both are bought again after every Ascension (Reliquary keeps them).
    ===================================================================== */
 const RELICS = [
   { id: 'metronome', name: 'Metronome Heart', cost: 6, desc: 'Pulse recharges in 1 second and grants 2 more seconds of Quanta production.' },
@@ -2487,7 +2551,7 @@ const TABS = [
   ['gen', 'Generators', () => true, () => false],
   ['upg', 'Upgrades', () => true, () => QUPG.some(u => !S.qUpg[u.id] && lq() >= u.cost) || openAffordable('q')],
   ['shard', 'Shards', shardsVisible, () => SUPG.some(u => !S.sUpg[u.id] && S.shards.gte(u.cost)) || (shardsVisible() && openAffordable('s'))],
-  ['asc', 'Ascension', ascVisible, () => EUPG.some(u => !S.eUpg[u.id] && S.essence.gte(u.cost)) || (streamVisible('e') && openAffordable('e'))],
+  ['asc', 'Ascension', ascVisible, () => !!S.boon.hand || EUPG.some(u => !S.eUpg[u.id] && S.essence.gte(u.cost)) || (streamVisible('e') && openAffordable('e'))],
   ['cards', 'Cards', () => cardsOn(), () => !!S.cards.hand],
   ['auto', 'Automation', autoVisible, () => false],
   ['chal', 'Challenges', () => hasE('e3'), () => false],
@@ -2574,10 +2638,10 @@ function abilityButtons() {
   return Object.entries(ABIL).map(([k, a]) => {
     const b = h('button', { class: 'abil', onclick: act(() => useAbility(k), k === 'surge' ? 'upgrade' : 'buy') });
     up(() => {
-      const unl = hasS(a.node); show(b, unl); if (!unl) return;
-      const now = S.stats.time, ready = abilReady(k), live = k === 'surge' && surgeActive();
+      const unl = abilOn(k); show(b, unl); if (!unl) return;
+      const now = S.stats.time, ready = abilReady(k), live = (k === 'surge' && surgeActive()) || (k === 'nova' && novaActive());
       let txt, p;
-      if (live) { const left = S.abil.surge.until - now; txt = a.name + ' · active ' + Math.ceil(left) + 's'; p = left / a.dur(); }
+      if (live) { const left = S.abil[k].until - now; txt = a.name + ' · active ' + Math.ceil(left) + 's'; p = left / a.dur(); }
       else if (ready) { txt = a.name + ' · ready'; p = 1; }
       else { const left = S.abil[k].ready - now; txt = a.name + ' · ' + fmtClock(left); p = 1 - left / a.cd(); }
       setT(b, txt); b.style.setProperty('--cd', (Math.max(0, Math.min(1, p)) * 100).toFixed(1) + '%');
@@ -2661,11 +2725,11 @@ function buildGenTab() {
   };
   up(() => { while (UI.genRows.length < S.gens.length) makeRow(UI.genRows.length); });
 
-  // Anomalies: secret generators unlocked by hidden achievements; they never reset
+  // Anomalies: secret generators unlocked by hidden achievements; they ignore Collapse, not Ascension (unless Reliquary)
   const anomHead = h('h2', {}, 'Anomalies');
   const anomNote = h('div', { class: 'muted', style: 'margin:-4px 0 8px' }, 'Things that should not exist. They ignore Collapse and Ascension.');
   T.append(anomHead, anomNote);
-  up(() => { const v = ANOMALIES.some(a => rewardUnlocked(a.id)); show(anomHead, v); show(anomNote, v); }, 'gen');
+  up(() => { const v = ANOMALIES.some(a => rewardUnlocked(a.id)); show(anomHead, v); show(anomNote, v); if (v) setT(anomNote, hasE('e48') ? 'Things that should not exist. They ignore Collapse and Ascension.' : 'Things that should not exist. They ignore Collapse, but after an Ascension you buy them again.'); }, 'gen');
   for (const a of ANOMALIES) {
     const lv = h('div', { class: 'sub' }), ef = h('div', { class: 'mult' }), bb = h('button', { onclick: act(() => buyAnom(a, S.settings.buyMode === 'max' ? 'max' : '1')) });
     const row = h('div', { class: 'row anom' }, h('div', {}, h('div', { class: 'name' }, h('span', { class: 'tier' }, '✶'), a.name), lv), h('div', {}, ef), h('div', { class: 'rate' }, a.desc), bb);
@@ -2709,9 +2773,10 @@ const WEB_DEF = {
   e: { root: 'e6', cur: 'essence', curName: 'Essence', costLog: id => L10(EBY[id].cost), owned: id => !!S.eUpg[id], loopNodes: 1,
     ring: { kind: 'qmult', v: L10(2), text: 'Quanta production ×2' },
     branches: [
-      { name: 'Starlight', sub: 'raw power', angle: -150, start: 'e2', links: [['e2', 'e19'], ['e19', 'e9'], ['e2', 'e10'], ['e9', 'e16'], ['e9', 'e20'], ['e10', 'e11'], ['e19', 'e22'], ['e11', 'e18'], ['e10', 'e23'], ['e16', 'e17'], ['e20', 'e21'], ['e17', 'e24']], minor: { kind: 'qmult', v: L10(1.96), text: 'Quanta production ×1.96' } },
-      { name: 'Memory', sub: 'what you keep, and automation', angle: -30, span: 128, start: 'e1', links: [['e1', 'e25'], ['e1', 'e35'], ['e25', 'e5'], ['e25', 'e7'], ['e25', 'e8'], ['e25', 'e36'], ['e8', 'e37'], ['e37', 'e38'], ['e38', 'e39'], ['e7', 'e29'], ['e7', 'e15'], ['e8', 'e26'], ['e15', 'e27'], ['e27', 'e28'], ['e35', 'e40']], minor: { kind: 'shard', v: L10(1.092), text: 'Shard gain ×1.092' } },
-      { name: 'Trials', sub: 'Shards, Essence and Challenges', angle: 90, start: 'e3', links: [['e3', 'e4'], ['e3', 'e14'], ['e3', 'e30'], ['e4', 'e13'], ['e13', 'e12'], ['e13', 'e33'], ['e14', 'e31'], ['e12', 'e32'], ['e32', 'e34']], minor: { kind: 'ess', v: L10(1.026), text: 'Essence gain ×1.026' } },
+      { name: 'Starlight', sub: 'raw power', angle: -135, span: 85, start: 'e2', links: [['e2', 'e19'], ['e19', 'e9'], ['e2', 'e10'], ['e9', 'e16'], ['e9', 'e20'], ['e10', 'e11'], ['e19', 'e22'], ['e11', 'e18'], ['e10', 'e23'], ['e16', 'e17'], ['e20', 'e21'], ['e17', 'e24']], minor: { kind: 'qmult', v: L10(1.96), text: 'Quanta production ×1.96' } },
+      { name: 'Memory', sub: 'what you keep, and automation', angle: -45, span: 100, start: 'e1', links: [['e1', 'e25'], ['e1', 'e35'], ['e25', 'e5'], ['e25', 'e7'], ['e25', 'e8'], ['e25', 'e36'], ['e8', 'e37'], ['e37', 'e38'], ['e38', 'e39'], ['e7', 'e29'], ['e7', 'e15'], ['e8', 'e26'], ['e15', 'e27'], ['e27', 'e28'], ['e35', 'e40']], minor: { kind: 'shard', v: L10(1.092), text: 'Shard gain ×1.092' } },
+      { name: 'Trials', sub: 'Shards, Essence and Challenges', angle: 45, span: 85, start: 'e3', links: [['e3', 'e4'], ['e3', 'e14'], ['e3', 'e30'], ['e4', 'e13'], ['e13', 'e12'], ['e13', 'e33'], ['e14', 'e31'], ['e12', 'e32'], ['e32', 'e34']], minor: { kind: 'ess', v: L10(1.026), text: 'Essence gain ×1.026' } },
+      { name: 'Wonders', sub: 'new things to do', angle: 135, span: 85, start: 'e41', links: [['e41', 'e45'], ['e41', 'e43'], ['e41', 'e46'], ['e41', 'e42'], ['e45', 'e49'], ['e43', 'e44'], ['e43', 'e51'], ['e46', 'e47'], ['e49', 'e48'], ['e42', 'e50']], minor: { kind: 'ess', v: L10(1.02), text: 'Essence gain ×1.02' } },
     ] },
 };
 // the branch an idea belongs on, by what it does (t = its generator tier; -1 is Clock Speed)
@@ -2789,6 +2854,7 @@ function growWebs() {
     let maxC = 0; for (const br of W.branches) for (const l of br.links) for (const id of [].concat(l[0], l[1])) maxC = Math.max(maxC, costLog(id));
     let k = k0;
     W.branches.forEach((br, b) => {
+      if (!cfg.kinds[b]) return; // Wonders (Essence web) is unlocks only: nothing grows on it
       const ids = []; for (const l of br.links) for (const id of [].concat(l[0], l[1])) if (!ids.includes(id)) ids.push(id);
       if (!pickAnchors) for (const late of GROW_LATE) if (ids.includes(late)) ids.splice(ids.indexOf(late), 1);
       if (!pickAnchors && layer === 's' && b === 1) { ids.splice(ids.indexOf('s2'), 1); ids.unshift('s2'); } // Wholesale came later: same anchors as before
@@ -2863,6 +2929,7 @@ function dynState(layer) {
   const W = WEB_DEF[layer], parents = new Set(), tips = [];
   for (const br of W.branches) for (const [a] of br.links) for (const x of [].concat(a)) parents.add(x);
   W.branches.forEach((br, b) => {
+    if (!GROW[layer].kinds[b]) return; // Wonders does not grow endlessly either
     const leaves = [];
     for (const [, c] of br.links) for (const y of [].concat(c)) if (!parents.has(y) && !leaves.includes(y)) leaves.push(y);
     leaves.sort((x, y) => W.costLog(y) - W.costLog(x));
@@ -3267,7 +3334,7 @@ function webInfo(layer, n) {
   const choice = ou ? 'Path choice: you get this or ' + ou.name + ', not both. Buying one closes the other' + (layer === 's' ? ' (Reshape the tree to switch).' : '.') : '';
   return { name: u.name, label: n.type === 'root' ? 'The root' : (ou ? 'Path choice · ' : n.dyn && !n.big ? 'Endless growth · ' : 'Notable · ') + (br ? br.name : ''), desc: u.desc, eff: u.eff, choice };
 }
-const BR_HUE = [['var(--es)', 'var(--esr)'], ['var(--q)', 'var(--qr)'], ['var(--sh)', 'var(--shr)']];
+const BR_HUE = [['var(--es)', 'var(--esr)'], ['var(--q)', 'var(--qr)'], ['var(--sh)', 'var(--shr)'], ['var(--ok)', '110,242,180']];
 function buildWebView(T, layer, tabId) {
   const W = WEB_DEF[layer];
   const wrap = h('div', { class: 'treeview' });
@@ -3406,8 +3473,8 @@ function buildWebView(T, layer, tabId) {
       distKey = key; dist = {}; const q = ownedIds.length ? ownedIds.slice() : [W.root];
       for (const id of q) dist[id] = 0;
       while (q.length) { const id = q.shift(); for (const nb of G.adj[id]) if (!(nb in dist)) { dist[nb] = dist[id] + 1; q.push(nb); } }
-      const count = [0, 0, 0]; for (const id of ownedIds) { const b = G.nodes[id].br; if (b >= 0) count[b]++; }
-      const tot = count[0] + count[1] + count[2], top = count.indexOf(Math.max(...count));
+      const count = W.branches.map(() => 0); for (const id of ownedIds) { const b = G.nodes[id].br; if (b >= 0) count[b]++; }
+      const tot = count.reduce((a, b) => a + b, 0), top = count.indexOf(Math.max(...count));
       wrap.style.setProperty('--tint', tot ? `rgba(${BR_HUE[top][1]},${(0.05 + Math.min(0.12, tot / 300)).toFixed(3)})` : 'rgba(var(--shr),.05)');
     }
     if (!fitted && wrap.clientWidth) { fit(false); fitted = true; }
@@ -3497,11 +3564,12 @@ function buildGuideTab() {
     [() => true, 'Upgrades', 'The <b>Upgrade web</b> holds hundreds of upgrades paid in Quanta, in three branches: Light (production), Harmony (resonance and clock) and Cascade (higher tiers and Shards). Buy any node next to one you own; big upgrades link straight to each other, and the small bonus nodes between them are detours that some upgrades branch off. Nodes still in the fog cannot be bought yet, and every upgrade costs a bit more than the one before. Until you own Memory (Shard web) the Upgrade web resets when you Collapse; Wholesale (Shard web) adds a <b>Buy all</b> button (key U). A dot on a tab means something there is affordable. <b>Max all</b> (key M) buys as many generators and Clock Speed levels as you can afford.'],
     [() => S.ai.log.length > 0, 'The Architect', 'The game\'s own AI. It talks to you in a speech bubble, writes endless upgrades for every layer (Quanta, Shards, Essence) that grow as diamond nodes in the webs, and names every new generator tier. Each new upgrade is invented when you buy the previous one, shaped by how you play: it builds for your favourite and newest generators, rewards clicking if you click a lot, and rewards idling if you leave the game running.'],
     [shardsVisible, 'Collapse and Shards', 'At 1e25 Quanta you can Collapse: Quanta, generators and Clock Speed reset, and you get Shards. Shards buy upgrades in the <b>Shard tree</b>: start at Fracture, then grow three branches. The first nodes open new things rather than boosting old ones: Fracture starts the Architect’s cards, Forgeworks unlocks the Shard repeatables, Wholesale adds a Buy all button to the Upgrade web and Shard Visions lets the Architect invent Shard ideas. Memory, deeper in Clockwork and expensive, keeps your Upgrade web through Collapses. Shard Wholesale, in the Essence web, adds a Buy all button to the Shard web (key B) that never makes a path choice for you. Radiance is raw power, Clockwork is speed and automation, Echoes is the Shard economy and the active abilities <b>Surge</b> and <b>Time Fold</b>. At each fork you choose one of two paths. <b>Reshape the tree</b> refunds every Shard so you can try a different build. More Quanta at the moment you Collapse means more Shards.'],
-    [autoVisible, 'Automation', 'The Clockwork branch of the Shard web has one autobuyer per generator: Automata I buys Flickers, II buys Sparks, and from Automata IX on every one you own adds the next, so there is always one more. Clockmaker buys Clock Speed; Lightkeeper, Harmonist and Cascader each buy one Upgrade-web node every 15 seconds; Self-Collapse adds Auto-Collapse. Later, the Prism, Gear and Echo Stewards in the Essence web do the same for the Shard web, leaving path choices to you. Configure them all in the Automation tab.'],
+    [autoVisible, 'Automation', 'The Clockwork branch of the Shard web has one autobuyer per generator: Automata I buys Flickers, II buys Sparks, and from Automata IX on every one you own adds the next, so there is always one more. Clockmaker buys Clock Speed; Lightkeeper, Harmonist and Cascader each buy one Upgrade-web node every 5 seconds; Self-Collapse adds Auto-Collapse. Later, the Prism, Gear and Echo Stewards in the Essence web do the same for the Shard web, leaving path choices to you. Configure them all in the Automation tab.'],
     [ascVisible, 'The Limit and Ascension', 'Quanta stops at 1e308, the Limit. There you can Ascend for Essence. At first an Ascension resets everything but Essence: Quanta, generators, the Upgrade web, Shards, the whole Shard web and its repeatables. The <b>Memory</b> branch of the Essence web lets you keep more: Muscle Memory keeps your automation, Perfect Recall the Shard web, Deep Memory the Upgrade web. Essence buys nodes in the <b>Essence web</b>; its root, <b>Apeiron</b>, breaks the Limit for good, so buy it first. Past it, every order of magnitude is a little harder to reach (dampening), but the Architect starts gathering <b>Inspiration</b>: Quanta production ×10 every minute, forever, so you never stop moving. Overgrowth, in the Memory branch, makes the outer tips of all three webs keep growing, so there is always another upgrade.'],
     [cardsOn, 'Cards', 'Once you buy Fracture, the root of the Shard web, the Architect deals you three cards every ten minutes of play (see the <b>Cards</b> tab). Keep one. Cards are Common, Rare, Epic or Legendary, and each rolls a little stronger or weaker. They give Quanta, speed up every generator, boost your top tier, Pulse, Lucky Pulses, Resonance or idle play for a while, add Shards or Essence to your next prestige, hand you production on the spot, or flip a coin for a big boost.'],
     [() => hasE('e3'), 'Challenges', 'Runs with a handicap. Reach the goal to complete one; every Challenge can be completed again and again with a higher goal and a stronger reward.'],
-    [() => SECRETS.some(s => S.ach[s.id]), 'Secrets', 'Some achievements are hidden. Each one shows only a hint until you earn it, and each unlocks something special: a <b>Relic</b> (an upgrade in the Upgrades tab that you buy again after every Ascension) or an <b>Anomaly</b> (a generator in the Generators tab that never resets). Pay attention to the hints, and to odd things you might try.'],
+    [ascVisible, 'Wonders', 'The fourth branch of the Essence web unlocks new things to do. <b>Observatory</b>: with every Ascension you choose a <b>Boon</b> that lasts until the next one (Twin Stars lets you keep two, Wide Sky adds a choice and makes them stronger). <b>Nova</b> is a third ability (key N): Quanta production to the power 1.04 for 20 seconds. <b>Reflex</b> fires your abilities as soon as they are ready, <b>Heartbeat</b> presses Pulse every 3 seconds, <b>Full House</b> and <b>Second Hand</b> improve your cards, <b>Afterglow</b> starts every Collapse with your first ten generators, and <b>Reliquary</b> keeps Relics and Anomalies through Ascension.'],
+    [() => SECRETS.some(s => S.ach[s.id]), 'Secrets', 'Some achievements are hidden. Each one shows only a hint until you earn it, and each unlocks something special: a <b>Relic</b> (an upgrade in the Upgrades tab that you buy again after every Ascension) or an <b>Anomaly</b> (a generator in the Generators tab that ignores Collapse; you buy it again after every Ascension, until Reliquary). Pay attention to the hints, and to odd things you might try.'],
     [() => true, 'Appearance', 'Options → Appearance lets you change the color theme, the UI size, and turn the starfield, animations, rainbow generator colors and pop-up notifications on or off.'],
     [() => true, 'Saving','The game saves itself every 10 seconds in this browser and keeps progressing while you are away, at 20% speed. After a big update, an older save gets a one-time notice offering a fresh start; your save keeps working either way. Use Options → Export to make a backup.'],
   ];
@@ -3590,6 +3658,8 @@ function buildAutoTab() {
   }, 'auto');
   g.append(chk('Clock Speed', () => S.auto.clock, v => S.auto.clock = v, () => !!S.sUpg.abC));
   ['Light', 'Harmony', 'Cascade'].forEach((nm, b) => g.append(chk(nm + ' upgrades', () => S.auto.qb[b], v => S.auto.qb[b] = v, () => !!S.sUpg[['abL', 'abH', 'abK'][b]])));
+  g.append(chk('Reflex (abilities)', () => S.auto.reflex !== false, v => S.auto.reflex = v, () => hasE('e44')));
+  g.append(chk('Heartbeat (Pulse)', () => S.auto.heart !== false, v => S.auto.heart = v, () => hasE('e45')));
   ['Radiance', 'Clockwork', 'Echoes'].forEach((nm, b) => g.append(chk(nm + ' Shard nodes', () => S.auto.sb[b], v => S.auto.sb[b] = v, () => !!S.eUpg[['e37', 'e38', 'e39'][b]])));
   const kn = h('div', { class: 'muted' });
   up(() => {
@@ -3628,7 +3698,9 @@ function buildAutoTab() {
 /* ---------------- Cards tab: the hand you are dealt, what is working now, your record ---------------- */
 function buildCardsTab() {
   const T = UI.tabs.cards;
-  T.append(h('h2', {}, 'The Architect’s deck'), h('div', { class: 'muted', style: 'margin-bottom:12px' }, 'Every ' + durTxt(DEAL_EVERY) + ' of play I deal three cards. Keep one; the others go back in the deck. Rarer cards roll stronger, and every card rolls a little up or down. Most work for a few minutes of game time, some until your next Collapse or Ascension.'));
+  const deckTxt = h('div', { class: 'muted', style: 'margin-bottom:12px' });
+  T.append(h('h2', {}, 'The Architect’s deck'), deckTxt);
+  up(() => setT(deckTxt, 'Every ' + durTxt(dealEvery()) + ' of play I deal ' + NUMW[handSize()] + ' cards. Keep ' + (hasE('e47') ? 'two' : 'one') + '; the others go back in the deck. Rarer cards roll stronger, and every card rolls a little up or down. Most work for a few minutes of game time, some until your next Collapse or Ascension.' + (S.cards.hand && S.cards.kept ? ' Keep one more from this hand.' : '')), 'cards');
   const hand = h('div', { class: 'hand' }), wait = h('div', { class: 'deal-wait' }), waitBar = h('div', { class: 'deal-bar' }, h('i', {}));
   T.append(hand, h('div', {}, wait, waitBar));
   T.append(h('h2', {}, 'Working now'));
@@ -3648,7 +3720,7 @@ function buildCardsTab() {
       });
     }
     show(wait, !C.hand); show(waitBar, !C.hand);
-    if (!C.hand) { const left = Math.max(0, C.next - S.stats.time); setT(wait, 'Next hand in ' + fmtTime(left) + '.'); waitBar.firstChild.style.width = (100 * (1 - left / DEAL_EVERY)).toFixed(1) + '%'; }
+    if (!C.hand) { const left = Math.max(0, C.next - S.stats.time); setT(wait, 'Next hand in ' + fmtTime(left) + '.'); waitBar.firstChild.style.width = (100 * (1 - left / dealEvery())).toFixed(1) + '%'; }
     setH(act, C.active.length ? C.active.map(c => `<div class="ca ${RARITY[c.r].id}"><b>${esc(c.name)}</b> · ${esc(CARD_KINDS[c.k].text(c))}${c.until >= 0 ? ` <span class="muted">(${fmtTime(Math.max(0, c.until - S.stats.time))} left)</span>` : ''}</div>`).join('') : '<div class="muted">Nothing yet. Keep a card to start one.</div>');
     setT(rec, `${C.drawn} cards kept: ${RARITY.map((r, i) => C.by[i] + ' ' + r.name).join(', ')}.`);
   }, 'cards');
@@ -3656,7 +3728,9 @@ function buildCardsTab() {
 const act2 = fn => e => { e.stopPropagation(); fn(); };
 // what an Ascension wipes right now, given the Memory-branch upgrades you own
 function ascResetText() {
-  const r = ['Quanta', 'generators', 'Shards', 'Relics'];
+  const r = ['Quanta', 'generators', 'Shards'];
+  if (!hasE('e48')) r.push('Relics', 'Anomalies');
+  if (boonOn()) r.push('Boons');
   if (!hasE('e15')) r.push('the Upgrade web');
   if (!hasE('e5')) r.push(hasE('e35') ? 'the Shard web except its automation' : 'the whole Shard web');
   if (!hasE('e1')) r.push('Shard repeatables');
@@ -3669,8 +3743,22 @@ function buildAscTab() {
     `Ascending needs ${fmt(D.fromLog(CFG.limit))} Quanta and resets ${ascResetText()}. Essence upgrades and Challenge completions are permanent; the Memory branch keeps more each time.` +
     (hasE('e6') ? ` <br>The Architect's <b class="hl-sh">Inspiration</b>: Quanta production <b>${fmtMult(inspirationLog())}</b> (×10 more every ${CFG.inspireSec} seconds, forever).` : '') +
     (hasE('e6') ? ` Essence gain: ×10 every ${CFG.ascDiv} orders of magnitude past the Limit${essMultLog() > 0 ? ', then ' + fmtMult(essMultLog()) : ''}.` : ' Each Ascension gives 1 Essence until you break the Limit.')), 'asc');
+  // Boons (Observatory): the hand to choose from, and what works this Ascension
+  const bHead = h('h2', {}, 'Boons'), bNote = h('div', { class: 'muted', style: 'margin:-2px 0 8px' }), bHand = h('div', { class: 'hand' }), bAct = h('div', { class: 'card-active' });
+  T.append(bHead, bNote, bHand, bAct);
+  let bKey = null;
+  up(() => {
+    const on = boonOn(); for (const el of [bHead, bNote, bHand, bAct]) show(el, on); if (!on) return;
+    const B = S.boon, key = B.hand ? B.hand.map(b => b.id).join(',') : '';
+    setT(bNote, B.hand ? (B.left > 1 ? 'Choose ' + NUMW[B.left] + ' Boons.' : 'Choose a Boon.') + ' It lasts until your next Ascension.' : 'A new hand of Boons comes with every Ascension.');
+    if (key !== bKey) {
+      bKey = key; bHand.textContent = '';
+      if (B.hand) B.hand.forEach((b, i) => { const d = BOON_KINDS[b.k]; bHand.append(h('button', { class: 'pcard legend', style: `animation-delay:${i * 0.12}s`, onclick: act2(() => { if (pickBoon(i)) sfx('upgrade'); }) }, h('div', { class: 'pc-r' }, 'Boon'), h('div', { class: 'pc-g' }, d.g), h('div', { class: 'pc-n' }, b.name), h('div', { class: 'pc-t' }, d.text(b.v)), h('div', { class: 'pc-k' }, 'Choose'))); });
+    }
+    setH(bAct, B.active.length ? B.active.map(b => `<div class="ca legend"><b>${esc(b.name)}</b> · ${esc(BOON_KINDS[b.k].text(b.v))}</div>`).join('') : '<div class="muted">No Boon working yet.</div>');
+  }, 'asc');
   T.append(h('h2', {}, 'Essence web'));
-  T.append(h('div', { class: 'muted', style: 'margin:-2px 0 8px' }, 'Start at Apeiron, then grow three branches: Starlight is raw power, Memory is what you keep and automation, Trials is Shards, Essence and Challenges. Diamonds are the Architect’s ideas. Everything here is permanent.'));
+  T.append(h('div', { class: 'muted', style: 'margin:-2px 0 8px' }, 'Start at Apeiron, then grow four branches: Starlight is raw power, Memory is what you keep and automation, Trials is Shards, Essence and Challenges, and Wonders unlocks new things to do. Diamonds are the Architect’s ideas. Everything here is permanent.'));
   buildWebView(T, 'e', 'asc');
   T.append(h('h2', {}, 'Repeatable'));
   const rg = h('div', { class: 'cards' }); T.append(rg);
@@ -3830,8 +3918,19 @@ function buildOptTab() {
       h('button', { onclick: exportDialog }, 'Export'),
       h('button', { onclick: importDialog }, 'Import'),
       h('button', { onclick: resetDialog, style: 'border-color:var(--bad);color:var(--bad)' }, 'Hard reset')));
-  T.append(h('h2', {}, 'Hotkeys'), h('div', { class: 'info', html: '<kbd>M</kbd> max all &nbsp; <kbd>T</kbd> buy Clock Speed &nbsp; <kbd>P</kbd> pulse &nbsp; <kbd>C</kbd> collapse &nbsp; <kbd>A</kbd> ascend &nbsp; <kbd>S</kbd> Surge &nbsp; <kbd>F</kbd> Time Fold' }));
+  // Bug report: a new issue on the game's GitHub page, with a short template and where you are in the game (no save data)
+  const bug = h('a', { class: 'btnlink', target: '_blank', rel: 'noopener noreferrer', href: ISSUES_URL }, 'Report a bug');
+  up(() => { bug.href = bugReportUrl(); }, 'opt');
+  T.append(h('h2', {}, 'Help'), h('div', { class: 'opt-row' }, bug, h('span', { class: 'muted' }, 'Opens the Issues page of Apeiron on GitHub with a short form to fill in. Posting needs a free GitHub account.')));
+  T.append(h('h2', {}, 'Hotkeys'), h('div', { class: 'info', html: '<kbd>M</kbd> max all &nbsp; <kbd>T</kbd> buy Clock Speed &nbsp; <kbd>P</kbd> pulse &nbsp; <kbd>C</kbd> collapse &nbsp; <kbd>A</kbd> ascend &nbsp; <kbd>S</kbd> Surge &nbsp; <kbd>F</kbd> Time Fold &nbsp; <kbd>N</kbd> Nova &nbsp; <kbd>U</kbd> buy all upgrades &nbsp; <kbd>B</kbd> buy all Shard upgrades' }));
   T.append(h('h2', {}, 'About'), h('div', { class: 'info', html: '<b>Apeiron</b> (Greek: the boundless) — an infinite incremental. Numbers are stored as mantissa × 10<sup>exponent</sup>, so they can grow far past 1e308 (to about 10<sup>10<sup>308</sup></sup>). Saves live in this browser\'s local storage; export to keep a backup.' }));
+}
+const ISSUES_URL = 'https://github.com/TitanTheGodlike/APEIRON/issues/new';
+function bugReportUrl() {
+  const where = location.protocol === 'file:' ? 'Android app' : 'website';
+  const body = '**What happened?**\n\n\n**What did you expect instead?**\n\n\n**How can it be made to happen again?**\n\n\n---\n' +
+    'Played on: ' + where + ' · save version ' + SAVE_VER + ' · ' + S.stats.totalCollapses + ' Collapses, ' + S.ascensions + ' Ascensions, best Quanta ' + fmt(S.stats.bestQ);
+  return ISSUES_URL + '?title=' + encodeURIComponent('Bug: ') + '&body=' + encodeURIComponent(body);
 }
 function exportDialog() {
   const ta = h('textarea', { readonly: '' }); ta.value = encodeSave();
@@ -3897,7 +3996,7 @@ document.addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
   if (k === KONAMI[konamiAt]) { if (++konamiAt === KONAMI.length) { konamiAt = 0; cheatCodeEntered(); return; } if (konamiAt > 8) return; }
   else konamiAt = k === KONAMI[0] ? 1 : 0;
-  if (!e.repeat && ['m', 'p', 't', 'c', 'a', 's', 'f', 'u', 'b'].includes(k)) sfx('click');
+  if (!e.repeat && ['m', 'p', 't', 'c', 'a', 's', 'f', 'n', 'u', 'b'].includes(k)) sfx('click');
   if (k === 'm') sfx(maxAll() ? 'buy' : 'fail');
   else if (k === 'p') sfx(pulse() ? 'pulse' : 'fail');
   else if (k === 't') sfx(buyClock(S.settings.buyMode === 'max' ? 'max' : '1') ? 'buy' : 'fail');
@@ -3905,6 +4004,7 @@ document.addEventListener('keydown', e => {
   else if (k === 'a') { if (!doAscend()) sfx('fail'); }
   else if (k === 's') sfx(useAbility('surge') ? 'upgrade' : 'fail');
   else if (k === 'f') sfx(useAbility('fold') ? 'buy' : 'fail');
+  else if (k === 'n') sfx(useAbility('nova') ? 'upgrade' : 'fail');
   else if (k === 'u') sfx(buyAllUpgrades() ? 'upgrade' : 'fail');
   else if (k === 'b') sfx(buyAllShards() ? 'upgrade' : 'fail');
   else return;

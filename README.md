@@ -33,10 +33,11 @@ The story unfolds in full-screen talks with the Architect at the big moments of 
 - **Endless generators.** From Flicker and Spark up through fires, suns and galaxies: buy the highest tier and a new one appears above it, named by the Architect.
 - **Sprawling skill webs.** Over 400 upgrades on three big pannable, zoomable webs (Upgrades, Shards, Essence), starting at just 20 Quanta. Most do more than multiply Quanta: single-generator boosts, generator bonds, faster resonance, cheaper prices, Pulse and Lucky Pulse upgrades, head starts, longer Surges. Branching trees, bonus nodes, clearly marked path choices where you pick one of two, and a Reshape button to rebuild your Shard build. The Architect's ideas grow here and there on the branch they belong to, and the web tidies itself around them.
 - **Cards.** After your first Collapse, the Architect deals you three cards every ten minutes of play; keep one. Common, Rare, Epic or Legendary, and every card rolls a little stronger or weaker: timed buffs to Quanta, every generator, your top tier, Pulse, Lucky Pulses, Resonance or idle play, extra Shards or Essence for your next prestige, production on the spot, or a coin flip for a big boost.
-- **Active abilities.** Surge and Time Fold reward playing actively instead of only idling.
+- **Active abilities.** Surge, Time Fold and Nova reward playing actively instead of only idling.
+- **Wonders.** A fourth branch of the Essence web made only of unlocks: a Boon to choose with every Ascension, the Nova ability, Reflex (abilities fire themselves), Heartbeat (Pulse presses itself), bigger hands of cards, Afterglow and Reliquary.
 - **Three layers of progression:** Quanta, Shards and Essence, each with its own upgrades, repeatables and automation.
 - **Seven Challenges** you can complete forever, each completion harder and more rewarding.
-- **Secrets.** Hidden achievements show only a hint until you find them, and each unlocks a Relic (a permanent upgrade) or an Anomaly (a generator that never resets).
+- **Secrets.** Hidden achievements show only a hint until you find them, and each unlocks a Relic (a special upgrade) or an Anomaly (a generator that ignores Collapse). Both are bought again after every Ascension, until Reliquary keeps them.
 - **Make it yours.** Six color themes, adjustable UI size, compact layout, and toggles for the starfield, animations, generator colors and pop-ups.
 - **Steady pacing.** Progress is meant to unfold over hours, not explode in minutes.
 - **Plays while you're away.** Offline progress at 20% speed, autosave and save export/import.
@@ -54,6 +55,13 @@ The story unfolds in full-screen talks with the Architect at the big moments of 
 | `A` | Ascend |
 | `S` | Surge (once unlocked) |
 | `F` | Time Fold (once unlocked) |
+| `N` | Nova (once unlocked) |
+| `U` | Buy all upgrades (once unlocked) |
+| `B` | Buy all Shard upgrades (once unlocked) |
+
+## Bugs
+
+Found a bug? Use **Options → Report a bug** in the game, or open an issue on the [Issues page](https://github.com/TitanTheGodlike/APEIRON/issues).
 
 ## Saves
 

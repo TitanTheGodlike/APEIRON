@@ -2437,7 +2437,7 @@ function startWind() {
     const s = document.createElement('i');
     s.style.top = (Math.random() * 100).toFixed(1) + '%'; s.style.width = (8 + Math.random() * 22).toFixed(1) + 'vw';
     s.style.opacity = (0.3 + Math.random() * 0.7).toFixed(2);
-    s.style.animationDuration = (1.1 + Math.random() * 2.2).toFixed(2) + 's'; s.style.animationDelay = (-Math.random() * 4).toFixed(2) + 's';
+    s.style.animationDuration = (4.5 + Math.random() * 5).toFixed(2) + 's'; s.style.animationDelay = (-Math.random() * 10).toFixed(2) + 's'; // a calm drift across the screen
     w.appendChild(s);
   }
   up(() => setC(w, 'on', hasE('e52') && !(S.settings.ui && S.settings.ui.motion === false)));

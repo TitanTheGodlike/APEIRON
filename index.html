@@ -2689,7 +2689,7 @@ function dynMake(layer, id, parent, b, c, depth, twig) {
   u.desc = u.kind ? growDesc(u) : FIELDS.filter(f => u[f]).map(f => FIELD_TXT[f] + (FLOG[f] ? niceX(u[f]) : u[f]) + (f === 'pc' ? ' per Clock Speed level' : '') + '.').join(' ');
   LIST.push(u); BY[id] = u;
   for (const f of FIELDS) if (u[f]) FU[f].push([layer, u]);
-  const n = { id, parent, b, depth, twig: !!twig, costLog: c };
+  const n = { id, parent, b, depth, twig: twig || false, costLog: c };
   D.nodes[id] = n; D.list.push(n);
   return n;
 }
@@ -2720,7 +2720,18 @@ function growDynamic(layer) {
       const id = layer + '_' + tip.id + '_' + d;
       c = Math.max(c + dynStep(layer, c) * (0.85 + 0.3 * mulberry(hashStr('step:' + id))()), d === 1 ? DYN_FLOOR[layer] : 0);
       dynMake(layer, id, parent, tip.b, c, d);
-      if (d % 4 === 0 && own(parent)) dynMake(layer, id + 't', parent, tip.b, c + 0.5 * dynStep(layer, c), d, true);
+      // every fourth step a side branch starts (its first node is the old twig) and keeps growing as you buy it;
+      // now and then a branch also puts out a leaf that does not grow further
+      if (d % 4 === 0 && own(parent)) {
+        let bp = parent, bc = c + 0.5 * dynStep(layer, c);
+        for (let j = 1; j < 5000; j++) {
+          const bid = j === 1 ? id + 't' : id + 't_' + j;
+          dynMake(layer, bid, bp, tip.b, bc, d + j - 1, j === 1 ? 'branch' : false);
+          if (j % 3 === 0 && own(bp)) dynMake(layer, bid + 'x', bp, tip.b, bc + 0.4 * dynStep(layer, bc), d + j - 1, 'leaf');
+          if (!own(bid)) break;
+          bp = bid; bc += dynStep(layer, bc) * (0.85 + 0.3 * mulberry(hashStr('step:' + bid))());
+        }
+      }
       if (!own(id)) break;
       parent = id;
     }
@@ -3004,8 +3015,8 @@ function webGraph(layer) {
     const n = dynNode(layer, dn.id); nodes[dn.id] = n; edges.push([dn.parent, dn.id]);
     const pp = pos[dn.parent] || [0, 0], gp = nodes[dn.parent] && nodes[dn.parent].dyn ? pos[nodes[dn.parent].parent] : null;
     let dx = pp[0] - (gp ? gp[0] : 0), dy = pp[1] - (gp ? gp[1] : 0); const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
-    const side = dn.twig ? 1 : (dn.depth % 2 ? 0.18 : -0.18), ox = -dy * side, oy = dx * side;
-    const at = dn.twig ? [pp[0] + ox * 115, pp[1] + oy * 115] : [pp[0] + (dx + ox) * 125, pp[1] + (dy + oy) * 125];
+    const turn = dn.twig === 'branch' ? (dn.depth % 8 ? -0.95 : 0.95) : dn.twig ? (dn.depth % 2 ? 1 : -1) : (dn.depth % 2 ? 0.18 : -0.18), ox = -dy * turn, oy = dx * turn;
+    const at = dn.twig === 'leaf' || dn.twig === true ? [pp[0] + ox * 100, pp[1] + oy * 100] : [pp[0] + (dx + ox) * 125, pp[1] + (dy + oy) * 125];
     pos[dn.id] = at; n.anchor = at.slice(); grew = true;
   }
   if (grew) relax(nodes, edges, pos, 140);

@@ -716,6 +716,7 @@ const EUPG = [
   { id: 'e3', name: 'Trials', cost: 3, desc: 'Unlock Challenges.' },
   { id: 'e4', name: 'Bloom', cost: 5, desc: 'Shard gain ×(1 + Ascensions).', eff: () => '×' + fmt(1 + S.ascensions) },
   { id: 'e5', name: 'Perfect Recall', cost: 8, desc: 'Keep the whole Shard web when you Ascend: its upgrades, bonus nodes and the Architect’s Shard ideas.' },
+  { id: 'e36', name: 'Overgrowth', cost: 40, desc: 'The webs never end: the outer tips of the Upgrade, Shard and Essence webs keep growing. Every node you buy at a tip sprouts the next one.' },
   { id: 'e35', name: 'Muscle Memory', cost: 2, desc: 'Keep Memory, the Automata, Clockmaker, the three branch keepers, Starseed and Self-Collapse when you Ascend.' },
   { id: 'e7', name: 'Shard Stream', cost: 15, desc: 'Passively gain 10% of your pending Collapse Shards every second.' },
   { id: 'e8', name: 'Self-Ascend', cost: 30, desc: 'Unlock Auto-Ascend.' },
@@ -796,7 +797,7 @@ const ACH = [
   ['a26', 'Purist', 'Collapse without buying any Clock Speed.', null],
   ['a27', 'Shard Hoard', 'Hold 1,000 Shards.', () => S.shards.log10() >= 3],
   ['a28', 'Crystalline', 'Hold 1e10 Shards.', () => S.shards.log10() >= 10],
-  ['a29', 'Fully Lit', 'Own every Quanta upgrade at once.', () => QUPG.every(u => S.qUpg[u.id])],
+  ['a29', 'Fully Lit', 'Own every Quanta upgrade at once.', () => QUPG.every(u => u.dyn || S.qUpg[u.id])],
   ['a30', 'Ascendant', 'Ascend for the first time.', () => S.ascensions >= 1],
   ['a31', 'Again and Again', 'Ascend 10 times.', () => S.ascensions >= 10],
   ['a32', 'Unbound', 'Break the Limit.', () => !!S.eUpg.e6],
@@ -830,7 +831,7 @@ const ACH = [
   ['a64', 'Idea Hoard', 'Own 250 endless upgrades at once.', () => S.proc.q + S.proc.s + S.proc.e >= 250],
   ['a65', 'Library of Babel', 'Own 500 endless upgrades at once.', () => S.proc.q + S.proc.s + S.proc.e >= 500],
   ['a66', 'Web Walker', 'Own 300 web upgrades at once.', () => Object.keys(S.qUpg).length + Object.keys(S.sUpg).length + Object.keys(S.eUpg).length >= 300],
-  ['a67', 'Every Star', 'Own every Essence upgrade.', () => EUPG.every(u => S.eUpg[u.id])],
+  ['a67', 'Every Star', 'Own every Essence upgrade.', () => EUPG.every(u => u.dyn || S.eUpg[u.id])],
   ['a68', 'A Long Day', 'Play for 24 hours.', () => S.stats.time >= 86400],
   ['a69', 'Hammer', 'Pulse 1,000 times.', () => S.stats.pulses >= 1000],
   ['a70', 'Anvil', 'Pulse 10,000 times.', () => S.stats.pulses >= 1e4],
@@ -2378,7 +2379,7 @@ const WEB_DEF = {
     ring: { kind: 'qmult', v: L10(2), text: 'Quanta production ×2' },
     branches: [
       { name: 'Starlight', sub: 'raw power', angle: -150, start: 'e2', links: [['e2', 'e19'], ['e19', 'e9'], ['e2', 'e10'], ['e9', 'e16'], ['e16', 'e20'], ['e10', 'e11'], ['e10', 'e22'], ['e11', 'e18'], ['e18', 'e23'], ['e16', 'e17'], ['e17', 'e21'], ['e21', 'e24']], minor: { kind: 'qmult', v: L10(1.4), text: 'Quanta production ×1.4' } },
-      { name: 'Memory', sub: 'what you keep, and automation', angle: -30, start: 'e1', links: [['e1', 'e25'], ['e1', 'e35'], ['e25', 'e5'], ['e5', 'e7'], ['e5', 'e8'], ['e7', 'e29'], ['e7', 'e15'], ['e8', 'e26'], ['e15', 'e27'], ['e27', 'e28']], minor: { kind: 'shard', v: L10(1.045), text: 'Shard gain ×1.045' } },
+      { name: 'Memory', sub: 'what you keep, and automation', angle: -30, start: 'e1', links: [['e1', 'e25'], ['e1', 'e35'], ['e25', 'e5'], ['e5', 'e7'], ['e5', 'e8'], ['e5', 'e36'], ['e7', 'e29'], ['e7', 'e15'], ['e8', 'e26'], ['e15', 'e27'], ['e27', 'e28']], minor: { kind: 'shard', v: L10(1.045), text: 'Shard gain ×1.045' } },
       { name: 'Trials', sub: 'Shards, Essence and Challenges', angle: 90, start: 'e3', links: [['e3', 'e4'], ['e3', 'e14'], ['e3', 'e30'], ['e4', 'e13'], ['e13', 'e12'], ['e13', 'e33'], ['e14', 'e31'], ['e12', 'e32'], ['e32', 'e34']], minor: { kind: 'ess', v: L10(1.013), text: 'Essence gain ×1.013' } },
     ] },
 };
@@ -2502,6 +2503,74 @@ function growWebs() {
 }
 function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 growWebs();
+/* Endless growth: past the written webs, the outer tips keep growing. Owning the newest node of a tip sprouts
+   the next one (and every fourth step a side twig), so there is always one more upgrade. Each node is generated
+   from its id alone, so a save only remembers which ones it owns and the web regrows the same way. */
+const DYN = { q: null, s: null, e: null };
+const DYN_MIN = { q: 120, s: 9, e: 3 };     // only tips at least this dear (log10) keep growing, so the start stays calm
+const DYN_FLOOR = { q: 320, s: 45, e: 12 }; // the first grown node of a tip costs at least this much: past the written web
+const DYN_TIPS = 4;                          // growing tips per branch (the dearest leaves)
+const dynStep = (layer, c) => layer === 'q' ? Math.max(4, 0.04 * c) : layer === 's' ? 2 + 0.05 * c : 1 + 0.05 * c;
+function dynState(layer) {
+  if (DYN[layer]) return DYN[layer];
+  const W = WEB_DEF[layer], parents = new Set(), tips = [];
+  for (const br of W.branches) for (const [a] of br.links) for (const x of [].concat(a)) parents.add(x);
+  W.branches.forEach((br, b) => {
+    const leaves = [];
+    for (const [, c] of br.links) for (const y of [].concat(c)) if (!parents.has(y) && !leaves.includes(y)) leaves.push(y);
+    leaves.sort((x, y) => W.costLog(y) - W.costLog(x));
+    const far = leaves.filter(id => W.costLog(id) >= DYN_MIN[layer]);
+    for (const id of (far.length >= 2 ? far : leaves).slice(0, DYN_TIPS)) tips.push({ id, b });
+  });
+  return (DYN[layer] = { tips, nodes: {}, list: [] });
+}
+function dynMake(layer, id, parent, b, c, depth, twig) {
+  const D = dynState(layer); if (D.nodes[id]) return D.nodes[id];
+  const LIST = { q: QUPG, s: SUPG, e: EUPG }[layer], BY = { q: QBY, s: SBY, e: EBY }[layer];
+  const rng = mulberry(hashStr('dyn:' + id)), pick = a => a[Math.floor(rng() * a.length)];
+  const wts = GROW[layer].kinds[b]; let tot = 0; for (const k in wts) tot += wts[k];
+  let r = rng() * tot, kind = 'qm'; for (const k in wts) { r -= wts[k]; if (r <= 0) { kind = k; break; } }
+  const u = { id, name: '', cost: layer === 'q' ? Math.round(c * 10) / 10 : (c < 300 ? roundSig(Math.pow(10, c)) : Infinity), grown: true, dyn: true };
+  const val = GROW_FULL.has(kind) ? GROW_VAL[layer][kind](2) : GROW_VAL[layer][kind](2) * GROW_P[layer];
+  if (FIELDS.includes(kind)) u[kind] = FLOG[kind] ? L10(roundSig(Math.pow(10, val), val < L10(1.1) ? 4 : 3)) : +val.toFixed(3);
+  else {
+    u.kind = kind; u.v = ['tier', 'pulse', 'idle', 'head', 'insight'].includes(kind) ? L10(roundSig(Math.pow(10, val), val < L10(1.1) ? 3 : 2)) : +val.toFixed(3);
+    // which generator: around the tiers you would have at that price (deep tips reach far up the ladder)
+    let topT = layer === 's' ? 10 + Math.floor(depth / 2) : layer === 'e' ? 18 + Math.floor(depth / 2) : 1;
+    if (layer === 'q') { while (topT < 400 && genDef(topT + 1).base <= c - 2) topT++; }
+    if (kind === 'tier' || kind === 'resonate' || kind === 'thrift') u.tier = Math.max(0, topT - Math.floor(rng() * 4));
+    if (kind === 'synergy') { u.src = Math.max(1, topT - Math.floor(rng() * 3)); u.tier = rng() < 0.6 ? u.src - 1 : Math.floor(rng() * u.src); }
+    u.eff = kindEff(u);
+    KIND_UPG[layer].push(u);
+  }
+  const bits = GROW_NAMES[kind] || GROW_NAMES.qmult;
+  u.name = (kind === 'tier' || kind === 'resonate' ? genDef(u.tier).name : kind === 'synergy' ? genDef(u.src).name + '–' + genDef(u.tier).name : pick(bits[0].length ? bits[0] : NAME_BITS.qmult[0])) + ' ' + pick(bits[1]) + ' ' + ROMAN(depth);
+  u.desc = u.kind ? growDesc(u) : FIELDS.filter(f => u[f]).map(f => FIELD_TXT[f] + (FLOG[f] ? niceX(u[f]) : u[f]) + (f === 'pc' ? ' per Clock Speed level' : '') + '.').join(' ');
+  LIST.push(u); BY[id] = u;
+  for (const f of FIELDS) if (u[f]) FU[f].push([layer, u]);
+  const n = { id, parent, b, depth, twig: !!twig, costLog: c };
+  D.nodes[id] = n; D.list.push(n);
+  return n;
+}
+// sprout what the owned tips have earned: the next node of every owned tip, plus a twig every fourth step
+function growDynamic(layer) {
+  const D = dynState(layer), W = WEB_DEF[layer], own = id => !!S[UPG_KEY[layer]][id];
+  if (!S.eUpg.e36) return D; // Overgrowth (Essence web) starts the endless growth
+  for (const tip of D.tips) {
+    if (!own(tip.id)) continue;
+    let parent = tip.id, c = W.costLog(tip.id);
+    for (let d = 1; d < 5000; d++) {
+      const id = layer + '_' + tip.id + '_' + d;
+      c = Math.max(c + dynStep(layer, c) * (0.85 + 0.3 * mulberry(hashStr('step:' + id))()), d === 1 ? DYN_FLOOR[layer] : 0);
+      dynMake(layer, id, parent, tip.b, c, d);
+      if (d % 4 === 0 && own(parent)) dynMake(layer, id + 't', parent, tip.b, c + 0.5 * dynStep(layer, c), d, true);
+      if (!own(id)) break;
+      parent = id;
+    }
+  }
+  return D;
+}
+const dynNode = (layer, id) => { const D = dynState(layer), n = D.nodes[id]; return n ? { id, type: 'notable', gen: true, dyn: true, br: n.b, upg: id, costLog: n.costLog, parent: n.parent } : null; };
 // Upgrades come one at a time, not in bursts: sorted by its written price, every upgrade costs at least
 // x5 (QGAP orders of magnitude) more than the one before it. The first costs 20 Quanta, then 100, 500, ...
 // until the written prices are steeper anyway. cost0 keeps the written price.
@@ -2641,7 +2710,7 @@ function bigParent(layer, pid) {
 function webNode(layer, id) {
   if (/^a\d+$/.test(id)) { const i = +id.slice(1), u = S.forge[layer][i]; return u ? { id, type: 'arch', arch: i, br: u.branch, parent: u.parent } : null; }
   if (/^c\d+$/.test(id)) return connectorNode(layer, +id.slice(1));
-  return webStatic(layer).nodes[id] || null;
+  return webStatic(layer).nodes[id] || dynNode(layer, id);
 }
 function webOwned(layer, n) {
   if (n.type === 'arch') return ideaOwned(layer, n.arch);
@@ -2653,7 +2722,7 @@ const webForkOther = (layer, id) => { for (const f of webStatic(layer).forks) if
 function webAvail(layer, n) {
   if (webOwned(layer, n) || webForked(layer, n)) return false;
   if (n.type === 'root') return true;
-  if (n.type === 'arch') { const p = webNode(layer, n.parent || WEB_DEF[layer].root); return !!p && webOwned(layer, p); }
+  if (n.type === 'arch' || n.dyn) { const p = webNode(layer, n.parent || WEB_DEF[layer].root); return !!p && webOwned(layer, p); }
   if (n.connector !== undefined) { if (!S.forge[layer][n.connector]) return false; const p = webNode(layer, n.parent || WEB_DEF[layer].root), a = webNode(layer, 'a' + n.connector); return (!!p && webOwned(layer, p)) || (!!a && webOwned(layer, a)); }
   const st = webStatic(layer);
   for (const nb of st.adj[n.id]) if (webOwned(layer, st.nodes[nb])) return true;
@@ -2670,7 +2739,8 @@ function webBuy(layer, id) {
   return layer === 'q' ? buyQ(n.upg) : layer === 's' ? buyS(n.upg) : buyE(n.upg);
 }
 function webFrontier(layer) {
-  const st = webStatic(layer), out = [];
+  const st = webStatic(layer), out = [], D = growDynamic(layer);
+  for (const id in D.nodes) { const x = dynNode(layer, id); if (webAvail(layer, x)) out.push(x); }
   for (const id in st.nodes) { const n = st.nodes[id]; if (webAvail(layer, n)) out.push(n); }
   for (let i = 0; i < S.forge[layer].length; i++) for (const id of ['c' + i, 'a' + i]) { const x = webNode(layer, id); if (x && webAvail(layer, x)) out.push(x); }
   return out;
@@ -2725,8 +2795,9 @@ const WEB_CACHE = {}, WEB_POS = { q: {}, s: {}, e: {} };
 function webGraph(layer) {
   const st = webStatic(layer), W = WEB_DEF[layer];
   ensureOpen(layer);
+  const D = growDynamic(layer), nDyn = D.list.length;
   const nArch = S.forge[layer].length, c = WEB_CACHE[layer];
-  if (c && c.nArch === nArch && c.S === S) return c;
+  if (c && c.nArch === nArch && c.nDyn === nDyn && c.S === S) return c;
   const pos = WEB_POS[layer];
   for (const k in pos) delete pos[k]; // auto-tidy: a new node means a fresh layout of the whole web
   const nodes = Object.assign({}, st.nodes), edges = st.edges.slice();
@@ -2757,11 +2828,20 @@ function webGraph(layer) {
       grew = true;
     }
   }
+  // endless growth: each new node steps outward from the one it grows from (twigs to the side)
+  for (const dn of D.list) {
+    const n = dynNode(layer, dn.id); nodes[dn.id] = n; edges.push([dn.parent, dn.id]);
+    const pp = pos[dn.parent] || [0, 0], gp = nodes[dn.parent] && nodes[dn.parent].dyn ? pos[nodes[dn.parent].parent] : null;
+    let dx = pp[0] - (gp ? gp[0] : 0), dy = pp[1] - (gp ? gp[1] : 0); const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
+    const side = dn.twig ? 1 : (dn.depth % 2 ? 0.18 : -0.18), ox = -dy * side, oy = dx * side;
+    const at = dn.twig ? [pp[0] + ox * 115, pp[1] + oy * 115] : [pp[0] + (dx + ox) * 125, pp[1] + (dy + oy) * 125];
+    pos[dn.id] = at; n.anchor = at.slice(); grew = true;
+  }
   if (grew) relax(nodes, edges, pos, 140);
   const adj = {};
   for (const id in nodes) adj[id] = [];
   for (const [a, b] of edges) { adj[a].push(b); adj[b].push(a); }
-  return (WEB_CACHE[layer] = { nodes, edges, adj, pos, nArch, S });
+  return (WEB_CACHE[layer] = { nodes, edges, adj, pos, nArch, nDyn, S });
 }
 // cheapest route (fewest nodes) from what you own to a target, for "buy the whole path"
 function webPath(layer, targetId) {
@@ -2794,7 +2874,7 @@ function webInfo(layer, n) {
   const u = layer === 'q' ? QBY[n.upg] : layer === 's' ? SBY[n.upg] : EBY[n.upg];
   const other = webForkOther(layer, n.upg), ou = other && (layer === 's' ? SBY[other] : layer === 'q' ? QBY[other] : EBY[other]);
   const choice = ou ? 'Path choice: you get this or ' + ou.name + ', not both. Buying one closes the other' + (layer === 's' ? ' (Reshape the tree to switch).' : '.') : '';
-  return { name: u.name, label: n.type === 'root' ? 'The root' : (ou ? 'Path choice · ' : 'Notable · ') + (br ? br.name : ''), desc: u.desc, eff: u.eff, choice };
+  return { name: u.name, label: n.type === 'root' ? 'The root' : (ou ? 'Path choice · ' : n.dyn ? 'Endless growth · ' : 'Notable · ') + (br ? br.name : ''), desc: u.desc, eff: u.eff, choice };
 }
 const BR_HUE = [['var(--es)', 'var(--esr)'], ['var(--q)', 'var(--qr)'], ['var(--sh)', 'var(--shr)']];
 function buildWebView(T, layer, tabId) {

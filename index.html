@@ -226,6 +226,7 @@ kbd{background:rgba(30,40,90,.6);border:1px solid var(--edge2);border-radius:3px
 /* Intro cutscene */
 #intro{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;flex-direction:column;background:#000;cursor:pointer}
 #intro.open{display:flex;animation:fadein .6s ease-out}
+#intro.closing{pointer-events:none}
 @keyframes fadein{from{opacity:0}}
 #intro .bigorb{width:150px;height:150px;margin-bottom:46px;transition:transform .3s}
 #intro .bigorb::after{inset:-16px}
@@ -974,7 +975,7 @@ function sayNext() {
   const box = $('say'), txt = box.querySelector('.say-t'), orb = box.querySelector('.orb');
   clearTimeout(SAY.timer);
   // never over the intro or the tutorial: wait until they are gone
-  if (SAY.q.length && ($('intro').classList.contains('open') || !tutorialDone())) { SAY.busy = true; box.classList.remove('on'); SAY.timer = setTimeout(sayNext, 1000); return; }
+  if (SAY.q.length && (stageUp() || !tutorialDone())) { SAY.busy = true; box.classList.remove('on'); SAY.timer = setTimeout(sayNext, 1000); return; }
   const text = SAY.q.shift();
   if (text === undefined) { SAY.busy = false; box.classList.remove('on'); document.body.style.removeProperty('--sayh'); return; }
   SAY.busy = true; SAY.full = text; box.classList.add('on'); txt.textContent = '';
@@ -2125,6 +2126,21 @@ const LORE = [
   'I will keep inventing for you. Upgrades. Generators. Ideas no one has had yet. There will always be another.',
   'Now. Let us begin.',
 ];
+// the black stage of the intro and the story chapters: it fades away instead of vanishing (the world runs again meanwhile)
+let STAGE_T = 0, STAGE_FADE = null;
+function stageOpen() {
+  const box = $('intro'); clearTimeout(STAGE_T);
+  if (STAGE_FADE) { STAGE_FADE.cancel(); STAGE_FADE = null; }
+  box.classList.remove('closing'); box.classList.add('open'); return box;
+}
+function stageClose() {
+  const box = $('intro'); box.classList.add('closing'); clearTimeout(STAGE_T);
+  if (STAGE_FADE) STAGE_FADE.cancel();
+  // from wherever it is (a chapter skipped during its own fade-in starts lower), down to nothing
+  STAGE_FADE = box.animate ? box.animate([{ opacity: getComputedStyle(box).opacity }, { opacity: 0 }], { duration: 1100, easing: 'ease-in', fill: 'forwards' }) : null;
+  STAGE_T = setTimeout(() => { box.classList.remove('open', 'closing'); if (STAGE_FADE) { STAGE_FADE.cancel(); STAGE_FADE = null; } }, 1100);
+}
+const stageUp = () => $('intro').classList.contains('open') && !$('intro').classList.contains('closing');
 function playIntro() {
   const box = $('intro'); box.innerHTML = '';
   const orb = h('div', { class: 'orb bigorb' }); attachViz(orb, 24);
@@ -2134,7 +2150,7 @@ function playIntro() {
   const start = h('button', { class: 'start', onclick: e => { e.stopPropagation(); audio(); begin(); } }, '▶  Answer the signal');
   const hint = h('div', { class: 'hint' }, 'sound on · click, Space or Enter to continue');
   box.append(skip, orb, start, hint);
-  box.classList.add('open');
+  stageOpen();
   let line = -1, tw = null, started = false;
   const show = () => { show2(); };
   const show2 = () => { next.style.visibility = 'hidden'; tw = typewriter(txt, LORE[line], { speed: 34, pitch: 1.15, orb, onDone: () => { next.style.visibility = 'visible'; } }); };
@@ -2148,7 +2164,7 @@ function playIntro() {
   function begin() { if (started) return; started = true; start.remove(); hint.textContent = 'click, Space or Enter to continue'; box.insertBefore(dlg, hint); line = 0; show(); }
   function end() {
     if (tw) tw.finish();
-    box.classList.remove('open'); document.removeEventListener('keydown', key, true); box.onclick = null;
+    stageClose(); document.removeEventListener('keydown', key, true); box.onclick = null;
     S.introSeen = true; save();
   }
   const key = e => {
@@ -2293,7 +2309,7 @@ function playScene(sc, replay = false) {
   const hint = h('div', { class: 'hint' }, 'click, Space or Enter to continue');
   next.style.visibility = 'hidden';
   box.append(skip, chap, orb, dlg, opts, hint);
-  box.classList.add('open');
+  stageOpen();
   const seq = sc.lines.slice();
   let line = -1, tw = null, asking = null, ready = false;
   const show = () => {
@@ -2313,11 +2329,11 @@ function playScene(sc, replay = false) {
   };
   const advance = () => { if (!ready || asking) return; if (tw && !tw.isDone()) { tw.finish(); return; } line++; if (line >= seq.length) return end(); show(); };
   function end() {
-    if (tw) tw.finish(); box.classList.remove('open'); document.removeEventListener('keydown', key, true); box.onclick = null;
+    if (tw) tw.finish(); stageClose(); document.removeEventListener('keydown', key, true); box.onclick = null;
     if (!replay) { S.story.seen[sc.id] = true; save(); }
   }
   const key = e => {
-    if (!box.classList.contains('open')) return;
+    if (!stageUp()) return;
     if (asking && /^[1-9]$/.test(e.key) && +e.key <= asking.length) { e.preventDefault(); e.stopPropagation(); answer(+e.key - 1); }
     else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); advance(); }
     else if (e.key === 'Escape') { e.stopPropagation(); end(); } else e.stopPropagation();
@@ -2325,7 +2341,7 @@ function playScene(sc, replay = false) {
   document.addEventListener('keydown', key, true);
   box.onclick = advance;
   sfx('ascend');
-  setTimeout(() => { if (!box.classList.contains('open')) return; ready = true; line = 0; show(); }, 1300); // the title first, then the voice
+  setTimeout(() => { if (!stageUp()) return; ready = true; line = 0; show(); }, 1300); // the title first, then the voice
 }
 // the next chapter starts on its own once its moment has come and nothing else is talking
 let STORY_AT = 0, STORY_SINCE = 0;
@@ -2542,7 +2558,7 @@ function buildTutorial(T) {
     const active = !S.tut.off && S.tut.step < TUT.length, st = active && TUT[S.tut.step];
     show(box, active);
     // the Architect only speaks (and points) while you are looking at the Generators tab
-    const onGen = S.settings.tab === 'gen' && !$('intro').classList.contains('open');
+    const onGen = S.settings.tab === 'gen' && !stageUp();
     const tg = active && onGen && st.target ? st.target() : null;
     if (tg !== lastTarget) { if (lastTarget) lastTarget.classList.remove('tut-hl'); if (tg) tg.classList.add('tut-hl'); lastTarget = tg; }
     if (!active) { lastStep = -1; return; }
@@ -3912,7 +3928,7 @@ let paused = false, lastRender = 0, lastSave = Date.now();
 function frame() {
   const now = Date.now();
   const dt = (now - S.last) / 1000; S.last = now;
-  const inIntro = $('intro').classList.contains('open'); // the world waits while the Architect talks
+  const inIntro = stageUp(); // the world waits while the Architect talks (not while the stage fades away)
   if (!paused && !inIntro && dt > 0) {
     // a long gap means the game was not running (phone app paused, laptop asleep): beyond a minute it counts like time away
     const run = dt > 60 ? 60 + (S.settings.offline ? (dt - 60) * CFG.offlineRate : 0) : dt;

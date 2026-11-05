@@ -971,7 +971,7 @@ function sayNext() {
   SAY.busy = true; SAY.full = text; box.classList.add('on'); txt.textContent = '';
   const beats = syllables(text);
   let i = 0;
-  const hold = () => { SAY.typing = false; box.classList.remove('typing'); orb.classList.remove('talk'); SAY.timer = setTimeout(() => { box.classList.remove('on'); if (++S.secret.heard >= 100) grantSecret('x21'); SAY.timer = setTimeout(sayNext, 320); }, 2600 + text.length * 30); };
+  const hold = () => { SAY.typing = false; box.classList.remove('typing'); orb.classList.remove('talk'); SAY.timer = setTimeout(() => { box.classList.remove('on'); if (S.settings.tab === 'arch' && ++S.secret.heard >= 10) grantSecret('x21'); SAY.timer = setTimeout(sayNext, 320); }, 2600 + text.length * 30); };
   const step = () => {
     i = Math.min(text.length, i + 1); txt.textContent = text.slice(0, i);
     document.body.style.setProperty('--sayh', (box.offsetHeight + 8) + 'px');
@@ -984,7 +984,7 @@ function sayNext() {
 }
 document.addEventListener('click', e => {
   if (!e.target.closest || !e.target.closest('#say')) return;
-  if (SAY.typing) { if (++S.secret.skips >= 20) grantSecret('x22'); clearTimeout(SAY.timer); $('say').querySelector('.say-t').textContent = SAY.full; SAY.typing = false; $('say').classList.remove('typing'); $('say').querySelector('.orb').classList.remove('talk'); SAY.timer = setTimeout(() => { $('say').classList.remove('on'); SAY.timer = setTimeout(sayNext, 320); }, 2200 + SAY.full.length * 25); }
+  if (SAY.typing) { if (recentCount('skip', 300000) >= 15) grantSecret('x22'); clearTimeout(SAY.timer); $('say').querySelector('.say-t').textContent = SAY.full; SAY.typing = false; $('say').classList.remove('typing'); $('say').querySelector('.orb').classList.remove('talk'); SAY.timer = setTimeout(() => { $('say').classList.remove('on'); SAY.timer = setTimeout(sayNext, 320); }, 2200 + SAY.full.length * 25); }
   else sayNext();
 });
 function playStyle() {
@@ -1212,7 +1212,7 @@ function newState() {
       ascend: { on: false, val: '1' },
     },
     reached: { collapse: false, limit: false },
-    run: { clockBought: false, abil: 0, best: 1 },
+    run: { clockBought: false, abil: 0, best: 1, pulsed: false },
     stats: { time: 0, tCollapse: 0, tAscend: 0, totalQ: D.Z, bestQ: D.fromNum(10), totalCollapses: 0, fastCollapse: null, fastAscend: null, pulses: 0, tUnbound: 0 },
     ach: {},
     settings: { notation: 'sci', buyMode: 'max', autosave: true, offline: true, tab: 'gen', sound: true, volume: 0.6, sfx: true, sfxVol: 0.5,
@@ -1459,7 +1459,9 @@ function pulse() {
   if (Math.random() < luckyChance()) { g = g.mul(D.fromNum(LUCKY_X)); luckyPop(); }
   S.q = S.q.add(g); S.stats.pulses++; capQ();
   S.ai.pulses.push(S.stats.time); if (S.ai.pulses.length > 400) S.ai.pulses.splice(0, 200);
-  { const now = S.stats.time; let c = 0; for (let k = S.ai.pulses.length - 1; k >= 0 && now - S.ai.pulses[k] <= 90; k--) c++; if (c >= 40) grantSecret('x2'); }
+  S.run.pulsed = true;
+  { const a = RECENT.drum = (RECENT.drum || []).concat(performance.now()).slice(-7); if (a.length === 7 && a.every((t, i) => !i || Math.abs(t - a[i - 1] - 2000) <= 150)) grantSecret('x2'); }
+  { const d = new Date(); if (d.getHours() === 3 && d.getMinutes() === 33) grantSecret('x5'); }
   return true;
 }
 function buyQ(id) {
@@ -1520,7 +1522,7 @@ function resetQLayer() {
   S.clock = 0;
   if (!hasS('s2')) { S.qUpg = {}; S.proc.q = 0; for (const u of S.forge.q) u.own = false; S.minor.q = {}; MINOR_VER++; }
   S.stats.tCollapse = 0;
-  S.run = { clockBought: false, abil: 0, best: S.q.log10() };
+  S.run = { clockBought: false, abil: 0, best: S.q.log10(), pulsed: false };
 }
 function doCollapse(quiet = false) {
   if (!canCollapse()) return false;
@@ -1530,8 +1532,9 @@ function doCollapse(quiet = false) {
   if (S.stats.fastCollapse === null || t < S.stats.fastCollapse) S.stats.fastCollapse = t;
   if (t <= 30) grant('a25');
   if (!S.run.clockBought) grant('a26');
-  if (tierBought(3) === 0) grantSecret('x4');
-  if (runBestLog() >= 60) grantSecret('x6');
+  if (!quiet && tierBought(3) === 0 && runBestLog() >= 30) grantSecret('x4');
+  if (S.stats.totalCollapses === 1 && runBestLog() >= 40) grantSecret('x6');
+  if (!quiet) { const a = RECENT.coll = (RECENT.coll || []).concat(performance.now()).slice(-10); if (a.length === 10 && a.every((t, i) => !i || t - a[i - 1] <= 30000)) grantSecret('x20'); }
   S.cards.active = S.cards.active.filter(c => c.k !== 'shard' && c.k !== 'top'); // used up by this Collapse
   resetQLayer();
   aiEvent('collapse', gain);
@@ -1711,8 +1714,8 @@ function keepCard(i) {
   if (c.k === 'time') { const p = qpsLog(); if (p > -Infinity) { S.q = S.q.add(D.fromLog(p + L10(c.v))); capQ(); } }
   else if (c.k === 'abil') { S.abil.surge.ready = 0; S.abil.fold.ready = 0; }
   else if (c.k === 'gamble') {
-    if (Math.random() < (hasR('consolation') ? 2 / 3 : 0.5)) { S.cards.active.push({ k: 'qmult', v: c.v, dur: 600, until: t + 600, name: c.name + ' (heads)', r: c.r }); aiSay('Heads. Enjoy it.'); S.secret.heads++; S.secret.tails = 0; if (S.secret.heads >= 3) grantSecret('x16'); }
-    else { aiSay(rnd(['Tails. The deck owes you one.', 'Tails. Nothing this time.'])); S.secret.tails++; S.secret.heads = 0; if (S.secret.tails >= 3) grantSecret('x15'); }
+    if (Math.random() < (hasR('consolation') ? 2 / 3 : 0.5)) { S.cards.active.push({ k: 'qmult', v: c.v, dur: 600, until: t + 600, name: c.name + ' (heads)', r: c.r }); aiSay('Heads. Enjoy it.'); S.secret.heads++; S.secret.tails = 0; if (S.secret.heads >= 5) grantSecret('x16'); }
+    else { aiSay(rnd(['Tails. The deck owes you one.', 'Tails. Nothing this time.'])); S.secret.tails++; S.secret.heads = 0; if (S.secret.tails >= 5) grantSecret('x15'); }
   }
   else S.cards.active.push({ k: c.k, v: c.v, dur: c.dur, until: c.dur < 0 ? -1 : t + c.dur, name: c.name, r: c.r });
   if (c.r === 3) grant('a43');
@@ -1794,28 +1797,28 @@ const ANOMALIES = [
   { id: 'prism', name: 'Prism Engine', base: 30, step: 12, q: 12, desc: 'Each one multiplies Shard gain by 1.25.', eff: n => fmtMult(n * L10(1.25)) + ' Shard gain' },
 ];
 const SECRETS = [
-  { id: 'x1', name: 'Patience', hint: 'Sometimes the best move is none.', desc: 'Leave the game open without touching it for 10 minutes.', reward: ['anom', 'hourglass'] },
-  { id: 'x2', name: 'Drumroll', hint: 'Keep the rhythm.', desc: 'Pulse 40 times within 90 seconds.', reward: ['relic', 'metronome'] },
-  { id: 'x3', name: 'Small Talk', hint: 'Knock, and someone may answer. Knock again.', desc: 'Click the Architect 10 times.', reward: ['anom', 'echo'] },
-  { id: 'x4', name: 'Minimalist', hint: 'Less, but enough.', desc: 'Collapse without buying a single Flame.', reward: ['relic', 'bareframe'] },
-  { id: 'x5', name: 'Night Owl', hint: 'Visit while the world sleeps deepest.', desc: 'Play between 3 AM and 5 AM.', reward: ['relic', 'moonlit'] },
-  { id: 'x6', name: 'Overkill', hint: 'Why stop at the line?', desc: 'Collapse with at least 1e60 Quanta.', reward: ['relic', 'heavy'] },
-  { id: 'x7', name: 'Lucky', hint: 'A gambler’s number, written twice.', desc: 'Own exactly 77 Flickers.', reward: ['relic', 'lucky7'] },
+  { id: 'x1', name: 'Patience', hint: 'Sometimes the best move is none.', desc: 'Wait five minutes at the start of a run without buying anything or Pulsing.', reward: ['anom', 'hourglass'] },
+  { id: 'x2', name: 'Drumroll', hint: 'Keep the rhythm.', desc: 'Pulse seven times in a row, two seconds apart each time.', reward: ['relic', 'metronome'] },
+  { id: 'x3', name: 'Small Talk', hint: 'Knock, and someone may answer. Knock again.', desc: 'Click the Architect ten times within thirty seconds.', reward: ['anom', 'echo'] },
+  { id: 'x4', name: 'Minimalist', hint: 'Less, but enough.', desc: 'Collapse by hand with at least 1e30 Quanta, without buying a single Flame.', reward: ['relic', 'bareframe'] },
+  { id: 'x5', name: 'Night Owl', hint: 'Visit while the world sleeps deepest.', desc: 'Pulse at 3:33 in the morning.', reward: ['relic', 'moonlit'] },
+  { id: 'x6', name: 'Overkill', hint: 'Why stop at the first line?', desc: 'Make your very first Collapse with at least 1e40 Quanta.', reward: ['relic', 'heavy'] },
+  { id: 'x7', name: 'Lucky', hint: 'A gambler’s number, and its little sibling.', desc: 'Own exactly 77 Flickers and 7 Sparks at the same time.', reward: ['relic', 'lucky7'] },
   { id: 'x8', name: 'Scholar', hint: 'The answers were written down all along.', desc: 'Spend a minute reading the Guide.', reward: ['relic', 'annotated'] },
-  { id: 'x9', name: 'Rebel', hint: 'Who needs instructions?', desc: 'Skip the intro or the tutorial.', reward: ['relic', 'selftaught'] },
+  { id: 'x9', name: 'Rebel', hint: 'Who needs help?', desc: 'Reach 1e10 Quanta without owning a single upgrade.', reward: ['relic', 'selftaught'] },
   { id: 'x10', name: 'Restless', hint: 'A restless eye, in every room at once.', desc: 'Switch tabs 30 times within a minute.', reward: ['anom', 'prism'] },
-  { id: 'x11', name: 'Insomniac', hint: 'Stay a while.', desc: 'Keep one session open for 3 hours.', reward: ['relic', 'secondwind'] },
+  { id: 'x11', name: 'Insomniac', hint: 'Stay a while.', desc: 'Play for six hours straight, never idle for more than five minutes.', reward: ['relic', 'secondwind'] },
   { id: 'x12', name: 'Cheat Code', hint: 'Thirty lives, if you remember the steps.', desc: 'Enter the old code after your first Collapse (↑ ↑ ↓ ↓ ← → ← → B A), and admit it.', reward: ['relic', 'cheatcode'] },
-  { id: 'x13', name: 'Spectrum', hint: 'Wear every coat in the wardrobe.', desc: 'Use all six colour themes.', reward: ['relic', 'spectrum'] },
-  { id: 'x14', name: 'Full House', hint: 'A hand that holds every kind of fortune.', desc: 'Have a Common, a Rare, an Epic and a Legendary card working at the same time.', reward: ['relic', 'markeddeck'] },
-  { id: 'x15', name: 'Tails Again', hint: 'Fortune turns its back. And again. And again.', desc: 'Lose three coin flips in a row.', reward: ['relic', 'consolation'] },
-  { id: 'x16', name: 'Hot Hand', hint: 'Fortune smiles. And again. And again.', desc: 'Win three coin flips in a row.', reward: ['relic', 'loadeddie'] },
-  { id: 'x17', name: 'Off the Grid', hint: 'Go where the signal cannot reach.', desc: 'Come back after at least 8 hours away.', reward: ['relic', 'dreamer'] },
+  { id: 'x13', name: 'Spectrum', hint: 'Wear every coat in the wardrobe.', desc: 'Try all six colour themes within ten seconds.', reward: ['relic', 'spectrum'] },
+  { id: 'x14', name: 'Full House', hint: 'A hand that holds every kind of fortune.', desc: 'Have five cards working at once, with Common, Rare, Epic and Legendary among them.', reward: ['relic', 'markeddeck'] },
+  { id: 'x15', name: 'Tails Again', hint: 'Fortune turns its back, five times over.', desc: 'Lose five coin flips in a row.', reward: ['relic', 'consolation'] },
+  { id: 'x16', name: 'Hot Hand', hint: 'Fortune smiles, five times over.', desc: 'Win five coin flips in a row.', reward: ['relic', 'loadeddie'] },
+  { id: 'x17', name: 'Off the Grid', hint: 'Go where the signal cannot reach.', desc: 'Turn off offline progress, then come back after at least 8 hours away.', reward: ['relic', 'dreamer'] },
   { id: 'x18', name: 'Second Thoughts', hint: 'Tear it down. Build it up. Tear it down.', desc: 'Reshape the Shard tree three times within 10 minutes.', reward: ['relic', 'draftsman'] },
   { id: 'x19', name: 'Ascetic', hint: 'Want nothing from it.', desc: 'Reach the Limit without buying a single one of the Architect’s ideas in that Ascension.', reward: ['relic', 'ascetic'] },
-  { id: 'x20', name: 'Old Hand', hint: 'Wear a groove in the world.', desc: 'Play for 100 hours.', reward: ['relic', 'patina'] },
-  { id: 'x21', name: 'Listener', hint: 'Let it finish its sentences.', desc: 'Let 100 of the Architect’s lines play to the end.', reward: ['relic', 'attentive'] },
-  { id: 'x22', name: 'Interrupter', hint: 'Not now.', desc: 'Cut the Architect off mid-sentence 20 times.', reward: ['relic', 'abridged'] },
+  { id: 'x20', name: 'Old Hand', hint: 'Wear a groove in the world.', desc: 'Collapse by hand ten times in a row, each within 30 seconds of the last.', reward: ['relic', 'patina'] },
+  { id: 'x21', name: 'Listener', hint: 'Watch it while it speaks.', desc: 'Let ten of the Architect’s lines play to the end while you are on its tab.', reward: ['relic', 'attentive'] },
+  { id: 'x22', name: 'Interrupter', hint: 'Not now.', desc: 'Cut the Architect off mid-sentence 15 times within five minutes.', reward: ['relic', 'abridged'] },
 ];
 const RELBY = byId(RELICS), ANBY = byId(ANOMALIES), SECBY = byId(SECRETS);
 const hasR = id => !!S.relics[id];
@@ -1834,6 +1837,9 @@ function buyRelic(id) {
   if (S.relics[id] || !rewardUnlocked(id) || lq() < r.cost) return false;
   S.q = S.q.sub(D.fromLog(r.cost)).max0(); S.relics[id] = true; return true;
 }
+// times of recent deliberate actions, for the secrets that need several in a short window (not saved)
+const RECENT = {};
+function recentCount(key, windowMs, keep = 40) { const now = performance.now(), a = RECENT[key] = (RECENT[key] || []).filter(t => now - t <= windowMs); a.push(now); if (a.length > keep) a.shift(); return a.length; }
 function grantSecret(id) {
   if (S.ach[id]) return;
   S.ach[id] = true;
@@ -1843,14 +1849,13 @@ function grantSecret(id) {
   if (!SIMULATING) { blip(1.4); setTimeout(() => blip(1.8), 90); setTimeout(() => blip(2.3), 180); flash('rgba(var(--esr),.35)'); }
 }
 function checkSecrets() {
-  if (tierBought(0) === 77) grantSecret('x7');
-  if (S.stats.time >= 100 * 3600) grantSecret('x20');
-  if (new Set(S.cards.active.map(c => c.r)).size === 4) grantSecret('x14');
+  if (tierBought(0) === 77 && tierBought(1) === 7) grantSecret('x7');
+  if (S.cards.active.length >= 5 && new Set(S.cards.active.map(c => c.r)).size === 4) grantSecret('x14');
   if (canAscend() && !S.secret.ideasAsc) grantSecret('x19');
   if (SIMULATING) return;
-  if (S.stats.time - S.ai.lastInput >= 600) grantSecret('x1');
-  { const hr = new Date().getHours(); if (hr >= 3 && hr < 5) grantSecret('x5'); }
-  if (performance.now() >= 3 * 3600e3) grantSecret('x11');
+  if (S.stats.tCollapse >= 300 && totalBought() === 0 && !S.run.pulsed) grantSecret('x1');
+  if (lq() >= 10 && !Object.keys(S.qUpg).length) grantSecret('x9');
+  if (performance.now() - SESSION.start >= 6 * 3600e3 && performance.now() - SESSION.last < 300000) grantSecret('x11');
 }
 const POKES = ['Yes?', 'I am listening.', 'That tickles. I think. Nobody has ever touched me before.', 'You keep doing that.', 'Is this how your kind says hello?', 'I am counting, you know.', 'Hello to you too.', 'Careful. I bruise in ideas.', 'Persistent. I like that.', 'Fine. You win. Have something I was saving.'];
 // after Small Talk, every poke gets something new (a few lines look at your game)
@@ -1883,7 +1888,7 @@ function poke() {
     aiSay(line); return;
   }
   aiSay(POKES[Math.min(S.secret.orb, POKES.length) - 1]);
-  if (S.secret.orb >= 10) grantSecret('x3');
+  if (recentCount('poke', 30000) >= 10) grantSecret('x3');
 }
 const tabTimes = [];
 // a Lucky Pulse (from the Architect's "lucky" ideas): a bright chime and a pop-up over the Pulse button
@@ -2116,7 +2121,7 @@ function playIntro() {
   const orb = h('div', { class: 'orb bigorb' }); attachViz(orb, 24);
   const txt = h('div', { class: 'txt' }), next = h('div', { class: 'next' }, '▼');
   const dlg = h('div', { class: 'dlg' }, h('div', { class: 'who' }, 'THE ARCHITECT'), txt, next);
-  const skip = h('button', { class: 'skip linkish', onclick: e => { e.stopPropagation(); end(); grantSecret('x9'); } }, 'Skip intro ›');
+  const skip = h('button', { class: 'skip linkish', onclick: e => { e.stopPropagation(); end(); } }, 'Skip intro ›');
   const start = h('button', { class: 'start', onclick: e => { e.stopPropagation(); audio(); begin(); } }, '▶  Answer the signal');
   const hint = h('div', { class: 'hint' }, 'sound on · click, Space or Enter to continue');
   box.append(skip, orb, start, hint);
@@ -2338,7 +2343,7 @@ function tutorialFinished() {
 function buildTutorial(T) {
   const txt = h('div', { class: 'tut-txt' });
   const ok = h('button', { onclick: () => { S.tut.step++; tutorialFinished(); } }, 'Got it');
-  const skip = h('button', { class: 'linkish', onclick: () => { S.tut.off = true; grantSecret('x9'); tutorialFinished(); } }, 'Skip tutorial');
+  const skip = h('button', { class: 'linkish', onclick: () => { S.tut.off = true; tutorialFinished(); } }, 'Skip tutorial');
   const orb = h('div', { class: 'orb poke', onclick: poke, title: 'The Architect' }); attachViz(orb, 12);
   const box = h('div', { class: 'tut' }, orb, h('div', { style: 'flex:1' }, h('div', { class: 'tut-who' }, 'THE ARCHITECT · GUIDE'), txt, h('div', { class: 'tut-btns' }, ok, skip)));
   T.append(box);
@@ -3579,7 +3584,7 @@ function buildOptTab() {
   T.append(h('h2', {}, 'Display'), h('div', { class: 'opt-row' }, h('span', {}, 'Notation'), sel));
   const ui = S => S.settings.ui;
   const uchk = (label, key) => { const cb = h('input', { type: 'checkbox', onchange: () => { ui(S)[key] = cb.checked; applyUI(); } }); up(() => { cb.checked = !!ui(S)[key]; }, 'opt'); return h('label', { class: 'chk' }, cb, label); };
-  const theme = h('select', { onchange: () => { ui(S).theme = theme.value; applyUI(); const T = S.secret.themes; if (!T.includes(theme.value)) T.push(theme.value); if (T.length >= 6) grantSecret('x13'); } },
+  const theme = h('select', { onchange: () => { ui(S).theme = theme.value; applyUI(); RECENT.themes = (RECENT.themes || []).filter(x => performance.now() - x.t <= 10000).concat({ v: theme.value, t: performance.now() }); if (new Set(RECENT.themes.map(x => x.v)).size >= 6) grantSecret('x13'); } },
     ...[['nebula', 'Nebula'], ['ember', 'Ember'], ['verdant', 'Verdant'], ['abyss', 'Abyss'], ['rose', 'Rose'], ['mono', 'Monochrome']].map(([v, l]) => h('option', { value: v }, l)));
   const scale = h('input', { type: 'range', min: '0.8', max: '1.3', step: '0.05', oninput: () => { ui(S).scale = +scale.value; applyUI(); } });
   const scaleLbl = h('span', { class: 'muted' });
@@ -3687,7 +3692,8 @@ document.addEventListener('pointerdown', e => {
   pressedEl = el; sfx(dead ? 'dud' : 'press');
 }, true);
 document.addEventListener('pointerup', () => { if (pressedEl) { const el = pressedEl; pressedEl = null; if (!el.disabled && !el.classList.contains('bought') && !el.classList.contains('draft')) sfx('release'); } }, true);
-for (const ev of ['pointerdown', 'keydown']) document.addEventListener(ev, () => { if (S) S.ai.lastInput = S.stats.time; }, true);
+const SESSION = { start: performance.now(), last: performance.now() }; // a stretch of play with no idle gap over five minutes
+for (const ev of ['pointerdown', 'keydown']) document.addEventListener(ev, () => { if (S) S.ai.lastInput = S.stats.time; const now = performance.now(); if (now - SESSION.last > 300000) SESSION.start = now; SESSION.last = now; }, true);
 
 /* ---------------- Main loop ---------------- */
 let paused = false, lastRender = 0, lastSave = Date.now();
@@ -3700,7 +3706,7 @@ function frame() {
     const run = dt > 60 ? 60 + (S.settings.offline ? (dt - 60) * CFG.offlineRate : 0) : dt;
     if (run > 0.5) simulate(run); else tick(run);
   }
-  if (S.settings.tab === 'guide' && dt > 0 && dt < 1) { S.secret.guide += dt; if (S.secret.guide >= 60) grantSecret('x8'); }
+  if (S.settings.tab === 'guide' && dt > 0 && dt < 1) { S.secret.guide += dt; if (S.secret.guide >= 60) grantSecret('x8'); } // an easy one, on purpose
   if (now - lastRender > 90) { render(); lastRender = now; }
   if (S.settings.autosave && now - lastSave > 10000) { save(); lastSave = now; }
 }
@@ -3725,7 +3731,7 @@ function init() {
   // a save from before a big update: say so first, then the welcome back
   const stale = BIG_UPDATES.filter(b => b.v > (S.ver || 1));
   if (stale.length) oldSaveNotice(stale, welcome); else if (welcome) welcome();
-  if (away >= 8 * 3600) grantSecret('x17');
+  if (away >= 8 * 3600 && !S.settings.offline) grantSecret('x17');
   S.last = Date.now();
   S.ai.lastInput = S.stats.time;
   // older saves: ideas were bought in order; Automata I/II became individual autobuyers

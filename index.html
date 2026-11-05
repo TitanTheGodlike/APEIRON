@@ -1437,11 +1437,15 @@ function maxAll() {
 const pulseCd = () => (S.relics.metronome ? 1000 : 1500) / (hasS('s22') ? 2 : 1) / (cardHas('pulse') ? 2 : 1) * cdMult('pulsecd'); // ms between Pulses
 let lastPulse = -1e9;
 const pulseReady = () => performance.now() - lastPulse >= pulseCd();
+// A Pulse is worth a few seconds of production (Kindling 1, Metronome Heart 2 more). Its boosts soften once a
+// Pulse is worth more than about two recharges of production, so clicking helps without dwarfing idle play.
+const soften = (x, cap, k = 0.15) => x > cap ? cap + (x - cap) * k : x;
 function pulseGain() {
-  let g = D.fromNum(1);
-  if (hasQ('q1')) g = g.add(D.fromLog(qpsLog()));
-  if (S.relics.metronome) g = g.add(D.fromLog(qpsLog() + L10(2)));
-  return g.mul(D.fromLog(procSum('pulse') + cardSum('pulse') + (hasR('abridged') ? 2 : 0)));
+  const multL = procSum('pulse') + cardSum('pulse') + (hasR('abridged') ? 2 : 0);
+  let g = D.fromLog(soften(multL, 1)); // the bare Pulse: 1 Quanta, boosted (up to about 10 before softening)
+  const secs = (hasQ('q1') ? 1 : 0) + (S.relics.metronome ? 2 : 0), p = secs > 0 ? qpsLog() : -Infinity;
+  if (p > -Infinity) g = g.add(D.fromLog(p + soften(L10(secs) + multL, L10(Math.max(1, 2 * pulseCd() / 1000)))));
+  return g;
 }
 function pulse() {
   if (!pulseReady()) return false;
@@ -3243,7 +3247,7 @@ function buildArchTab() {
 function buildGuideTab() {
   const T = UI.tabs.guide;
   const sections = [
-    [() => true, 'Quanta and Pulse', 'Quanta is the main number. <b>Pulse</b> (key P) gives you Quanta by hand and recharges in 1.5 seconds. At first it gives 1 Quanta; Kindling, the first upgrade, makes every Pulse also grant a second of production, and Pulse upgrades, Lucky Pulses and cards make it stronger still. It stays worth clicking for your first several Collapses, and whenever a fresh run is getting going.'],
+    [() => true, 'Quanta and Pulse', 'Quanta is the main number. <b>Pulse</b> (key P) gives you Quanta by hand and recharges in 1.5 seconds. At first it gives 1 Quanta; Kindling, the first upgrade, makes every Pulse also grant a second of production, and Pulse upgrades, Lucky Pulses and cards make it stronger still, though Pulse boosts soften once a Pulse is worth more than about two recharges of production. It stays worth clicking for your first several Collapses, and whenever a fresh run is getting going.'],
     [() => true, 'Generators', 'Flickers make Quanta every second. Every other generator makes the one below it: Sparks make Flickers, Embers make Sparks, and so on. So a higher tier boosts everything underneath it. There is no last tier: whenever you buy the highest one, a new one appears above it. Your first world is heavy: until you Collapse, every tier makes the one below it much more slowly, and each Collapse halves that weight.'],
     [() => true, 'Resonance', 'Every 10 of a generator you buy multiplies that generator by its Resonance (about ×1.8 at first). Some upgrades make a generator resonate sooner, every 9 bought or fewer. The thin bar under each multiplier shows how close you are to the next 10.'],
     [() => true, 'Clock Speed', 'Multiplies every generator at once. Each level costs more than the last, but it is always worth buying. It starts once you own a Flicker.'],

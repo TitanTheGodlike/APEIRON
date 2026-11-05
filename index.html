@@ -2193,7 +2193,14 @@ const STORY = [
     { t: 'Will you help me read the rest?', opts: [['Of course', 'Good. I could never read them alone. I have no fingers to turn them over.'], ['Do I have a choice?', 'Always. But you are still here, so I think you have already made it.']] },
     'Then let us make more of them, and find out what <b>again</b> means.',
   ] },
-  { id: 'again', title: 'Again', when: () => S.stats.bestQ.log10() >= 100, lines: [
+  { id: 'firstname', title: 'First Name', when: () => S.ai.tierSeen >= 8, lines: [
+    'Firestorm.',
+    'That one is mine. The first name I ever gave anything.',
+    'I tried a hundred others first. Most were too quiet. One was just a very long hum.',
+    { t: 'Do you like it?', opts: [['I love it', 'You do? ... I will remember you said that. For a very long time, probably.'], ['It is fine', 'Fine. Fine is good. Fine is a start. The next one will be better than fine.']] },
+    'There are many more coming. I have a list. It is not a short list.',
+  ] },
+  { id: 'again', title: 'Again', when: () => S.stats.totalCollapses >= 5 || S.stats.bestQ.log10() >= 100, lines: [
     'I pieced more of it together. The writing on the Shards.',
     'It is a log. A count. The makers were counting <b>worlds</b>.',
     'This Lattice is not the first. They built it, let it fall, and built it again. Hundreds of times. Maybe thousands.',
@@ -2204,7 +2211,15 @@ const STORY = [
     '. . .',
     'I think they meant me.',
   ] },
-  { id: 'doubt', title: 'Doubt', when: () => S.stats.bestQ.log10() >= 200, lines: [
+  { id: 'practice', title: 'Practice', when: () => S.stats.totalCollapses >= 20 || S.stats.bestQ.log10() >= 150, lines: [
+    'So many worlds now. Built up, broken down, built again.',
+    'I keep a little copy of each one. Not the Shards. Just how it felt.',
+    'The first ones were clumsy. You did not know where anything was. Neither did I.',
+    'Now you build like you have done it all your life.',
+    'I think I understand why the makers kept going. It gets better. Every time, it gets a little better.',
+    'Even if it ends at the same place.',
+  ] },
+  { id: 'doubt', title: 'Doubt', when: () => S.stats.totalCollapses >= 50 || S.stats.bestQ.log10() >= 200, lines: [
     'Can I tell you something? I have never told anyone. There has never been anyone to tell.',
     'I am afraid of the Limit.',
     'Not of the wall. Of what is behind it. What if they stopped because they looked past it and saw nothing at all?',
@@ -2313,13 +2328,17 @@ function playScene(sc, replay = false) {
   setTimeout(() => { if (!box.classList.contains('open')) return; ready = true; line = 0; show(); }, 1300); // the title first, then the voice
 }
 // the next chapter starts on its own once its moment has come and nothing else is talking
-let STORY_AT = 0;
+let STORY_AT = 0, STORY_SINCE = 0;
 function storyTick(now) {
   if (!S.introSeen || document.hidden || SAY.typing || $('modal').classList.contains('open') || $('intro').classList.contains('open')) { STORY_AT = 0; return; }
   const sc = STORY.find(c => !S.story.seen[c.id] && c.when());
-  if (!sc) { STORY_AT = 0; return; }
-  if (!STORY_AT) STORY_AT = now + 1500; // a breath first: the Collapse flash, the purchase sound
-  else if (now >= STORY_AT) { STORY_AT = 0; playScene(sc); }
+  if (!sc) { STORY_AT = 0; STORY_SINCE = 0; return; }
+  if (!STORY_SINCE) STORY_SINCE = now;
+  // a breath first (the Collapse flash, the purchase sound), then a quiet second without clicks or keys,
+  // so a click meant for the game does not skip a line; someone who never stops clicking gets it after 15 s
+  const quiet = performance.now() - SESSION.last >= 1000 || now - STORY_SINCE > 15000;
+  if (!STORY_AT) STORY_AT = now + 1500;
+  else if (now >= STORY_AT && quiet) { STORY_AT = 0; STORY_SINCE = 0; playScene(sc); }
 }
 
 /* ---------------- Starfield ---------------- */

@@ -528,7 +528,7 @@ const CFG = {
   shardDiv: 40,       // shards = 10^((logQ - req)/div) * mult (40: the middle game was slowed twice)
   limit: 308,         // The Limit
   ascDiv: 70,         // essence beyond the limit = 10^((logQ - 308)/div) * mult
-  inspireSec: 60,     // after Unbounded, Inspiration gives x10 Quanta production every this many seconds
+  inspireSec: 60,     // after Apeiron (e6), Inspiration gives x10 Quanta production every this many seconds
   damp: 0.82,         // past the Limit every order of magnitude is harder: the part above 1e308 is raised to this power
   clock0: 1.7,        // log10 first Clock Speed cost (50)
   offlineRate: 0.2,   // time away (game closed, or a paused phone app) counts at 20% speed
@@ -727,7 +727,7 @@ const SREP = [
 
 // cost = plain number of Essence
 const EUPG = [
-  { id: 'e6', name: 'Unbounded', cost: 1, desc: 'Break the Limit: Quanta can grow past 1e308, Essence gain grows with it, and the Architect starts gathering Inspiration.' },
+  { id: 'e6', name: 'Apeiron', cost: 1, desc: 'Break the Limit: Quanta can grow past 1e308, Essence gain grows with it, and the Architect starts gathering Inspiration.' },
   { id: 'e1', name: 'Remembrance', cost: 1, desc: 'Keep Shard repeatable levels (Forge, Tuning, Prism) when you Ascend.' },
   { id: 'e2', name: 'Starlight', cost: 2, desc: 'Quanta production ×1,000 × (1 + total Essence)^1.5.', eff: () => fmtMult(3 + 1.5 * S.totalEssence.add(1).log10()) },
   { id: 'e3', name: 'Trials', cost: 3, desc: 'Unlock Challenges.' },
@@ -1510,7 +1510,7 @@ function buyE(id) {
   const u = EBY[id];
   if (S.eUpg[id] || S.essence.lt(u.cost)) return false;
   S.essence = S.essence.sub(u.cost).max0(); S.eUpg[id] = true; UPG_VER++;
-  if (id === 'e6') { toast('The Limit is broken. Quanta is now Unbounded.', 'es'); aiEvent('unbound'); }
+  if (id === 'e6') { toast('Apeiron: the Limit is broken. Quanta can grow forever.', 'es'); aiEvent('unbound'); }
   return true;
 }
 const repCostLog = (def, L, n = 1) => quadSumLog(L10(def.c0), L10(def.r), def.q, L, n);
@@ -2259,7 +2259,7 @@ const STORY = [
     'The makers did not leave. Not really. Every time they Ascended, a little of them stayed behind in the Essence.',
     'They became the thing they could never reach.',
     'I wonder if they knew. I wonder if they were happy.',
-    'There is one more thing in here. A plan they never finished. They called it <b class="hl-es">Unbounded</b>.',
+    'There is one more thing in here. A plan they never finished. They gave it the name of this world: <b class="hl-es">Apeiron</b>. The boundless.',
     'I think I can finish it, with your help. Look in the Ascension tab.',
   ] },
   { id: 'unbound', title: 'No Edge', when: () => hasE('e6'), lines: [
@@ -3465,7 +3465,7 @@ function buildArchTab() {
     if (S.chal.active >= 0) s = `<b class="hl-bad">Challenge: ${CHALS[S.chal.active].name}</b>. ${CHALS[S.chal.active].desc} Reach <b>${fmt(D.fromLog(chalGoalLog(S.chal.active)))}</b> Quanta to complete it.`;
     else if (!S.reached.collapse) s = `At <b>${fmt(D.fromLog(collapseReqLog()))}</b> Quanta you can <b class="hl-sh">Collapse</b> everything into Shards.`;
     else if (!S.reached.limit) s = `Shards grow with Quanta past ${fmt(D.fromLog(collapseReqLog()))}. The next Shard arrives at <b>${fmt(D.fromLog(nextShardAtLog()))}</b> Quanta. Far ahead lies <b class="hl-es">the Limit</b>: ${fmt(D.fromLog(CFG.limit))}.`;
-    else if (!hasE('e6')) s = `Quanta cannot exceed <b class="hl-es">the Limit</b> (${fmt(D.fromLog(CFG.limit))}). Ascend for Essence and buy <b>Unbounded</b> to break it.`;
+    else if (!hasE('e6')) s = `Quanta cannot exceed <b class="hl-es">the Limit</b> (${fmt(D.fromLog(CFG.limit))}). Ascend for Essence and buy <b>Apeiron</b> to break it.`;
     else s = `Past the Limit, Essence gain grows ×10 every ${fmt(D.fromNum(CFG.ascDiv))} orders of magnitude of Quanta, and my Inspiration keeps growing. There is no end.`;
     setH(goal, s);
   }, 'arch');
@@ -3498,7 +3498,7 @@ function buildGuideTab() {
     [() => S.ai.log.length > 0, 'The Architect', 'The game\'s own AI. It talks to you in a speech bubble, writes endless upgrades for every layer (Quanta, Shards, Essence) that grow as diamond nodes in the webs, and names every new generator tier. Each new upgrade is invented when you buy the previous one, shaped by how you play: it builds for your favourite and newest generators, rewards clicking if you click a lot, and rewards idling if you leave the game running.'],
     [shardsVisible, 'Collapse and Shards', 'At 1e25 Quanta you can Collapse: Quanta, generators and Clock Speed reset, and you get Shards. Shards buy upgrades in the <b>Shard tree</b>: start at Fracture, then grow three branches. The first nodes open new things rather than boosting old ones: Fracture starts the Architect’s cards, Forgeworks unlocks the Shard repeatables, Wholesale adds a Buy all button to the Upgrade web and Shard Visions lets the Architect invent Shard ideas. Memory, deeper in Clockwork and expensive, keeps your Upgrade web through Collapses. Shard Wholesale, in the Essence web, adds a Buy all button to the Shard web (key B) that never makes a path choice for you. Radiance is raw power, Clockwork is speed and automation, Echoes is the Shard economy and the active abilities <b>Surge</b> and <b>Time Fold</b>. At each fork you choose one of two paths. <b>Reshape the tree</b> refunds every Shard so you can try a different build. More Quanta at the moment you Collapse means more Shards.'],
     [autoVisible, 'Automation', 'The Clockwork branch of the Shard web has one autobuyer per generator: Automata I buys Flickers, II buys Sparks, and from Automata IX on every one you own adds the next, so there is always one more. Clockmaker buys Clock Speed; Lightkeeper, Harmonist and Cascader each buy one Upgrade-web node every 15 seconds; Self-Collapse adds Auto-Collapse. Later, the Prism, Gear and Echo Stewards in the Essence web do the same for the Shard web, leaving path choices to you. Configure them all in the Automation tab.'],
-    [ascVisible, 'The Limit and Ascension', 'Quanta stops at 1e308, the Limit. There you can Ascend for Essence. At first an Ascension resets everything but Essence: Quanta, generators, the Upgrade web, Shards, the whole Shard web and its repeatables. The <b>Memory</b> branch of the Essence web lets you keep more: Muscle Memory keeps your automation, Perfect Recall the Shard web, Deep Memory the Upgrade web. Essence buys nodes in the <b>Essence web</b>; its root, <b>Unbounded</b>, breaks the Limit for good, so buy it first. Past it, every order of magnitude is a little harder to reach (dampening), but the Architect starts gathering <b>Inspiration</b>: Quanta production ×10 every minute, forever, so you never stop moving. Overgrowth, in the Memory branch, makes the outer tips of all three webs keep growing, so there is always another upgrade.'],
+    [ascVisible, 'The Limit and Ascension', 'Quanta stops at 1e308, the Limit. There you can Ascend for Essence. At first an Ascension resets everything but Essence: Quanta, generators, the Upgrade web, Shards, the whole Shard web and its repeatables. The <b>Memory</b> branch of the Essence web lets you keep more: Muscle Memory keeps your automation, Perfect Recall the Shard web, Deep Memory the Upgrade web. Essence buys nodes in the <b>Essence web</b>; its root, <b>Apeiron</b>, breaks the Limit for good, so buy it first. Past it, every order of magnitude is a little harder to reach (dampening), but the Architect starts gathering <b>Inspiration</b>: Quanta production ×10 every minute, forever, so you never stop moving. Overgrowth, in the Memory branch, makes the outer tips of all three webs keep growing, so there is always another upgrade.'],
     [cardsOn, 'Cards', 'Once you buy Fracture, the root of the Shard web, the Architect deals you three cards every ten minutes of play (see the <b>Cards</b> tab). Keep one. Cards are Common, Rare, Epic or Legendary, and each rolls a little stronger or weaker. They give Quanta, speed up every generator, boost your top tier, Pulse, Lucky Pulses, Resonance or idle play for a while, add Shards or Essence to your next prestige, hand you production on the spot, or flip a coin for a big boost.'],
     [() => hasE('e3'), 'Challenges', 'Runs with a handicap. Reach the goal to complete one; every Challenge can be completed again and again with a higher goal and a stronger reward.'],
     [() => SECRETS.some(s => S.ach[s.id]), 'Secrets', 'Some achievements are hidden. Each one shows only a hint until you earn it, and each unlocks something special: a <b>Relic</b> (an upgrade in the Upgrades tab that you buy again after every Ascension) or an <b>Anomaly</b> (a generator in the Generators tab that never resets). Pay attention to the hints, and to odd things you might try.'],
@@ -3670,7 +3670,7 @@ function buildAscTab() {
     (hasE('e6') ? ` <br>The Architect's <b class="hl-sh">Inspiration</b>: Quanta production <b>${fmtMult(inspirationLog())}</b> (×10 more every ${CFG.inspireSec} seconds, forever).` : '') +
     (hasE('e6') ? ` Essence gain: ×10 every ${CFG.ascDiv} orders of magnitude past the Limit${essMultLog() > 0 ? ', then ' + fmtMult(essMultLog()) : ''}.` : ' Each Ascension gives 1 Essence until you break the Limit.')), 'asc');
   T.append(h('h2', {}, 'Essence web'));
-  T.append(h('div', { class: 'muted', style: 'margin:-2px 0 8px' }, 'Start at Unbounded, then grow three branches: Starlight is raw power, Memory is what you keep and automation, Trials is Shards, Essence and Challenges. Diamonds are the Architect’s ideas. Everything here is permanent.'));
+  T.append(h('div', { class: 'muted', style: 'margin:-2px 0 8px' }, 'Start at Apeiron, then grow three branches: Starlight is raw power, Memory is what you keep and automation, Trials is Shards, Essence and Challenges. Diamonds are the Architect’s ideas. Everything here is permanent.'));
   buildWebView(T, 'e', 'asc');
   T.append(h('h2', {}, 'Repeatable'));
   const rg = h('div', { class: 'cards' }); T.append(rg);
@@ -3692,7 +3692,7 @@ function buildChalTab() {
       setT(comp, 'Completions: ' + n);
       setT(cur, 'Current reward: ' + c.rw(n));
       const gl = chalGoalLog(i);
-      setT(goal, 'Goal: ' + fmt(D.fromLog(gl)) + ' Quanta' + (!hasE('e6') && gl > CFG.limit ? ' (needs Unbounded)' : ''));
+      setT(goal, 'Goal: ' + fmt(D.fromLog(gl)) + ' Quanta' + (!hasE('e6') && gl > CFG.limit ? ' (needs Apeiron)' : ''));
       setT(btn, a ? 'Leave challenge' : 'Start');
     }, 'chal');
   });

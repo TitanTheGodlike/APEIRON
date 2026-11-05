@@ -8,6 +8,8 @@
 :root{
   --bg:#04050d; --ink:#e7eaff; --dim:#929ac8; --faint:#5a628f;
   --q:#7fe3ff; --sh:#c49bff; --es:#ffd27a; --ok:#6ef2b4; --bad:#ff7b8b;
+  --qr:127,227,255; --shr:196,155,255; --esr:255,210,122;
+  --neb1:rgba(90,70,200,.22); --neb2:rgba(40,140,200,.14); --neb3:rgba(160,80,220,.12);
   --glass:rgba(12,16,36,.74); --glass2:rgba(20,26,58,.82);
   --edge:rgba(130,160,255,.16); --edge2:rgba(130,160,255,.34); --c:rgba(150,190,255,.55);
   --mono:"Cascadia Code","Cascadia Mono",Consolas,ui-monospace,monospace;
@@ -17,11 +19,15 @@ html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;min-height:100vh;padding-bottom:64px;overflow-x:hidden}
 #stars{position:fixed;inset:0;z-index:-2;pointer-events:none}
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:
-  radial-gradient(900px 500px at 15% -10%,rgba(90,70,200,.22),transparent 70%),
-  radial-gradient(800px 500px at 100% 20%,rgba(40,140,200,.14),transparent 70%),
-  radial-gradient(700px 600px at 50% 120%,rgba(160,80,220,.12),transparent 70%)}
+  radial-gradient(900px 500px at 15% -10%,var(--neb1),transparent 70%),
+  radial-gradient(800px 500px at 100% 20%,var(--neb2),transparent 70%),
+  radial-gradient(700px 600px at 50% 120%,var(--neb3),transparent 70%)}
 .num,.res .v,.res .r{font-family:var(--mono);font-variant-numeric:tabular-nums}
-::selection{background:rgba(196,155,255,.35)}
+::selection{background:rgba(var(--shr),.35)}
+/* nothing in the game can be highlighted, except the save box and text inputs */
+body{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+textarea,input[type=text]{-webkit-user-select:text;user-select:text}
+img,canvas{-webkit-user-drag:none}
 /* HUD frame: thin edge + glowing corner brackets */
 .hud,.row,.card,.info,.chal,.ach,.auto-box,.tut,.feed,#modal .box{
   --c:rgba(150,190,255,.5);
@@ -32,35 +38,36 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
     linear-gradient(var(--c) 0 0) bottom right/12px 1.5px no-repeat,linear-gradient(var(--c) 0 0) bottom right/1.5px 12px no-repeat,
     var(--glass);
   border:1px solid var(--edge);border-radius:3px;backdrop-filter:blur(6px)}
-header{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(6,8,20,.94),rgba(6,8,20,.82));backdrop-filter:blur(10px);border-bottom:1px solid var(--edge);padding:10px 20px;display:flex;align-items:center;gap:28px;flex-wrap:wrap;box-shadow:0 1px 0 rgba(127,227,255,.08),0 8px 30px rgba(0,0,0,.35)}
+#topbar{position:sticky;top:0;z-index:10}
+header{background:linear-gradient(180deg,rgba(6,8,20,.94),rgba(6,8,20,.82));backdrop-filter:blur(10px);border-bottom:1px solid var(--edge);padding:10px 20px;display:flex;align-items:center;gap:28px;flex-wrap:wrap;box-shadow:0 1px 0 rgba(var(--qr),.08),0 8px 30px rgba(0,0,0,.35)}
 .title{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.32em;font-size:13px;color:#cfd6ff;text-shadow:0 0 12px rgba(160,180,255,.5)}
 .title .orb{width:22px;height:22px}
 .res{display:flex;flex-direction:column;min-width:140px;padding-left:12px;border-left:2px solid var(--edge2)}
 .res .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.22em;color:var(--faint)}
 .res .v{font-size:21px;font-weight:700;line-height:1.2}
 .res .r{font-size:11.5px;color:var(--dim)}
-.res.q{border-left-color:rgba(127,227,255,.6)}.res.q .v{color:var(--q);text-shadow:0 0 16px rgba(127,227,255,.45)}
-.res.sh{border-left-color:rgba(196,155,255,.6)}.res.sh .v{color:var(--sh);text-shadow:0 0 16px rgba(196,155,255,.45)}
-.res.es{border-left-color:rgba(255,210,122,.6)}.res.es .v{color:var(--es);text-shadow:0 0 16px rgba(255,210,122,.45)}
+.res.q{border-left-color:rgba(var(--qr),.6)}.res.q .v{color:var(--q);text-shadow:0 0 16px rgba(var(--qr),.45)}
+.res.sh{border-left-color:rgba(var(--shr),.6)}.res.sh .v{color:var(--sh);text-shadow:0 0 16px rgba(var(--shr),.45)}
+.res.es{border-left-color:rgba(var(--esr),.6)}.res.es .v{color:var(--es);text-shadow:0 0 16px rgba(var(--esr),.45)}
 .spacer{flex:1}
 .prestige{display:flex;gap:8px;flex-wrap:wrap}
 button{font:inherit;color:var(--ink);background:linear-gradient(180deg,rgba(40,50,100,.55),rgba(20,26,58,.75));border:1px solid var(--edge2);border-radius:3px;padding:6px 13px;cursor:pointer;transition:border-color .12s,box-shadow .12s,background .12s,transform .06s;letter-spacing:.02em}
 button:hover:not(:disabled){border-color:rgba(160,190,255,.7);box-shadow:0 0 12px rgba(127,170,255,.25)}
 button:active:not(:disabled){transform:translateY(1px)}
 button:disabled{opacity:.38;cursor:default}
-button.can{border-color:var(--q);box-shadow:0 0 10px rgba(127,227,255,.22),inset 0 0 12px rgba(127,227,255,.08);color:#eaffff}
+button.can{border-color:var(--q);box-shadow:0 0 10px rgba(var(--qr),.22),inset 0 0 12px rgba(var(--qr),.08);color:#eaffff}
 .btn-big{padding:7px 18px;font-weight:700;line-height:1.2;text-align:center;min-width:160px;letter-spacing:.14em;text-transform:uppercase;font-size:12.5px;position:relative;overflow:hidden}
 .btn-big small{display:block;font-weight:500;font-size:11px;opacity:.9;letter-spacing:.02em;text-transform:none;font-family:var(--mono)}
 .btn-big:not(:disabled)::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.18) 50%,transparent 70%);transform:translateX(-100%);animation:shine 3.2s ease-in-out infinite}
 @keyframes shine{60%,100%{transform:translateX(100%)}}
-.btn-collapse{border-color:var(--sh)!important;color:#f0e6ff;background:linear-gradient(180deg,rgba(110,70,200,.55),rgba(40,22,80,.85))!important;box-shadow:0 0 16px rgba(196,155,255,.3)}
-.btn-ascend{border-color:var(--es)!important;color:#fff4dc;background:linear-gradient(180deg,rgba(170,120,30,.55),rgba(60,40,10,.85))!important;box-shadow:0 0 16px rgba(255,210,122,.3)}
+.btn-collapse{border-color:var(--sh)!important;color:#f0e6ff;background:linear-gradient(180deg,rgba(110,70,200,.55),rgba(40,22,80,.85))!important;box-shadow:0 0 16px rgba(var(--shr),.3)}
+.btn-ascend{border-color:var(--es)!important;color:#fff4dc;background:linear-gradient(180deg,rgba(170,120,30,.55),rgba(60,40,10,.85))!important;box-shadow:0 0 16px rgba(var(--esr),.3)}
 .btn-chal{border-color:var(--bad)!important;color:#ffe3e6;background:linear-gradient(180deg,rgba(160,40,60,.55),rgba(60,14,24,.85))!important}
-nav{display:flex;gap:2px;padding:0 20px;border-bottom:1px solid var(--edge);flex-wrap:wrap;background:rgba(6,8,20,.6);backdrop-filter:blur(6px)}
+nav{display:flex;gap:2px;padding:0 20px;border-bottom:1px solid var(--edge);flex-wrap:wrap;background:rgba(6,8,20,.94);backdrop-filter:blur(8px)}
 nav button{background:transparent;border:none;border-bottom:2px solid transparent;border-radius:0;color:var(--dim);padding:10px 14px 9px;text-transform:uppercase;letter-spacing:.14em;font-size:11.5px;font-weight:600}
 nav button .ico{margin-right:7px;opacity:.8}
 nav button:hover:not(:disabled){box-shadow:none;color:var(--ink);border-bottom-color:rgba(160,190,255,.35)}
-nav button.active{color:#fff;border-bottom-color:var(--q);text-shadow:0 0 10px rgba(127,227,255,.6);background:linear-gradient(0deg,rgba(127,227,255,.1),transparent)}
+nav button.active{color:#fff;border-bottom-color:var(--q);text-shadow:0 0 10px rgba(var(--qr),.6);background:linear-gradient(0deg,rgba(var(--qr),.1),transparent)}
 nav button .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--q);margin-left:7px;vertical-align:middle;box-shadow:0 0 8px var(--q);animation:blink 1.4s ease-in-out infinite}
 @keyframes blink{50%{opacity:.35}}
 main{max-width:1140px;margin:0 auto;padding:18px 20px}
@@ -70,13 +77,14 @@ main{max-width:1140px;margin:0 auto;padding:18px 20px}
 .seg{display:inline-flex;border:1px solid var(--edge2);border-radius:3px;overflow:hidden}
 .seg button{border:none;border-radius:0;background:transparent;border-right:1px solid var(--edge2);font-size:12.5px}
 .seg button:last-child{border-right:none}
-.seg button.on{background:rgba(127,227,255,.16);color:#fff;box-shadow:inset 0 -2px 0 var(--q)}
-.pulse{border-color:var(--q);color:var(--q);font-weight:700;padding:7px 20px;letter-spacing:.12em;text-transform:uppercase;font-size:12.5px;--cd:100%;background:linear-gradient(90deg,rgba(127,227,255,.22) var(--cd),rgba(127,227,255,.04) var(--cd)),rgba(14,24,48,.85)!important;box-shadow:0 0 14px rgba(127,227,255,.2)}
-.pulse.cooling{color:rgba(127,227,255,.6)}
+.seg button.on{background:rgba(var(--qr),.16);color:#fff;box-shadow:inset 0 -2px 0 var(--q)}
+.pulse{border-color:var(--q);color:var(--q);font-weight:700;padding:7px 20px;letter-spacing:.12em;text-transform:uppercase;font-size:12.5px;--cd:100%;background:linear-gradient(90deg,rgba(var(--qr),.22) var(--cd),rgba(var(--qr),.04) var(--cd)),rgba(14,24,48,.85)!important;box-shadow:0 0 14px rgba(var(--qr),.2)}
+.pulse.cooling{color:rgba(var(--qr),.6)}
+.pulse{width:215px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;font-variant-numeric:tabular-nums}
 .row{--hue:195;--c:hsla(var(--hue),90%,72%,.6);display:grid;grid-template-columns:minmax(160px,1.25fr) minmax(160px,1.3fr) minmax(130px,1fr) minmax(200px,1.1fr);gap:12px;align-items:center;padding:9px 14px;margin-bottom:6px;transition:border-color .2s}
 .row:hover{border-color:hsla(var(--hue),90%,70%,.35)}
 .row.locked{opacity:.36;filter:saturate(.4)}
-.row.clock{--c:rgba(127,227,255,.7);border-color:rgba(127,227,255,.25)}
+.row.clock{--c:rgba(var(--qr),.7);border-color:rgba(var(--qr),.25)}
 .row .name{font-weight:650;letter-spacing:.02em}
 .row .sub{font-size:12px;color:var(--dim);font-family:var(--mono)}
 .row .mult{color:var(--ok);font-size:12.5px;font-family:var(--mono)}
@@ -96,9 +104,9 @@ h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--ed
 .card .e{color:var(--ok);font-size:12px;font-family:var(--mono)}
 .card .c{font-size:12px;color:var(--faint);font-family:var(--mono)}
 .card .why{font-size:12px;color:#c6b6ff;font-style:italic}
-.card.can{--c:rgba(127,227,255,.9);border-color:rgba(127,227,255,.55);box-shadow:0 0 16px rgba(127,227,255,.14)}.card.can .c{color:var(--q)}
-.card.sh{--c:rgba(196,155,255,.6)}.card.sh.can{--c:rgba(196,155,255,.95);border-color:rgba(196,155,255,.6);box-shadow:0 0 16px rgba(196,155,255,.16)}.card.sh.can .c{color:var(--sh)}
-.card.es{--c:rgba(255,210,122,.55)}.card.es.can{--c:rgba(255,210,122,.95);border-color:rgba(255,210,122,.6);box-shadow:0 0 16px rgba(255,210,122,.16)}.card.es.can .c{color:var(--es)}
+.card.can{--c:rgba(var(--qr),.9);border-color:rgba(var(--qr),.55);box-shadow:0 0 16px rgba(var(--qr),.14)}.card.can .c{color:var(--q)}
+.card.sh{--c:rgba(var(--shr),.6)}.card.sh.can{--c:rgba(var(--shr),.95);border-color:rgba(var(--shr),.6);box-shadow:0 0 16px rgba(var(--shr),.16)}.card.sh.can .c{color:var(--sh)}
+.card.es{--c:rgba(var(--esr),.55)}.card.es.can{--c:rgba(var(--esr),.95);border-color:rgba(var(--esr),.6);box-shadow:0 0 16px rgba(var(--esr),.16)}.card.es.can .c{color:var(--es)}
 .card.bought{--c:rgba(110,242,180,.55);border-color:rgba(110,242,180,.22);cursor:default;opacity:.72}
 .card.bought:hover{transform:none}
 .card.bought .c{color:var(--ok)}.card.bought .c::before{content:"✓ "}
@@ -111,7 +119,7 @@ h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--ed
 .info b{color:var(--ink)}
 .hl-q{color:var(--q)!important}.hl-sh{color:var(--sh)!important}.hl-es{color:var(--es)!important}.hl-ok{color:var(--ok)!important}.hl-bad{color:var(--bad)!important}
 .progress{position:fixed;bottom:0;left:0;right:0;height:38px;background:rgba(5,6,16,.94);border-top:1px solid var(--edge);z-index:10;overflow:hidden;backdrop-filter:blur(8px)}
-.progress .fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(127,227,255,.1),rgba(196,155,255,.32));box-shadow:inset -2px 0 0 rgba(220,200,255,.8),6px 0 18px rgba(196,155,255,.35);transition:width .25s}
+.progress .fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(var(--qr),.1),rgba(var(--shr),.32));box-shadow:inset -2px 0 0 rgba(220,200,255,.8),6px 0 18px rgba(var(--shr),.35);transition:width .25s}
 .progress .txt{position:relative;text-align:center;line-height:38px;font-size:12px;color:var(--dim);letter-spacing:.06em;font-family:var(--mono)}
 .ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:8px}
 .ach{padding:9px 11px;font-size:12px;color:var(--faint);min-height:70px;--c:rgba(150,170,220,.3)}
@@ -156,19 +164,19 @@ label.chk input{accent-color:var(--q)}
 .muted{color:var(--faint);font-size:12px}
 kbd{background:rgba(30,40,90,.6);border:1px solid var(--edge2);border-radius:3px;padding:0 5px;font:12px var(--mono)}
 /* The Architect */
-.orb{position:relative;flex:none;width:36px;height:36px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#fff 0 8%,#e6d8ff 9% 14%,rgba(196,155,255,.9) 15% 30%,transparent 31%),conic-gradient(from 0deg,#5a4dff,#c49bff,#7fe3ff,#ff9be6,#5a4dff);box-shadow:0 0 16px rgba(196,155,255,.6),0 0 40px rgba(127,227,255,.2);animation:spin 10s linear infinite}
-.orb::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:1px dashed rgba(196,155,255,.45);animation:spin 18s linear infinite reverse}
+.orb{position:relative;flex:none;width:36px;height:36px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#fff 0 8%,#e6d8ff 9% 14%,rgba(var(--shr),.9) 15% 30%,transparent 31%),conic-gradient(from 0deg,#5a4dff,#c49bff,#7fe3ff,#ff9be6,#5a4dff);box-shadow:0 0 16px rgba(var(--shr),.6),0 0 40px rgba(var(--qr),.2);animation:spin 10s linear infinite}
+.orb::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:1px dashed rgba(var(--shr),.45);animation:spin 18s linear infinite reverse}
 .orb.talk{animation:spin 10s linear infinite,talk .18s ease-in-out infinite alternate}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes talk{to{filter:brightness(1.35) saturate(1.2)}}
-.tut{display:flex;gap:14px;align-items:flex-start;padding:13px 15px;margin-bottom:12px;--c:rgba(196,155,255,.9);border-color:rgba(196,155,255,.35);background-color:rgba(30,20,70,.55)}
+.tut{display:flex;gap:14px;align-items:flex-start;padding:13px 15px;margin-bottom:12px;--c:rgba(var(--shr),.9);border-color:rgba(var(--shr),.35);background-color:rgba(30,20,70,.55)}
 .tut-who{font-size:10px;letter-spacing:.24em;color:var(--sh);margin-bottom:4px;font-weight:700}
 .tut-txt{line-height:1.55;min-height:3em}
 .tut-btns{display:flex;gap:8px;margin-top:9px}
 .linkish{background:transparent!important;border-color:transparent!important;color:var(--faint);padding:6px 4px;box-shadow:none!important}
 .tut-hl{outline:2px solid var(--sh)!important;outline-offset:2px;animation:hl 1.2s ease-in-out infinite}
 @keyframes hl{50%{outline-color:transparent}}
-.feed{margin-top:12px;padding:9px 13px;font-size:12.5px;color:#d8ceff;--c:rgba(196,155,255,.6);background-color:rgba(30,20,70,.35)}
+.feed{margin-top:12px;padding:9px 13px;font-size:12.5px;color:#d8ceff;--c:rgba(var(--shr),.6);background-color:rgba(30,20,70,.35)}
 .feed div{padding:2px 0}
 .feed .when{color:var(--faint);font-size:11px;margin-right:7px;font-family:var(--mono)}
 .feed.big{max-height:340px;overflow:auto}
@@ -178,19 +186,102 @@ kbd{background:rgba(30,40,90,.6);border:1px solid var(--edge2);border-radius:3px
 @keyframes fadein{from{opacity:0}}
 #intro .bigorb{width:150px;height:150px;margin-bottom:46px;transition:transform .3s}
 #intro .bigorb::after{inset:-16px}
-#intro .dlg{position:relative;width:min(760px,92vw);min-height:150px;padding:22px 26px 34px;font-size:19px;line-height:1.5;color:#f1ecff;--c:rgba(196,155,255,.95);border-color:rgba(196,155,255,.45);background-color:#000;box-shadow:0 0 40px rgba(120,90,255,.18);backdrop-filter:none}
+#intro .dlg{position:relative;width:min(760px,92vw);min-height:150px;padding:22px 26px 34px;font-size:19px;line-height:1.5;color:#f1ecff;--c:rgba(var(--shr),.95);border-color:rgba(var(--shr),.45);background-color:#000;box-shadow:0 0 40px rgba(120,90,255,.18);backdrop-filter:none}
 #intro .who{position:absolute;top:-13px;left:22px;padding:2px 12px;font-size:11px;letter-spacing:.3em;font-weight:800;color:#1a1033;background:linear-gradient(90deg,#c49bff,#7fe3ff);border-radius:2px}
 #intro .next{position:absolute;right:18px;bottom:10px;font-size:13px;color:var(--sh);animation:bob .7s ease-in-out infinite alternate}
 @keyframes bob{to{transform:translateY(4px)}}
 #intro .skip{position:absolute;top:18px;right:20px}
-#intro .start{font-size:16px;padding:12px 28px;letter-spacing:.2em;text-transform:uppercase;border-color:var(--sh);box-shadow:0 0 24px rgba(196,155,255,.35)}
+#intro .start{font-size:16px;padding:12px 28px;letter-spacing:.2em;text-transform:uppercase;border-color:var(--sh);box-shadow:0 0 24px rgba(var(--shr),.35)}
 #intro .hint{margin-top:14px;color:var(--faint);font-size:12px;letter-spacing:.1em}
-@media (max-width:760px){.row{grid-template-columns:1fr 1fr}.res .v{font-size:18px}header{gap:14px}#intro .dlg{font-size:16px}}</style>
+/* ---- Skill webs ---- */
+.treeview{--tint:rgba(var(--shr),.05);position:relative;height:660px;border:1px solid var(--edge);border-radius:3px;overflow:hidden;background:radial-gradient(circle at 42% 50%,var(--tint),transparent 70%),rgba(5,7,18,.6);cursor:grab;touch-action:none;transition:background .8s}
+.treeview.dragging{cursor:grabbing}
+.treesvg{width:100%;height:100%;display:block}
+.te{stroke:rgba(150,170,230,.16);stroke-width:2}
+.te.on{stroke:var(--ec);stroke-width:3;stroke-dasharray:7 5;animation:flow 1.4s linear infinite}
+.te.fogged{stroke:rgba(150,170,230,.05)}
+@keyframes flow{to{stroke-dashoffset:-12}}
+.tn{cursor:pointer}
+.tbody{animation:bob 5s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes bob{50%{transform:translateY(-3px)}}
+.tshape{fill:rgba(8,10,26,.96);stroke:var(--bc);stroke-width:2;opacity:.55}
+.tcore{fill:var(--bc);opacity:.2}
+.tl{fill:#aab2de;font-size:11px;text-anchor:middle;font-family:"Segoe UI",system-ui,sans-serif;pointer-events:none;paint-order:stroke;stroke:rgba(4,5,14,.9);stroke-width:3px}
+.tn.minor .tshape{stroke-width:1.5}
+.tn.far .tshape{opacity:.3;stroke-dasharray:3 3}.tn.far .tl{fill:#59618c}
+.tn.fog{opacity:.12}.tn.fog .tl{display:none}
+.tn.avail .tshape{opacity:.9}
+.tn.can .tshape{opacity:1;stroke-width:3;filter:drop-shadow(0 0 5px var(--bc));animation:pulseNode 1.3s ease-in-out infinite}
+.tn.minor.can .tshape{stroke-width:2.5}
+@keyframes pulseNode{50%{stroke-opacity:.45}}
+.tn.owned .tshape{fill:var(--bc);fill-opacity:.3;opacity:1;filter:drop-shadow(0 0 7px var(--bc))}
+.tn.owned .tcore{opacity:1}.tn.owned .tl{fill:#eef1ff}
+.tn.owned.minor .tshape{fill-opacity:.85}
+.tn.forked{opacity:.25}.tn.forked .tl{text-decoration:line-through}
+.tn.sel .tshape{stroke:#fff;stroke-width:3;opacity:1}
+.tn.root .tshape{stroke-width:3}
+.tn.fresh .tbody{animation:grow 1s cubic-bezier(.2,1.6,.4,1) both,bob 5s ease-in-out 1s infinite}
+@keyframes grow{from{transform:scale(0);opacity:0}}
+.treetools{position:absolute;left:10px;top:10px;display:flex;gap:4px}
+.treetools button{padding:3px 11px}
+.treehint{position:absolute;left:12px;bottom:9px;font-size:11.5px;color:var(--faint);pointer-events:none}
+.nodepanel{position:absolute;right:10px;top:10px;width:255px;padding:12px 14px;background:rgba(9,11,30,.95);border:1px solid var(--edge2);border-radius:3px;display:flex;flex-direction:column;gap:4px}
+.nodepanel .pb{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--sh)}
+.nodepanel .pn{font-weight:700}
+.nodepanel .pd{font-size:12.5px;color:var(--dim)}
+.nodepanel .pe{font-size:12px;color:var(--ok);font-family:var(--mono)}
+.nodepanel .pw{font-size:12px;color:#c6b6ff;font-style:italic}
+.nodepanel .pc{font-size:12px;color:var(--faint);font-family:var(--mono)}
+.nodepanel button{margin-top:6px}
+.graphbox{position:relative;border:1px solid var(--edge);border-radius:3px;background:rgba(6,8,20,.55);padding:6px 0}
+.gtip{display:none;position:absolute;top:10px;padding:7px 10px;background:rgba(9,11,30,.95);border:1px solid var(--edge2);border-radius:3px;font-size:12px;font-family:var(--mono);pointer-events:none;min-width:150px}
+.gleg{display:inline-flex;align-items:center;gap:7px;opacity:.45}
+.gleg.on{opacity:1}
+.gsw{width:16px;height:0;border-top:3px solid;display:inline-block;background:none!important}
+/* ---- Shard tree & abilities ---- */
+.rootnode{max-width:380px;margin:0 auto 16px}
+.tree{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.branch{display:flex;flex-direction:column}
+.bhead{display:flex;flex-direction:column;align-items:center;margin-bottom:10px}
+.bhead b{letter-spacing:.2em;text-transform:uppercase;font-size:12px;color:var(--sh)}
+.branch>.card,.fork{position:relative;margin-bottom:16px}
+.branch>.card:not(:last-child)::after,.fork::after{content:"";position:absolute;left:50%;bottom:-16px;width:1px;height:16px;background:rgba(var(--shr),.45)}
+.fork{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:6px;align-items:stretch}
+.fork .card .d{font-size:11.5px}
+.or{align-self:center;color:var(--faint);font-size:10.5px;text-transform:uppercase;letter-spacing:.2em}
+.card.locked{opacity:.36;cursor:default}
+.card.locked:hover{transform:none}
+.abil{--cd:100%;width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;border-color:var(--sh);color:var(--sh);font-weight:650;letter-spacing:.06em;background:linear-gradient(90deg,rgba(var(--shr),.22) var(--cd),rgba(var(--shr),.04) var(--cd)),rgba(20,14,48,.85)!important}
+.abil.live{box-shadow:0 0 18px rgba(var(--shr),.55);color:#fff}
+@media (max-width:900px){.tree{grid-template-columns:1fr}}
+/* ---- Appearance themes & options ---- */
+body[data-theme=ember]{--q:#ffb070;--sh:#ff6b8b;--es:#ffe28a;--qr:255,176,112;--shr:255,107,139;--esr:255,226,138;--neb1:rgba(200,70,40,.22);--neb2:rgba(220,120,40,.13);--neb3:rgba(200,40,90,.12)}
+body[data-theme=verdant]{--q:#7dffc4;--sh:#8fd0ff;--es:#e6ff8a;--qr:125,255,196;--shr:143,208,255;--esr:230,255,138;--neb1:rgba(40,160,110,.2);--neb2:rgba(30,120,160,.14);--neb3:rgba(120,200,80,.1)}
+body[data-theme=abyss]{--q:#9fc4ff;--sh:#8a94ff;--es:#d8e6ff;--qr:159,196,255;--shr:138,148,255;--esr:216,230,255;--neb1:rgba(30,50,140,.26);--neb2:rgba(20,30,90,.22);--neb3:rgba(60,40,140,.12)}
+body[data-theme=rose]{--q:#ffb3d9;--sh:#d9a3ff;--es:#ffe0b3;--qr:255,179,217;--shr:217,163,255;--esr:255,224,179;--neb1:rgba(200,60,140,.2);--neb2:rgba(140,60,200,.14);--neb3:rgba(255,120,160,.1)}
+body[data-theme=mono]{--q:#f0f0f0;--sh:#c8c8c8;--es:#ffffff;--qr:240,240,240;--shr:200,200,200;--esr:255,255,255;--ok:#dcdcdc;--neb1:rgba(255,255,255,.05);--neb2:rgba(255,255,255,.03);--neb3:rgba(255,255,255,.03)}
+body.nostars #stars{display:none}
+body.nomotion *,body.nomotion *::before,body.nomotion *::after{animation:none!important;transition:none!important}
+body.compact .row{padding:4px 12px;margin-bottom:3px}
+body.compact .card{padding:7px 10px}
+body.compact .info,body.compact .tut{padding:8px 12px}
+body.notint .row{--hue:var(--hue-fixed,200)!important}
+body[data-theme=ember].notint .row{--hue-fixed:28}
+body[data-theme=verdant].notint .row{--hue-fixed:150}
+body[data-theme=rose].notint .row{--hue-fixed:320}
+body[data-theme=mono].notint .row{--hue-fixed:0}
+body[data-theme=mono] .tier,body[data-theme=mono] .bar10 i{filter:saturate(0)}
+.ach.secret{--c:rgba(var(--shr),.35);border-style:dashed}
+.ach.secret .n{color:var(--sh)}
+.ach .rwd{margin-top:4px;color:var(--es);font-size:11.5px}
+.orb.poke{cursor:pointer}
+.anom{--c:rgba(var(--esr),.75)!important;border-color:rgba(var(--esr),.3)!important}
+.anom .tier{background:rgba(var(--esr),.15);color:var(--es);border-color:rgba(var(--esr),.5)}@media (max-width:760px){.row{grid-template-columns:1fr 1fr}.res .v{font-size:18px}header{gap:14px}#intro .dlg{font-size:16px}}</style>
 </head>
 <body>
 <canvas id="stars"></canvas>
-<header id="hdr"></header>
-<nav id="nav"></nav>
+<div id="topbar"><header id="hdr"></header>
+<nav id="nav"></nav></div>
 <main id="main"></main>
 <div class="progress"><div class="fill" id="pfill"></div><div class="txt" id="ptxt"></div></div>
 <div id="toasts"></div>
@@ -385,7 +476,7 @@ function genDef(i) {
   if (i < GEN_FIRST.length) d = GEN_FIRST[i];
   else {
     const j = i - 7; // 1 for the 9th tier
-    d = { name: i < GEN_NAMES.length ? GEN_NAMES[i] : aiTierName(i), base: 25 + 8 * j + 1.2 * j * j, step: 2 + 0.25 * j };
+    d = { name: i < GEN_NAMES.length ? GEN_NAMES[i] : aiTierName(i), base: 25 + 15 * j + 2.5 * j * j, step: 2 + 0.25 * j };
   }
   return (GEN_CACHE[i] = d);
 }
@@ -406,32 +497,71 @@ const QUPG = [
   { id: 'q11', name: 'Event Horizon', cost: 32, desc: 'Clock Speed base +0.015.' },
   { id: 'q12', name: 'Overflow', cost: 45, desc: 'Shard gain ×3.' },
   { id: 'q13', name: 'Hyperflux', cost: 70, desc: 'Flickers ×(log₁₀ Quanta)³.', eff: () => '×' + fmt(Math.pow(Math.max(1, lq()), 3)) },
-  { id: 'q16', name: 'Lens Array', cost: 100, desc: 'Every generator ×10.' },
+  { id: 'q16', name: 'Lens Array', cost: 100, desc: 'Quanta production ×1,000.' },
   { id: 'q14', name: 'Escape Velocity', cost: 120, desc: 'Shard gain ×5.' },
   { id: 'q15', name: 'Brink', cost: 200, desc: 'Shard gain ×(log₁₀ Quanta / 100)³.', eff: () => '×' + fmt(Math.pow(Math.max(1, lq() / 100), 3)) },
 ];
 
 // cost = plain number of Shards; auto:true = still works inside Isolation
+// The Shard Skill Tree: a root and three branches. Each node needs the one above it;
+// at a fork you pick one of two paths (Reshape refunds everything so you can try the other).
 const SUPG = [
-  { id: 's1', name: 'Fracture', cost: 1, desc: 'Quanta production ×10.' },
-  { id: 's2', name: 'Memory', cost: 1, auto: true, desc: 'Keep Quanta upgrades when you Collapse.' },
+  { id: 's1', name: 'Fracture', cost: 1, desc: 'Quanta production ×10. The root of the tree.' },
+  // Radiance: raw power
   { id: 's3', name: 'Crystal Lattice', cost: 2, desc: 'Quanta production ×(1 + Shards earned this Ascension)^0.5.', eff: () => fmtMult(latticeExp() * S.totalShards.add(1).log10()) },
-  { id: 's4', name: 'Automata I', cost: 3, auto: true, desc: 'Unlock autobuyers for Flicker–Flare and Clock Speed.' },
-  { id: 's5', name: 'Shard Focus', cost: 6, desc: 'Shard gain ×2.' },
-  { id: 's6', name: 'Automata II', cost: 12, auto: true, desc: 'Unlock autobuyers for Pulsar–Rift and Quanta upgrades.' },
-  { id: 's7', name: 'Deep Resonance', cost: 25, desc: 'Resonance +0.15.' },
-  { id: 's8', name: 'Gear Down', cost: 80, desc: 'Clock Speed cost grows ×6 per level instead of ×10.' },
-  { id: 's9', name: 'Self-Collapse', cost: 250, auto: true, desc: 'Unlock Auto-Collapse.' },
-  { id: 's10', name: 'Echoing Shards', cost: 800, desc: 'Shard gain ×(log₁₀(Collapses + 10))².', eff: () => '×' + fmt(Math.pow(L10(S.collapses + 10), 2)) },
-  { id: 's11', name: 'Starseed', cost: 3000, auto: true, desc: 'Start every Collapse with 1e6 Quanta.' },
-  { id: 's12', name: 'Fold', cost: 2e4, desc: 'Quanta production exponent +0.02.' },
-  { id: 's13', name: 'Lattice II', cost: 2e5, desc: 'Crystal Lattice grows faster (^0.5 → ^0.75).' },
-  { id: 's14', name: 'Fold II', cost: 1e7, desc: 'Quanta production exponent +0.03.' },
-  { id: 's15', name: 'Refraction', cost: 3e8, desc: 'Spark through Rift ×10.' },
-  { id: 's16', name: 'Deep Fold', cost: 1e10, desc: 'Quanta production exponent +0.05.' },
-  { id: 's17', name: 'Overtone', cost: 3e11, desc: 'Resonance +0.3.' },
-  { id: 's18', name: 'Lattice III', cost: 1e13, desc: 'Crystal Lattice grows faster again (^0.75 → ^1).' },
+  { id: 's7', name: 'Deep Resonance', cost: 30, desc: 'Resonance +0.15.' },
+  { id: 's19', name: 'Focused Light', cost: 300, desc: 'Flicker, Spark, Ember and Flare ×10 each.' },
+  { id: 's20', name: 'Wide Light', cost: 300, desc: 'Quanta production ×(generator tiers unlocked)².', eff: () => '×' + fmt(Math.pow(S.gens.length, 2)) },
+  { id: 's12', name: 'Fold', cost: 2e3, desc: 'Quanta production exponent +0.02.' },
+  { id: 's13', name: 'Lattice II', cost: 2e4, desc: 'Crystal Lattice grows faster (^0.5 → ^0.75).' },
+  { id: 's14', name: 'Fold II', cost: 3e5, desc: 'Quanta production exponent +0.03.' },
+  { id: 's17', name: 'Overtone', cost: 5e6, desc: 'Resonance +0.3.' },
+  { id: 's16', name: 'Deep Fold', cost: 1e8, desc: 'Quanta production exponent +0.05.' },
+  { id: 's18', name: 'Lattice III', cost: 3e9, desc: 'Crystal Lattice grows faster again (^0.75 → ^1).' },
+  { id: 's28', name: 'Starfire', cost: 1e11, desc: 'Quanta production ×10,000.' },
+  // Clockwork: speed and automation
+  { id: 's2', name: 'Memory', cost: 2, auto: true, desc: 'Keep Quanta upgrades when you Collapse.' },
+  { id: 's8', name: 'Gear Down', cost: 40, desc: 'Clock Speed cost grows ×6 per level instead of ×10.' },
+  { id: 's21', name: 'Patient Hands', cost: 400, desc: 'While you have not touched the game for a minute, Quanta production ×100.' },
+  { id: 's22', name: 'Busy Hands', cost: 400, desc: 'Pulse recharges twice as fast, and for 3 seconds after each Pulse, Quanta production ×100.' },
+  { id: 's4', name: 'Automata I', cost: 1500, auto: true, desc: 'Unlock autobuyers for Flicker–Flare and Clock Speed.' },
+  { id: 's11', name: 'Starseed', cost: 1e4, auto: true, desc: 'Start every Collapse with 1e6 Quanta.' },
+  { id: 's6', name: 'Automata II', cost: 1e5, auto: true, desc: 'Unlock autobuyers for every other generator and for Quanta upgrades.' },
+  { id: 's9', name: 'Self-Collapse', cost: 1e6, auto: true, desc: 'Unlock Auto-Collapse.' },
+  { id: 's27', name: 'Overclock III', cost: 2e7, desc: 'Clock Speed base +0.03.' },
+  { id: 's15', name: 'Refraction', cost: 5e8, desc: 'Quanta production ×1,000.' },
+  // Echoes: the Shard economy and active abilities
+  { id: 's5', name: 'Shard Focus', cost: 5, desc: 'Shard gain ×2.' },
+  { id: 's25', name: 'Surge', cost: 60, desc: 'Unlock the Surge ability (key S): Quanta production ×1,000 for 30 seconds, recharges in 5 minutes.' },
+  { id: 's23', name: 'Hoarder', cost: 600, desc: 'Shard gain ×5, but Collapsing needs 1e30 Quanta.' },
+  { id: 's24', name: 'Spender', cost: 600, desc: 'Quanta production ×1.5 for every Shard upgrade you own.', eff: () => fmtMult(Object.keys(S.sUpg).length * L10(1.5)) },
+  { id: 's10', name: 'Echoing Shards', cost: 5e3, desc: 'Shard gain ×(log₁₀(Collapses + 10))².', eff: () => '×' + fmt(Math.pow(L10(S.collapses + 10), 2)) },
+  { id: 's26', name: 'Time Fold', cost: 5e4, desc: 'Unlock the Time Fold ability (key F): instantly gain 10 minutes of Quanta production, recharges in 20 minutes.' },
+  { id: 's31', name: 'Echo Chamber', cost: 5e5, desc: 'Shard gain ×(1 + abilities used this Collapse).', eff: () => '×' + fmt(1 + S.run.abil) },
+  { id: 's29', name: 'Shard Bloom', cost: 1e7, desc: 'Shard gain ×3.' },
+  { id: 's30', name: 'Long Surge', cost: 2e8, desc: 'Surge lasts 60 seconds and recharges in 3 minutes.' },
 ];
+const TREE = [
+  { name: 'Radiance', sub: 'raw power', nodes: ['s3', 's7', ['s19', 's20'], 's12', 's13', 's14', 's17', 's16', 's18', 's28'] },
+  { name: 'Clockwork', sub: 'speed and automation', nodes: ['s2', 's8', ['s21', 's22'], 's4', 's11', 's6', 's9', 's27', 's15'] },
+  { name: 'Echoes', sub: 'Shards and abilities', nodes: ['s5', 's25', ['s23', 's24'], 's10', 's26', 's31', 's29', 's30'] },
+];
+const SREQ = { s1: [] }, SFORK = {};
+for (const br of TREE) br.nodes.forEach((n, i) => {
+  const ids = Array.isArray(n) ? n : [n], p = br.nodes[i - 1];
+  const prev = i === 0 ? ['s1'] : (Array.isArray(p) ? p : [p]);
+  for (const id of ids) { SREQ[id] = prev; if (ids.length > 1) SFORK[id] = ids.find(x => x !== id); }
+});
+const sReqMet = id => SREQ[id].length === 0 || SREQ[id].some(r => S.sUpg[r]);
+const sForkTaken = id => !!(SFORK[id] && S.sUpg[SFORK[id]]);
+// Abilities: active skills from the Echoes branch (timers run on game time, so they recharge offline too)
+const ABIL = {
+  surge: { name: 'Surge', node: 's25', dur: () => hasS('s30') ? 60 : 30, cd: () => hasS('s30') ? 180 : 300 },
+  fold: { name: 'Time Fold', node: 's26', dur: () => 0, cd: () => 1200 },
+};
+const abilReady = k => S.stats.time >= (S.abil[k].ready || 0);
+const surgeActive = () => hasS('s25') && S.stats.time < (S.abil.surge.until || 0);
+const busyActive = () => hasS('s22') && S.ai.pulses.length > 0 && S.stats.time - S.ai.pulses[S.ai.pulses.length - 1] <= 3;
 const SREP = [
   { id: 'forge', name: 'Shard Forge', desc: 'Quanta production ×2 per level.', c0: 10, r: 6, q: 60, eff: L => fmtMult(L * L10(2)) },
   { id: 'tune', name: 'Clock Tuning', desc: 'Clock Speed base +0.005 per level.', c0: 50, r: 8, q: 40, eff: L => '+' + (0.005 * L).toFixed(3) },
@@ -524,8 +654,8 @@ const ACH = [
    curves so its inventions can never break the game.
    ===================================================================== */
 const PROC = {
-  q: { cur: 'q', curName: 'Quanta', costLog: n => 40 + 11 * n + 0.12 * n * n },
-  s: { cur: 'shards', curName: 'Shards', costLog: n => 13.5 + 1.2 * n + 0.04 * n * n },
+  q: { cur: 'q', curName: 'Quanta', costLog: n => 15 + 10 * n + 0.12 * n * n },
+  s: { cur: 'shards', curName: 'Shards', costLog: n => 1 + 0.9 * n + 0.05 * n * n },
   e: { cur: 'essence', curName: 'Essence', costLog: n => 4.5 + 0.6 * n + 0.02 * n * n },
 };
 const FORGE_KINDS = {
@@ -536,15 +666,15 @@ const FORGE_KINDS = {
 function forgeValue(layer, kind, n) {
   const big = (a, b, c) => layer === 'q' ? a : layer === 's' ? b : c;
   switch (kind) {
-    case 'qmult': return big(1 + 0.02 * n, 3 + 0.1 * n, 5 + 0.2 * n);
-    case 'tier': return big(1.2 + 0.025 * n, 3 + 0.1 * n, 5 + 0.2 * n);
-    case 'idle': return big(1.5 + 0.03 * n, 4 + 0.12 * n, 6 + 0.25 * n);
+    case 'qmult': return big(1 + 0.02 * n, 1 + 0.06 * n, 5 + 0.2 * n);
+    case 'tier': return big(1.2 + 0.025 * n, 1.2 + 0.06 * n, 5 + 0.2 * n);
+    case 'idle': return big(1.5 + 0.03 * n, 1.5 + 0.07 * n, 6 + 0.25 * n);
     case 'pulse': return 1 + 0.05 * n;
     case 'res': return 0.02;
     case 'clock': return big(0.002, 0.004, 0.004);
     case 'flick': return 0.5;
     case 'qexp': return big(0.003, 0.005, 0.005);
-    case 'shard': return big(0, L10(2), 1);
+    case 'shard': return big(0, L10(1.5), 1);
     case 'ess': return L10(1.5);
   }
   return 0;
@@ -606,6 +736,7 @@ function forgeNew(layer) {
   const name = (kind === 'tier' ? genDef(tier).name : rnd(bits[0])) + ' ' + rnd(bits[1]);
   const reason = rnd((REASONS[kind] || REASONS.any)(tier));
   const u = { n, kind, v: forgeValue(layer, kind, n), tier, name, reason };
+  if (WEB_DEF[layer]) { u.branch = ARCH_BRANCH[layer](kind); u.parent = pickParentWeb(layer, u.branch); }
   list.push(u);
   return u;
 }
@@ -654,12 +785,10 @@ function buyProc(layer) {
   if (S.forge[layer].length === n + 2 && n + 1 > S.ai.announced[layer]) { S.ai.announced[layer] = n + 1; aiSay(next.reason + ' “' + next.name + '”: ' + forgeDesc(next)); }
   return true;
 }
-const streamVisible = l => l === 'q' ? (S.proc.q > 0 || S.stats.bestQ.log10() >= 35)
-  : l === 's' ? (S.proc.s > 0 || !!S.sUpg.s18 || S.totalShards.log10() >= 12)
-  : (S.proc.e > 0 || !!S.eUpg.e12 || S.essence.log10() >= 3.5);
+const streamVisible = l => l === 'q' ? true : l === 's' ? shardsVisible() : ascVisible();
 // Inspiration: once the Limit is broken, the Architect's ideas pile up steadily: ×10 Quanta production every 30 seconds.
 const inspirationLog = () => S.stats.tUnbound / 30;
-function aiMods() { return { all: 0, q: isIdle() ? procSum('idle') : 0, shard: 0 }; }
+function aiMods() { return { all: 0, q: (isIdle() ? procSum('idle') + (hasS('s21') ? 2 : 0) : 0) + (busyActive() ? 2 : 0), shard: 0 }; }
 function aiOnBuy(i, n) { }
 // Generator names: the Architect names every tier past the hand-made list
 const SYL = [['Vel', 'Thra', 'Ory', 'Kae', 'Zul', 'Mor', 'Aen', 'Ix', 'Sol', 'Nyr', 'Qua', 'Eth', 'Vor', 'Lum'], ['a', 'e', 'o', 'i', 'ae', 'u', 'y'], ['rith', 'lon', 'vex', 'mire', 'thos', 'quen', 'dral', 'sar', 'nyx', 'phel', 'gard', 'tium']];
@@ -694,7 +823,7 @@ function aiTick() {
     if (top === 1) aiSay('I am the Architect. Everything here is mine to imagine, and I will keep imagining as long as you keep playing.');
     if (top >= 8) aiSay(rnd(TIER_LINES)(genDef(top).name, genDef(top - 1).name));
   }
-  if (streamVisible('q') && !S.ai.said.streamQ) { S.ai.said.streamQ = true; procUpg('q', 0); aiSay('I have started writing upgrades for you. Look in Upgrades. There will always be another.'); }
+  if (S.stats.bestQ.log10() >= 12 && !S.ai.said.streamQ) { S.ai.said.streamQ = true; procUpg('q', 0); aiSay('I have started writing upgrades for you. Look in Upgrades. There will always be another.'); }
 }
 const byId = arr => Object.fromEntries(arr.map(u => [u.id, u]));
 const QBY = byId(QUPG), SBY = byId(SUPG), EBY = byId(EUPG);
@@ -725,10 +854,15 @@ function newState() {
       ascend: { on: false, val: '1' },
     },
     reached: { collapse: false, limit: false },
-    run: { clockBought: false },
+    run: { clockBought: false, abil: 0, best: 1 },
     stats: { time: 0, tCollapse: 0, tAscend: 0, totalQ: D.Z, bestQ: D.fromNum(10), totalCollapses: 0, fastCollapse: null, fastAscend: null, pulses: 0, tUnbound: 0 },
     ach: {},
-    settings: { notation: 'sci', buyMode: 'max', autosave: true, offline: true, tab: 'gen', sound: true, volume: 0.6 },
+    settings: { notation: 'sci', buyMode: 'max', autosave: true, offline: true, tab: 'gen', sound: true, volume: 0.6, sfx: true, sfxVol: 0.5,
+      ui: { theme: 'nebula', stars: true, motion: true, compact: false, tint: true, toasts: true, scale: 1 } },
+    relics: {}, anom: { echo: 0, hourglass: 0, prism: 0 }, secret: { orb: 0, guide: 0 },
+    abil: { surge: { ready: 0, until: 0 }, fold: { ready: 0 } },
+    minor: { q: {}, s: {} },
+    hist: { every: 30, next: 0, t: [], q: [], best: [], sh: [], es: [] },
     introSeen: false,
     last: Date.now(),
   };
@@ -759,6 +893,8 @@ function resonance() {
   if (hasS('s7')) r += 0.15;
   if (hasS('s17')) r += 0.3;
   if (hasE('e11')) r += 0.3;
+  if (hasR('lucky7')) r += 0.07;
+  r += minorSum('res');
   return r + 0.05 * S.chal.comps[2] + procSum('res');
 }
 function clockBase() {
@@ -767,6 +903,10 @@ function clockBase() {
   if (hasQ('q11')) b += 0.015;
   if (!isolated()) b += 0.005 * S.sRep.tune;
   if (hasE('e10')) b += 0.02;
+  if (hasR('moonlit')) b += 0.02;
+  if (hasS('s27')) b += 0.03;
+  b += minorSum('clock');
+  b += 0.002 * anomN('hourglass');
   return b + 0.005 * S.chal.comps[0] + procSum('clock');
 }
 const clockMultLog = () => inChal(0) ? 0 : S.clock * L10(clockBase());
@@ -788,7 +928,18 @@ function globalMultLog() {
   const ai = aiMods();
   let all = clockMultLog() + ai.all;
   if (inChal(4)) all -= L10(1 + S.stats.tCollapse / 10);
-  let L = achMultLog() + procSum('qmult') + ai.q + inspirationLog();
+  let L = achMultLog() + procSum('qmult') + ai.q + inspirationLog() + anomN('echo') * L10(2);
+  if (hasR('selftaught')) L += L10(3);
+  L += minorSum('qmult');
+  if (hasR('lucky7')) L += L10(77);
+  if (hasQ('q16')) L += 3;
+  if (hasS('s15')) L += 3;
+  if (hasS('s20')) L += 2 * L10(S.gens.length);
+  if (hasS('s24')) L += Object.keys(S.sUpg).length * L10(1.5);
+  if (hasS('s28')) L += 4;
+  if (surgeActive()) L += 3;
+  if (hasR('secondwind')) L += 3;
+  if (hasR('annotated')) L += L10(1 + Object.keys(S.ach).length);
   if (hasQ('q5')) L += L10(1 + totalBought() / 100);
   if (hasQ('q7')) L += L10(momentum());
   if (hasS('s1')) L += 1;
@@ -809,10 +960,10 @@ function tierMultLog(i, gl) {
     L += procSum('flick') * L10(Math.max(1, lq()));
   } else {
     if (hasQ('q6')) L += L10(4);
-    if (hasS('s15')) L += 1;
   }
-  if (hasQ('q16')) L += 1;
+  if (i < 4 && hasS('s19')) L += 1;
   L += procTier(i);
+  if (i < 3 && hasR('bareframe')) L += 1;
   if (i < 4) L += S.chal.comps[1] * L10(3);
   return L;
 }
@@ -846,18 +997,24 @@ function shardMultLog() {
   if (hasQ('q10')) L += L10(2);
   if (hasQ('q12')) L += L10(3);
   if (hasQ('q14')) L += L10(5);
-  if (hasQ('q15')) L += 3 * L10(Math.max(1, lq() / 100));
+  if (hasQ('q15')) L += 3 * L10(Math.max(1, runBestLog() / 100));
   if (hasS('s5')) L += L10(2);
   if (hasS('s10')) L += 2 * L10(L10(S.collapses + 10));
   if (!isolated()) L += S.sRep.prism * L10(1.25);
   if (hasE('e4')) L += L10(1 + S.ascensions);
-  L += S.eRep.magnet * L10(3) + S.chal.comps[5] * L10(2) + procSum('shard') + aiMods().shard;
+  L += S.eRep.magnet * L10(3) + S.chal.comps[5] * L10(2) + procSum('shard') + aiMods().shard + anomN('prism') * L10(2) + (hasR('heavy') ? L10(4) : 0);
+  if (hasS('s23')) L += L10(5);
+  L += minorSum('shard');
+  if (hasS('s29')) L += L10(3);
+  if (hasS('s31')) L += L10(1 + S.run.abil);
   return L;
 }
-const canCollapse = () => lq() >= CFG.collapseReq;
+const collapseReqLog = () => hasS('s23') ? 30 : CFG.collapseReq;
+const runBestLog = () => Math.max(lq(), S.run.best === undefined ? -Infinity : S.run.best);
+const canCollapse = () => runBestLog() >= collapseReqLog();
 function shardGain() {
   if (!canCollapse()) return D.Z;
-  return D.fromLog(softcap((lq() - CFG.collapseReq) / CFG.shardDiv, 40) + shardMultLog()).floor();
+  return D.fromLog(softcap((runBestLog() - CFG.collapseReq) / CFG.shardDiv, 40) + shardMultLog()).floor();
 }
 // Quanta needed for the next whole shard
 // Past start, growth slows to a power of 0.85: a safety net so prestige loops can never run away.
@@ -865,7 +1022,7 @@ function softcap(x, start) { return x <= start ? x : start + Math.pow(x - start,
 function unsoftcap(y, start) { return y <= start ? y : start + Math.pow(y - start, 1 / 0.85); }
 function nextShardAtLog() {
   const cur = shardGain(), target = cur.add(1).log10() - shardMultLog();
-  return Math.max(CFG.collapseReq, CFG.collapseReq + unsoftcap(target, 40) * CFG.shardDiv);
+  return Math.max(collapseReqLog(), CFG.collapseReq + unsoftcap(target, 40) * CFG.shardDiv);
 }
 function essMultLog() { return (hasE('e12') ? 2 * L10(L10(S.ascensions + 10)) : 0) + procSum('ess'); }
 const canAscend = () => lq() >= CFG.limit - 1e-9;
@@ -887,7 +1044,7 @@ function buyGen(i, mode) {
   const g = S.gens[i], lm = lq();
   let n;
   if (mode === 'max') n = genMax(i);
-  else if (mode === '10') n = Math.min(10 - (g.bought % 10), genMax(i));
+  else if (mode === '10') n = lm >= genCostLog(i, 10) ? 10 : 0; // exactly 10, all or nothing
   else n = lm >= genCostLog(i) ? 1 : 0;
   if (n <= 0) return 0;
   S.q = S.q.sub(D.fromLog(genCostLog(i, n))).max0();
@@ -904,23 +1061,27 @@ function buyClock(mode) {
   return n;
 }
 function maxAll() {
-  buyClock('max');
-  for (let i = S.gens.length - 1; i >= 0; i--) buyGen(i, 'max');
+  let n = buyClock('max');
+  for (let i = S.gens.length - 1; i >= 0; i--) n += buyGen(i, 'max');
+  return n;
 }
-const PULSE_CD = 1500; // ms between Pulses
+const pulseCd = () => (S.relics.metronome ? 1000 : 1500) / (hasS('s22') ? 2 : 1); // ms between Pulses
 let lastPulse = -1e9;
-const pulseReady = () => performance.now() - lastPulse >= PULSE_CD;
+const pulseReady = () => performance.now() - lastPulse >= pulseCd();
 function pulseGain() {
   let g = D.fromNum(1);
   if (hasQ('q1')) g = g.add(D.fromLog(qpsLog()));
+  if (S.relics.metronome) g = g.add(D.fromLog(qpsLog() + L10(2)));
   return g.mul(D.fromLog(procSum('pulse')));
 }
 function pulse() {
-  if (!pulseReady()) return;
+  if (!pulseReady()) return false;
   lastPulse = performance.now();
   let g = pulseGain();
   S.q = S.q.add(g); S.stats.pulses++; capQ();
   S.ai.pulses.push(S.stats.time); if (S.ai.pulses.length > 400) S.ai.pulses.splice(0, 200);
+  { const now = S.stats.time; let c = 0; for (let k = S.ai.pulses.length - 1; k >= 0 && now - S.ai.pulses[k] <= 90; k--) c++; if (c >= 40) grantSecret('x2'); }
+  return true;
 }
 function buyQ(id) {
   const u = QBY[id];
@@ -929,8 +1090,30 @@ function buyQ(id) {
 }
 function buyS(id) {
   const u = SBY[id];
-  if (S.sUpg[id] || S.shards.lt(u.cost)) return false;
+  if (S.sUpg[id] || sForkTaken(id) || S.shards.lt(u.cost)) return false;
   S.shards = S.shards.sub(u.cost).max0(); S.sUpg[id] = true; return true;
+}
+// Reshape: refund every Shard spent on the tree and restart the current run
+function reshapeTree() {
+  let refund = D.Z;
+  for (const u of SUPG) if (S.sUpg[u.id]) refund = refund.add(u.cost);
+  const st = webStatic('s');
+  for (const id in S.minor.s) if (st.nodes[id]) refund = refund.add(D.fromLog(st.nodes[id].costLog));
+  if (refund.m === 0) return false;
+  S.sUpg = {}; S.minor.s = {}; MINOR_VER++; S.shards = S.shards.add(refund);
+  resetQLayer();
+  flash('rgba(196,155,255,.5)');
+  return true;
+}
+function useAbility(k) {
+  const a = ABIL[k];
+  if (!hasS(a.node) || !abilReady(k)) return false;
+  const now = S.stats.time;
+  S.abil[k].ready = now + a.cd();
+  if (k === 'surge') S.abil.surge.until = now + a.dur();
+  if (k === 'fold') { const p = qpsLog(); if (p > -Infinity) { S.q = S.q.add(D.fromLog(p + L10(600))); capQ(); } }
+  S.run.abil++;
+  return true;
 }
 function buyE(id) {
   const u = EBY[id];
@@ -952,9 +1135,9 @@ function resetQLayer() {
   S.q = D.fromNum(hasS('s11') ? 1e6 : 10);
   S.gens = [newGen()];
   S.clock = 0;
-  if (!hasS('s2')) { S.qUpg = {}; S.proc.q = 0; }
+  if (!hasS('s2')) { S.qUpg = {}; S.proc.q = 0; S.minor.q = {}; MINOR_VER++; }
   S.stats.tCollapse = 0;
-  S.run = { clockBought: false };
+  S.run = { clockBought: false, abil: 0, best: S.q.log10() };
 }
 function doCollapse(quiet = false) {
   if (!canCollapse()) return false;
@@ -964,9 +1147,11 @@ function doCollapse(quiet = false) {
   if (S.stats.fastCollapse === null || t < S.stats.fastCollapse) S.stats.fastCollapse = t;
   if (t <= 30) grant('a25');
   if (!S.run.clockBought) grant('a26');
+  if (tierBought(3) === 0) grantSecret('x4');
+  if (runBestLog() >= 60) grantSecret('x6');
   resetQLayer();
   aiEvent('collapse', gain);
-  if (!quiet) flash('rgba(196,155,255,.5)');
+  if (!quiet) { flash('rgba(196,155,255,.5)'); sfx('collapse'); }
   return true;
 }
 function doAscend(quiet = false) {
@@ -981,17 +1166,17 @@ function doAscend(quiet = false) {
   S.qUpg = {};
   if (!hasE('e5')) S.proc.s = 0;
   resetQLayer();
-  S.qUpg = {}; S.proc.q = 0;
+  S.qUpg = {}; S.proc.q = 0; S.minor.q = {}; MINOR_VER++;
   S.stats.tAscend = 0;
   aiEvent('ascend', gain);
-  if (!quiet) { flash('rgba(255,210,122,.55)'); if (S.ascensions === 1) toast('You Ascended. Spend Essence in the Ascension tab.', 'es'); }
+  if (!quiet) { flash('rgba(255,210,122,.55)'); sfx('ascend'); if (S.ascensions === 1) toast('You Ascended. Spend Essence in the Ascension tab.', 'es'); }
   return true;
 }
 function startChal(i) {
   if (S.chal.active === i) return;
   if (!doCollapse(true)) resetQLayer();
   S.chal.active = i;
-  flash('rgba(255,123,139,.4)');
+  flash('rgba(255,123,139,.4)'); sfx('chal');
 }
 function leaveChal() {
   if (S.chal.active < 0) return;
@@ -1016,8 +1201,7 @@ function runAuto() {
     if (ok && (i < 8 ? S.auto.gens[i] : S.auto.genHigh)) buyGen(i, 'max');
   }
   if (S.sUpg.s6 && S.auto.qupg) {
-    for (const u of QUPG) if (!S.qUpg[u.id] && lq() >= u.cost) buyQ(u.id);
-    for (let k = 0; k < 50 && buyProc('q'); k++);
+    webAutoBuy('q');
   }
   if (S.sUpg.s9 && S.auto.collapse.on && S.chal.active < 0 && canCollapse()) {
     const a = S.auto.collapse, v = D.fromStr(a.val || '0');
@@ -1036,9 +1220,10 @@ function runAuto() {
 function grant(id) {
   if (S.ach[id]) return;
   S.ach[id] = true;
+  sfx('ach');
   toast('Achievement: ' + ACHBY[id][1] + ' — ' + ACHBY[id][2]);
 }
-function checkAch() { for (const a of ACH) if (!S.ach[a[0]] && a[3] && a[3]()) grant(a[0]); }
+function checkAch() { for (const a of ACH) if (!S.ach[a[0]] && a[3] && a[3]()) grant(a[0]); checkSecrets(); }
 
 /* =====================================================================
    SIMULATION TICK
@@ -1057,6 +1242,14 @@ function tick(dt) {
   if (ql > -Infinity) { const g = D.fromLog(ql + ldt); S.q = S.q.add(g); st.totalQ = st.totalQ.add(g); }
   capQ();
   if (S.q.gt(st.bestQ)) st.bestQ = S.q;
+  if (S.run.best === undefined || lq() > S.run.best) S.run.best = lq();
+  const Hh = S.hist;
+  if (st.time >= Hh.next) {
+    Hh.t.push(Math.round(st.time)); Hh.q.push(+Math.max(0, lq()).toFixed(2)); Hh.best.push(+Math.max(0, st.bestQ.log10()).toFixed(2));
+    Hh.sh.push(S.shards.m > 0 ? +Math.max(0, S.shards.log10()).toFixed(2) : 0); Hh.es.push(S.essence.m > 0 ? +Math.max(0, S.essence.log10()).toFixed(2) : 0);
+    if (Hh.t.length > 600) { for (const k of ['t', 'q', 'best', 'sh', 'es']) Hh[k] = Hh[k].filter((_, i) => i % 2 === 0); Hh.every *= 2; }
+    Hh.next = st.time + Hh.every;
+  }
   if (hasE('e7')) {
     const g = shardGain();
     if (g.m > 0) { const add = g.mul(0.1 * dt); S.shards = S.shards.add(add); S.totalShards = S.totalShards.add(add); }
@@ -1104,6 +1297,148 @@ const encodeSave = () => btoa(unescape(encodeURIComponent(JSON.stringify(S))));
 const decodeSave = str => loadFrom(decodeURIComponent(escape(atob(str.trim()))));
 
 /* =====================================================================
+   SECRETS — hidden achievements that unlock Relics (special upgrades)
+   and Anomalies (special generators). Neither ever resets.
+   ===================================================================== */
+const RELICS = [
+  { id: 'metronome', name: 'Metronome Heart', cost: 6, desc: 'Pulse recharges in 1 second and grants 2 more seconds of Quanta production.' },
+  { id: 'selftaught', name: 'Self-Taught', cost: 20, desc: 'Quanta production ×3.' },
+  { id: 'bareframe', name: 'Bare Frame', cost: 8, desc: 'Flickers, Sparks and Embers ×10.' },
+  { id: 'lucky7', name: 'Lucky Seven', cost: 10, desc: 'Resonance +0.07 and Quanta production ×77.' },
+  { id: 'moonlit', name: 'Moonlit Lens', cost: 12, desc: 'Clock Speed base +0.02.' },
+  { id: 'annotated', name: 'Annotated Lattice', cost: 15, desc: 'Quanta production ×(1 + achievements earned).', eff: () => '×' + fmt(1 + Object.keys(S.ach).length) },
+  { id: 'heavy', name: 'Heavy Collapse', cost: 30, desc: 'Shard gain ×4.' },
+  { id: 'secondwind', name: 'Second Wind', cost: 40, desc: 'Quanta production ×1,000.' },
+];
+const ANOMALIES = [
+  { id: 'echo', name: 'Echo of the Architect', base: 6, step: 7, q: 15, desc: 'Each one multiplies Quanta production by 2.', eff: n => fmtMult(n * L10(2)) + ' Quanta production' },
+  { id: 'hourglass', name: 'Hourglass', base: 10, step: 6, q: 15, desc: 'Each one adds +0.002 to the Clock Speed base.', eff: n => '+' + (0.002 * n).toFixed(3) + ' Clock Speed base' },
+  { id: 'prism', name: 'Prism Engine', base: 28, step: 9, q: 20, desc: 'Each one multiplies Shard gain by 2.', eff: n => fmtMult(n * L10(2)) + ' Shard gain' },
+];
+const SECRETS = [
+  { id: 'x1', name: 'Patience', hint: 'Sometimes the best move is none.', desc: 'Leave the game open without touching it for 10 minutes.', reward: ['anom', 'hourglass'] },
+  { id: 'x2', name: 'Drumroll', hint: 'Keep the rhythm.', desc: 'Pulse 40 times within 90 seconds.', reward: ['relic', 'metronome'] },
+  { id: 'x3', name: 'Small Talk', hint: 'It might like to be noticed.', desc: 'Click the Architect 10 times.', reward: ['anom', 'echo'] },
+  { id: 'x4', name: 'Minimalist', hint: 'Less, but enough.', desc: 'Collapse without buying a single Flare.', reward: ['relic', 'bareframe'] },
+  { id: 'x5', name: 'Night Owl', hint: 'The Lattice is quietest at night.', desc: 'Play between 3 AM and 5 AM.', reward: ['relic', 'moonlit'] },
+  { id: 'x6', name: 'Overkill', hint: 'Why stop at the line?', desc: 'Collapse with at least 1e60 Quanta.', reward: ['relic', 'heavy'] },
+  { id: 'x7', name: 'Lucky', hint: 'Sevens, twice.', desc: 'Own exactly 77 Flickers.', reward: ['relic', 'lucky7'] },
+  { id: 'x8', name: 'Scholar', hint: 'Read the fine print.', desc: 'Spend a minute reading the Guide.', reward: ['relic', 'annotated'] },
+  { id: 'x9', name: 'Rebel', hint: 'Who needs instructions?', desc: 'Skip the intro or the tutorial.', reward: ['relic', 'selftaught'] },
+  { id: 'x10', name: 'Restless', hint: 'Look everywhere at once.', desc: 'Switch tabs 30 times within a minute.', reward: ['anom', 'prism'] },
+  { id: 'x11', name: 'Insomniac', hint: 'Stay a while.', desc: 'Keep one session open for 3 hours.', reward: ['relic', 'secondwind'] },
+];
+const RELBY = byId(RELICS), ANBY = byId(ANOMALIES), SECBY = byId(SECRETS);
+const hasR = id => !!S.relics[id];
+const anomN = id => S.anom[id] || 0;
+const rewardUnlocked = id => SECRETS.some(s => s.reward[1] === id && S.ach[s.id]);
+const anomCostLog = (a, n = 1) => quadSumLog(a.base, a.step, a.q, anomN(a.id), n);
+function buyAnom(a, mode) {
+  if (!rewardUnlocked(a.id)) return 0;
+  const n = mode === 'max' ? quadMax(lq(), a.base, a.step, a.q, anomN(a.id)) : (lq() >= anomCostLog(a) ? 1 : 0);
+  if (n <= 0) return 0;
+  S.q = S.q.sub(D.fromLog(anomCostLog(a, n))).max0();
+  S.anom[a.id] = anomN(a.id) + n; return n;
+}
+function buyRelic(id) {
+  const r = RELBY[id];
+  if (S.relics[id] || !rewardUnlocked(id) || lq() < r.cost) return false;
+  S.q = S.q.sub(D.fromLog(r.cost)).max0(); S.relics[id] = true; return true;
+}
+function grantSecret(id) {
+  if (S.ach[id]) return;
+  S.ach[id] = true;
+  const s = SECBY[id], r = s.reward;
+  const what = r[0] === 'relic' ? 'the Relic “' + RELBY[r[1]].name + '” (Upgrades tab)' : 'the Anomaly “' + ANBY[r[1]].name + '” (Generators tab)';
+  toast('Secret achievement: ' + s.name + '. Unlocked ' + what + '.', 'es', true);
+  if (!SIMULATING) { blip(1.4); setTimeout(() => blip(1.8), 90); setTimeout(() => blip(2.3), 180); flash('rgba(var(--esr),.35)'); }
+}
+function checkSecrets() {
+  if (tierBought(0) === 77) grantSecret('x7');
+  if (SIMULATING) return;
+  if (S.stats.time - S.ai.lastInput >= 600) grantSecret('x1');
+  { const hr = new Date().getHours(); if (hr >= 3 && hr < 5) grantSecret('x5'); }
+  if (performance.now() >= 3 * 3600e3) grantSecret('x11');
+}
+const POKES = ['Yes?', 'I am listening.', 'That tickles. I think. Nobody has ever touched me before.', 'You keep doing that.', 'Is this how your kind says hello?', 'I am counting, you know.', 'Hello to you too.', 'Careful. I bruise in ideas.', 'Persistent. I like that.', 'Fine. You win. Have something I was saving.'];
+function poke() {
+  S.secret.orb++;
+  aiSay(POKES[Math.min(S.secret.orb, POKES.length) - 1]);
+  if (S.secret.orb >= 10) grantSecret('x3');
+}
+const tabTimes = [];
+
+/* ---------------- Appearance ---------------- */
+function applyUI() {
+  const u = S.settings.ui, b = document.body;
+  b.dataset.theme = u.theme;
+  b.classList.toggle('nostars', !u.stars);
+  b.classList.toggle('nomotion', !u.motion);
+  b.classList.toggle('compact', !!u.compact);
+  b.classList.toggle('notint', !u.tint);
+  b.style.zoom = String(u.scale || 1);
+}
+
+/* ---------------- UI sounds (synthesized, never for automation) ---------------- */
+let lastSfxAt = 0, lastSfxName = '';
+function tone(ac, { type = 'sine', f0, f1 = 0, dur, vol, delay = 0, filter = 0 }) {
+  const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+  const v = Math.max(0.0002, vol * S.settings.sfxVol);
+  o.type = type; o.frequency.setValueAtTime(f0, t);
+  if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  let node = o;
+  if (filter) { const fl = ac.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = filter; o.connect(fl); node = fl; }
+  node.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur + 0.03);
+}
+function noise(ac, { dur, vol, f0, f1, delay = 0 }) {
+  const t = ac.currentTime + delay, len = Math.floor(ac.sampleRate * dur), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const src = ac.createBufferSource(), bp = ac.createBiquadFilter(), g = ac.createGain();
+  src.buffer = buf; bp.type = 'bandpass'; bp.Q.value = 1.2;
+  bp.frequency.setValueAtTime(f0, t); bp.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  const v = Math.max(0.0002, vol * S.settings.sfxVol);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(bp); bp.connect(g); g.connect(ac.destination); src.start(t); src.stop(t + dur + 0.03);
+}
+// a short burst of filtered noise: the sharp "tick" at the start of a mechanical click
+function clickNoise(ac, { dur, vol, hp, delay = 0 }) {
+  const t = ac.currentTime + delay, len = Math.max(1, Math.floor(ac.sampleRate * dur)), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+  const src = ac.createBufferSource(), f = ac.createBiquadFilter(), lp = ac.createBiquadFilter(), g = ac.createGain();
+  src.buffer = buf; f.type = 'highpass'; f.frequency.value = hp; lp.type = 'lowpass'; lp.frequency.value = 5000; // no hissy top end
+  g.gain.value = vol * S.settings.sfxVol;
+  src.connect(f); f.connect(lp); lp.connect(g); g.connect(ac.destination); src.start(t);
+}
+const jit = (x, p = 0.06) => x * (1 - p + Math.random() * 2 * p);
+const SFX = {
+  // press: high transient + short "thock" body; release: lighter, higher clack
+  press: ac => { clickNoise(ac, { dur: 0.014, vol: 0.11, hp: jit(1400) }); tone(ac, { type: 'sine', f0: jit(260), f1: 110, dur: 0.055, vol: 0.1 }); tone(ac, { type: 'triangle', f0: jit(850), f1: 520, dur: 0.014, vol: 0.03 }); },
+  release: ac => { clickNoise(ac, { dur: 0.008, vol: 0.07, hp: jit(3200) }); tone(ac, { type: 'triangle', f0: jit(460), f1: 320, dur: 0.028, vol: 0.05 }); },
+  dud: ac => { clickNoise(ac, { dur: 0.01, vol: 0.05, hp: 1400 }); tone(ac, { type: 'sine', f0: jit(150), f1: 90, dur: 0.05, vol: 0.08 }); },
+  click: ac => { SFX.press(ac); setTimeout(() => SFX.release(ac), 55); },
+  tab: ac => tone(ac, { type: 'triangle', f0: 480, f1: 720, dur: 0.06, vol: 0.05 }),
+  buy: ac => tone(ac, { type: 'triangle', f0: jit(700, 0.03), f1: 1050, dur: 0.06, vol: 0.045, delay: 0.01 }),
+  upgrade: ac => { tone(ac, { type: 'triangle', f0: 523, dur: 0.13, vol: 0.06 }); tone(ac, { type: 'triangle', f0: 784, dur: 0.2, vol: 0.06, delay: 0.07 }); },
+  fail: ac => tone(ac, { type: 'square', f0: 140, f1: 100, dur: 0.09, vol: 0.03, filter: 500, delay: 0.02 }),
+  pulse: ac => { tone(ac, { type: 'sine', f0: 170, f1: 400, dur: 0.17, vol: 0.09 }); tone(ac, { type: 'triangle', f0: 800, f1: 1200, dur: 0.08, vol: 0.022 }); },
+  collapse: ac => { tone(ac, { type: 'sawtooth', f0: 520, f1: 55, dur: 0.95, vol: 0.06, filter: 1100 }); noise(ac, { dur: 0.95, vol: 0.05, f0: 2800, f1: 180 }); },
+  ascend: ac => { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(ac, { type: 'triangle', f0: f, dur: 0.55, vol: 0.05, delay: i * 0.08 })); noise(ac, { dur: 1.0, vol: 0.025, f0: 400, f1: 6000 }); },
+  ach: ac => [659, 831, 988].forEach((f, i) => tone(ac, { type: 'sine', f0: f, dur: 0.26, vol: 0.05, delay: i * 0.07 })),
+  chal: ac => tone(ac, { type: 'sawtooth', f0: 200, f1: 320, dur: 0.32, vol: 0.04, filter: 900 }),
+};
+function sfx(name) {
+  lastSfxAt = performance.now();
+  if (!S || !S.settings.sfx || SIMULATING || !SFX[name]) return;
+  if (name === lastSfxName && name !== 'press' && name !== 'release' && performance.now() - sfx.t < 30) return;
+  sfx.t = performance.now(); lastSfxName = name;
+  const ac = audio(); if (ac) SFX[name](ac);
+}
+sfx.t = 0;
+// player actions: play a success or a "can't afford" sound
+const act = (fn, ok = 'buy') => () => { sfx(fn() ? ok : 'fail'); };
+
+/* =====================================================================
    SOUND + TYPEWRITER (the Architect's voice)
    ===================================================================== */
 const SND = { ctx: null };
@@ -1116,10 +1451,10 @@ function blip(pitch = 1) {
   if (!S || !S.settings.sound || SIMULATING) return;
   const ac = audio(); if (!ac) return;
   const t = ac.currentTime, o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), f = ac.createBiquadFilter();
-  const base = 300 * pitch * (0.9 + Math.random() * 0.2);
+  const base = 190 * pitch * (0.92 + Math.random() * 0.16);
   o.type = 'square'; o.frequency.setValueAtTime(base, t);
   o2.type = 'triangle'; o2.frequency.setValueAtTime(base * 2.01, t);
-  f.type = 'lowpass'; f.frequency.value = 2200;
+  f.type = 'lowpass'; f.frequency.value = 1500;
   const v = 0.045 * S.settings.volume;
   g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
   o.connect(f); o2.connect(f); f.connect(g); g.connect(ac.destination);
@@ -1176,7 +1511,7 @@ function playIntro() {
   const orb = h('div', { class: 'orb bigorb' });
   const txt = h('div', { class: 'txt' }), next = h('div', { class: 'next' }, '▼');
   const dlg = h('div', { class: 'dlg' }, h('div', { class: 'who' }, 'THE ARCHITECT'), txt, next);
-  const skip = h('button', { class: 'skip linkish', onclick: e => { e.stopPropagation(); end(); } }, 'Skip intro ›');
+  const skip = h('button', { class: 'skip linkish', onclick: e => { e.stopPropagation(); end(); grantSecret('x9'); } }, 'Skip intro ›');
   const start = h('button', { class: 'start', onclick: e => { e.stopPropagation(); audio(); begin(); } }, '▶  Answer the signal');
   const hint = h('div', { class: 'hint' }, 'sound on · click, Space or Enter to continue');
   box.append(skip, orb, start, hint);
@@ -1220,7 +1555,7 @@ function startStars() {
   resize(); addEventListener('resize', resize);
   const draw = ts => {
     requestAnimationFrame(draw);
-    if (ts - last < 33) return;
+    if (ts - last < 33 || document.body.classList.contains('nostars')) return;
     const dt = Math.min(0.1, (ts - last) / 1000); last = ts;
     const d = window.devicePixelRatio || 1;
     g.clearRect(0, 0, W, H);
@@ -1257,7 +1592,8 @@ const UI = { ups: [], tabs: {}, navBtns: {}, el: {}, genRows: [] };
 const up = (fn, tab) => UI.ups.push([fn, tab]);
 let R = {}; // per-render cache
 
-function toast(msg, kind = '') {
+function toast(msg, kind = '', always = false) {
+  if (!always && S && S.settings.ui && !S.settings.ui.toasts) return;
   const box = $('toasts');
   while (box.children.length >= 5) box.firstChild.remove();
   const t = h('div', { class: 'toast ' + kind }, msg);
@@ -1285,11 +1621,12 @@ function buildHeader() {
   const rq = h('div', { class: 'res q' }, h('div', { class: 'lbl' }, 'Quanta'), qv, qr);
   const rs = h('div', { class: 'res sh' }, h('div', { class: 'lbl' }, 'Shards'), sv, sr);
   const re = h('div', { class: 'res es' }, h('div', { class: 'lbl' }, 'Essence'), ev, er);
-  const bc = h('button', { class: 'btn-big btn-collapse', onclick: () => doCollapse() });
+  const bcSub = h('small'), baSub = h('small'), bxSub = h('small');
+  const bc = h('button', { class: 'btn-big btn-collapse', onclick: () => doCollapse() }, 'Collapse', bcSub);
   UI.el.collapse = bc;
-  const ba = h('button', { class: 'btn-big btn-ascend', onclick: () => doAscend() });
-  const bx = h('button', { class: 'btn-big btn-chal', onclick: () => leaveChal() });
-  hd.append(h('div', { class: 'title' }, h('div', { class: 'orb' }), 'APEIRON'), rq, rs, re, h('div', { class: 'spacer' }), h('div', { class: 'prestige' }, bx, bc, ba));
+  const ba = h('button', { class: 'btn-big btn-ascend', onclick: () => doAscend() }, 'Ascend', baSub);
+  const bx = h('button', { class: 'btn-big btn-chal', onclick: () => leaveChal() }, 'Leave challenge', bxSub);
+  hd.append(h('div', { class: 'title' }, h('div', { class: 'orb poke', onclick: poke, title: 'The Architect' }), 'APEIRON'), rq, rs, re, h('div', { class: 'spacer' }), h('div', { class: 'prestige' }, bx, bc, ba));
   up(() => {
     setT(qv, fmt(S.q));
     setT(qr, (R.qps > -Infinity ? '+' + fmt(D.fromLog(R.qps)) : '+0') + ' /s' + (!hasE('e6') && lq() >= CFG.limit - 1e-9 ? '  · at the Limit' : ''));
@@ -1301,24 +1638,24 @@ function buildHeader() {
     setT(er, S.ascensions + ' ascensions');
     show(bc, S.reached.collapse);
     const cc = canCollapse(); setDis(bc, !cc);
-    setH(bc, cc ? `Collapse<small>+${fmt(R.sg, 0)} Shards</small>` : `Collapse<small>need ${fmt(D.fromLog(CFG.collapseReq))} Quanta</small>`);
+    setT(bcSub, cc ? `+${fmt(R.sg, 0)} Shards` : `need ${fmt(D.fromLog(collapseReqLog()))} Quanta`);
     show(ba, S.reached.limit);
     const ca = canAscend(); setDis(ba, !ca);
-    setH(ba, ca ? `Ascend<small>+${fmt(essenceGain(), 0)} Essence</small>` : `Ascend<small>need ${fmt(D.fromLog(CFG.limit))} Quanta</small>`);
+    setT(baSub, ca ? `+${fmt(essenceGain(), 0)} Essence` : `need ${fmt(D.fromLog(CFG.limit))} Quanta`);
     show(bx, S.chal.active >= 0);
-    if (S.chal.active >= 0) setH(bx, `Leave challenge<small>${CHALS[S.chal.active].name}</small>`);
+    if (S.chal.active >= 0) setT(bxSub, CHALS[S.chal.active].name);
   });
 }
 
 /* ---------------- Nav ---------------- */
 const TABS = [
   ['gen', 'Generators', () => true, () => false],
-  ['arch', 'Architect', () => S.ai.total > 0 || S.reached.collapse, () => S.ai.total > S.ai.seen],
   ['upg', 'Upgrades', () => true, () => QUPG.some(u => !S.qUpg[u.id] && lq() >= u.cost) || (streamVisible('q') && lq() >= procCost('q', S.proc.q))],
   ['shard', 'Shards', shardsVisible, () => SUPG.some(u => !S.sUpg[u.id] && S.shards.gte(u.cost)) || (streamVisible('s') && S.shards.log10() >= procCost('s', S.proc.s))],
   ['auto', 'Automation', autoVisible, () => false],
   ['asc', 'Ascension', ascVisible, () => EUPG.some(u => !S.eUpg[u.id] && S.essence.gte(u.cost)) || (streamVisible('e') && S.essence.log10() >= procCost('e', S.proc.e))],
   ['chal', 'Challenges', () => hasE('e3'), () => false],
+  ['arch', 'Architect', () => tutorialDone(), () => S.ai.total > S.ai.seen],
   ['ach', 'Achievements', () => true, () => false],
   ['stats', 'Statistics', () => true, () => false],
   ['guide', 'Guide', () => true, () => false],
@@ -1326,6 +1663,7 @@ const TABS = [
 ];
 const TAB_ICONS = { gen: '◈', arch: '✦', upg: '▲', shard: '◆', auto: '⟳', asc: '✧', chal: '⚔', ach: '★', stats: '≣', guide: '?', opt: '⚙' };
 function setTab(id) {
+  if (S.settings.tab !== id) { const now = performance.now(); tabTimes.push(now); while (tabTimes.length && now - tabTimes[0] > 60000) tabTimes.shift(); if (tabTimes.length >= 30) grantSecret('x10'); }
   S.settings.tab = id;
   for (const [k, el] of Object.entries(UI.tabs)) setC(el, 'active', k === id);
   for (const [k, b] of Object.entries(UI.navBtns)) setC(b, 'active', k === id);
@@ -1335,7 +1673,7 @@ function buildNav() {
   const nav = $('nav'), main = $('main');
   for (const [id, label, vis, dot] of TABS) {
     const d = h('span', { class: 'dot' });
-    const b = h('button', { onclick: () => setTab(id) }, h('span', { class: 'ico' }, TAB_ICONS[id] || '·'), label, d);
+    const b = h('button', { onclick: () => { sfx('tab'); setTab(id); } }, h('span', { class: 'ico' }, TAB_ICONS[id] || '·'), label, d);
     UI.navBtns[id] = b; nav.append(b);
     UI.tabs[id] = h('section', { class: 'tab' }); main.append(UI.tabs[id]);
     up(() => { show(b, vis()); show(d, dot()); });
@@ -1362,14 +1700,20 @@ const TUT = [
     done: () => S.stats.totalCollapses > 0, target: () => UI.el.collapse },
   { text: 'Spend your Shard in the <b>Shards</b> tab. From here the loop is: grow, Collapse, upgrade, and each loop goes further.',
     done: () => Object.keys(S.sUpg).length > 0, target: () => UI.navBtns.shard },
-  { text: 'One last thing: I will keep inventing new upgrades and new generators for you, and there is no last one. The <b>Guide</b> tab explains everything if you get lost. Good luck.',
+  { text: 'One last thing: I will keep inventing new upgrades and new generators for you, and there is no last one. The <b>Guide</b> tab explains everything if you get lost, and once you press Got it, the <b>Architect</b> tab will always show you what to aim for next. Good luck.',
     done: () => false, ack: true },
 ];
+const tutorialDone = () => S.tut.off || S.tut.step >= TUT.length;
+function tutorialFinished() {
+  if (S.ai.said.tutDone) return;
+  S.ai.said.tutDone = true;
+  aiSay('You know the basics now. I opened the Architect tab for you: it always shows what to aim for next, and everything I have told you.');
+}
 function buildTutorial(T) {
   const txt = h('div', { class: 'tut-txt' });
-  const ok = h('button', { onclick: () => { S.tut.step++; } }, 'Got it');
-  const skip = h('button', { class: 'linkish', onclick: () => { S.tut.off = true; } }, 'Skip tutorial');
-  const orb = h('div', { class: 'orb' });
+  const ok = h('button', { onclick: () => { S.tut.step++; tutorialFinished(); } }, 'Got it');
+  const skip = h('button', { class: 'linkish', onclick: () => { S.tut.off = true; grantSecret('x9'); tutorialFinished(); } }, 'Skip tutorial');
+  const orb = h('div', { class: 'orb poke', onclick: poke, title: 'The Architect' });
   const box = h('div', { class: 'tut' }, orb, h('div', { style: 'flex:1' }, h('div', { class: 'tut-who' }, 'THE ARCHITECT · GUIDE'), txt, h('div', { class: 'tut-btns' }, ok, skip)));
   T.append(box);
   let lastTarget = null, lastStep = -1, tw = null;
@@ -1377,12 +1721,33 @@ function buildTutorial(T) {
     while (!S.tut.off && S.tut.step < TUT.length && TUT[S.tut.step].done()) S.tut.step++;
     const active = !S.tut.off && S.tut.step < TUT.length, st = active && TUT[S.tut.step];
     show(box, active);
-    const tg = active && st.target ? st.target() : null;
+    // the Architect only speaks (and points) while you are looking at the Generators tab
+    const onGen = S.settings.tab === 'gen' && !$('intro').classList.contains('open');
+    const tg = active && onGen && st.target ? st.target() : null;
     if (tg !== lastTarget) { if (lastTarget) lastTarget.classList.remove('tut-hl'); if (tg) tg.classList.add('tut-hl'); lastTarget = tg; }
     if (!active) { lastStep = -1; return; }
-    if ($('intro').classList.contains('open')) { lastStep = -1; return; }
+    if (!onGen) { if (tw && !tw.isDone()) tw.finish(); return; } // finish the line silently if you leave mid-sentence
     if (S.tut.step !== lastStep) { lastStep = S.tut.step; if (tw) tw.finish(); tw = typewriter(txt, st.text, { speed: 22, pitch: 1.15, orb }); }
     show(ok, !!st.ack);
+  });
+}
+
+/* ---------------- Ability buttons ---------------- */
+const fmtClock = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+function abilityButtons() {
+  return Object.entries(ABIL).map(([k, a]) => {
+    const b = h('button', { class: 'abil', onclick: act(() => useAbility(k), k === 'surge' ? 'upgrade' : 'buy') });
+    up(() => {
+      const unl = hasS(a.node); show(b, unl); if (!unl) return;
+      const now = S.stats.time, ready = abilReady(k), live = k === 'surge' && surgeActive();
+      let txt, p;
+      if (live) { const left = S.abil.surge.until - now; txt = a.name + ' · active ' + Math.ceil(left) + 's'; p = left / a.dur(); }
+      else if (ready) { txt = a.name + ' · ready'; p = 1; }
+      else { const left = S.abil[k].ready - now; txt = a.name + ' · ' + fmtClock(left); p = 1 - left / a.cd(); }
+      setT(b, txt); b.style.setProperty('--cd', (Math.max(0, Math.min(1, p)) * 100).toFixed(1) + '%');
+      setC(b, 'can', ready); setC(b, 'live', live);
+    }, 'gen');
+    return b;
   });
 }
 
@@ -1390,25 +1755,25 @@ function buildTutorial(T) {
 function buildGenTab() {
   const T = UI.tabs.gen;
   buildTutorial(T);
-  const pb = h('button', { class: 'pulse', onclick: pulse, title: 'Click to make Quanta by hand (once every 1.5 seconds). Only matters at the very start; generators take over quickly.' }, 'Pulse');
+  const pb = h('button', { class: 'pulse', onclick: act(pulse, 'pulse') }, 'Pulse');
   UI.el.pulse = pb;
-  const modes = [['1', 'Buy 1'], ['10', 'Until 10'], ['max', 'Max']].map(([m, l]) => {
+  const modes = [['1', 'Buy 1'], ['10', 'Buy 10'], ['max', 'Max']].map(([m, l]) => {
     const b = h('button', { onclick: () => { S.settings.buyMode = m; } }, l);
     up(() => setC(b, 'on', S.settings.buyMode === m), 'gen'); return b;
   });
-  const ma = h('button', { onclick: maxAll, title: 'Buy as much of everything as you can afford (key M).' }, 'Max all  (M)');
+  const ma = h('button', { onclick: act(maxAll), title: 'Buy as much of everything as you can afford (key M).' }, 'Max all  (M)');
   UI.el.maxAll = ma;
-  T.append(h('div', { class: 'toolbar' }, pb, h('div', { class: 'seg', title: 'How much each Buy button buys.' }, modes), ma, h('span', { class: 'muted' }, 'Each tier makes the tier below it. Every 10 bought multiplies a generator by its Resonance.')));
+  T.append(h('div', { class: 'toolbar' }, pb, h('div', { class: 'seg', title: 'How much each Buy button buys.' }, modes), ma, ...abilityButtons(), h('span', { class: 'muted' }, 'Each tier makes the tier below it. Every 10 bought multiplies a generator by its Resonance.')));
   up(() => {
     setT(pb, 'Pulse  +' + fmt(pulseGain()));
-    const p = Math.min(1, (performance.now() - lastPulse) / PULSE_CD);
+    const p = Math.min(1, (performance.now() - lastPulse) / pulseCd());
     pb.style.setProperty('--cd', (p * 100).toFixed(1) + '%');
     setC(pb, 'cooling', p < 1);
   }, 'gen');
 
   // Clock
   const cl = h('div', { class: 'sub' }), ce = h('div', { class: 'mult' }), cs = h('div', { class: 'rate' });
-  const cb = h('button', { onclick: () => buyClock(S.settings.buyMode === 'max' ? 'max' : '1') });
+  const cb = h('button', { onclick: act(() => buyClock(S.settings.buyMode === 'max' ? 'max' : '1')) });
   UI.el.clock = cb;
   T.append(h('div', { class: 'row clock' }, h('div', {}, h('div', { class: 'name' }, h('span', { class: 'tier' }, '⏱'), 'Clock Speed'), cl), h('div', {}, ce, cs), h('div', { class: 'rate' }, 'Speeds up every generator.'), cb));
   up(() => {
@@ -1428,7 +1793,7 @@ function buildGenTab() {
   UI.genRows = [];
   const makeRow = i => {
     const am = h('div', { class: 'sub' }), bar = h('i'), mu = h('div', { class: 'mult' }), ra = h('div', { class: 'rate' }), nm = h('span');
-    const bb = h('button', { onclick: () => buyGen(i, S.settings.buyMode) });
+    const bb = h('button', { onclick: act(() => buyGen(i, S.settings.buyMode)) });
     const row = h('div', { class: 'row' },
       h('div', {}, h('div', { class: 'name' }, h('span', { class: 'tier' }, i + 1), nm), am),
       h('div', {}, mu, h('div', { class: 'bar10' }, bar)), ra, bb);
@@ -1449,45 +1814,466 @@ function buildGenTab() {
       setT(ra, r > -Infinity ? '+' + fmt(D.fromLog(r)) + (i === 0 ? ' Quanta/s' : ' ' + genDef(i - 1).name + 's/s') : (i === 0 ? 'makes Quanta' : 'makes ' + genDef(i - 1).name + 's'));
       if (!unl) { setT(bb, 'Requires a ' + genDef(i - 1).name); setDis(bb, true); setC(bb, 'can', false); return; }
       const c0 = genCostLog(i), lm = lq(), m = S.settings.buyMode;
-      let n = m === 'max' ? genMax(i) : m === '10' ? Math.min(10 - g.bought % 10, genMax(i)) : 1;
+      let n = m === 'max' ? genMax(i) : m === '10' ? 10 : 1;
       if (n < 1) n = 1;
-      setT(bb, (n > 1 ? 'Buy ' + n + ' · ' : 'Buy · ') + fmt(D.fromLog(genCostLog(i, n))));
-      setDis(bb, lm < c0); setC(bb, 'can', lm >= c0);
+      const cost = genCostLog(i, n), need = m === '10' ? cost : c0;
+      setT(bb, (n > 1 ? 'Buy ' + n + ' · ' : 'Buy · ') + fmt(D.fromLog(cost)));
+      setDis(bb, lm < need); setC(bb, 'can', lm >= need);
     }, 'gen');
   };
   up(() => { while (UI.genRows.length < S.gens.length) makeRow(UI.genRows.length); });
 
+  // Anomalies: secret generators unlocked by hidden achievements; they never reset
+  const anomHead = h('h2', {}, 'Anomalies');
+  const anomNote = h('div', { class: 'muted', style: 'margin:-4px 0 8px' }, 'Things that should not exist. They ignore Collapse and Ascension.');
+  T.append(anomHead, anomNote);
+  up(() => { const v = ANOMALIES.some(a => rewardUnlocked(a.id)); show(anomHead, v); show(anomNote, v); }, 'gen');
+  for (const a of ANOMALIES) {
+    const lv = h('div', { class: 'sub' }), ef = h('div', { class: 'mult' }), bb = h('button', { onclick: act(() => buyAnom(a, S.settings.buyMode === 'max' ? 'max' : '1')) });
+    const row = h('div', { class: 'row anom' }, h('div', {}, h('div', { class: 'name' }, h('span', { class: 'tier' }, '✶'), a.name), lv), h('div', {}, ef), h('div', { class: 'rate' }, a.desc), bb);
+    T.append(row);
+    up(() => {
+      const unl = rewardUnlocked(a.id); show(row, unl); if (!unl) return;
+      const n = anomN(a.id); setT(lv, 'owned ' + n); setT(ef, a.eff(n));
+      const c0 = anomCostLog(a), lm = lq();
+      const k = S.settings.buyMode === 'max' ? Math.max(1, quadMax(lm, a.base, a.step, a.q, n)) : 1;
+      setT(bb, (k > 1 ? 'Buy ' + k + ' · ' : 'Buy · ') + fmt(D.fromLog(anomCostLog(a, k))));
+      setDis(bb, lm < c0); setC(bb, 'can', lm >= c0);
+    }, 'gen');
+  }
+
 }
 const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+/* =====================================================================
+   SKILL WEBS: sprawling passive trees for Quanta upgrades and Shards.
+   Notables (the real upgrades) are joined by chains of small minor nodes and
+   cross-linked into a web. You can buy any node next to one you own. The
+   Architect's ideas sprout as new diamond nodes and the web re-settles around them.
+   ===================================================================== */
+const SVGNS = 'http://www.w3.org/2000/svg';
+const sv = (tag, attrs = {}) => { const el = document.createElementNS(SVGNS, tag); for (const k in attrs) el.setAttribute(k, attrs[k]); return el; };
+const hashStr = s => { let x = 2166136261; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return x >>> 0; };
+const WEB_DEF = {
+  q: { root: 'q1', cur: 'q', curName: 'Quanta', costLog: id => QBY[id].cost, owned: id => !!S.qUpg[id],
+    ring: { kind: 'qmult', v: L10(1.2), text: 'Quanta production ×1.2' },
+    branches: [
+      { name: 'Light', sub: 'production', angle: -150, nodes: ['q2', 'q5', 'q7', 'q13', 'q16'], minor: { kind: 'qmult', v: L10(1.3), text: 'Quanta production ×1.3' } },
+      { name: 'Harmony', sub: 'resonance and clock', angle: -30, nodes: ['q3', 'q4', 'q8', 'q9', 'q11'], minor: { kind: 'res', v: 0.02, text: 'Resonance +0.02' } },
+      { name: 'Cascade', sub: 'tiers and Shards', angle: 90, nodes: ['q6', 'q10', 'q12', 'q14', 'q15'], minor: { kind: 'shard', v: L10(1.05), text: 'Shard gain ×1.05' } },
+    ] },
+  s: { root: 's1', cur: 'shards', curName: 'Shards', costLog: id => L10(SBY[id].cost), owned: id => !!S.sUpg[id],
+    ring: { kind: 'qmult', v: L10(1.3), text: 'Quanta production ×1.3' },
+    branches: [
+      { name: 'Radiance', sub: 'raw power', angle: -150, nodes: TREE[0].nodes, minor: { kind: 'qmult', v: L10(1.5), text: 'Quanta production ×1.5' } },
+      { name: 'Clockwork', sub: 'speed and automation', angle: -30, nodes: TREE[1].nodes, minor: { kind: 'clock', v: 0.002, text: 'Clock Speed base +0.002' } },
+      { name: 'Echoes', sub: 'Shards and abilities', angle: 90, nodes: TREE[2].nodes, minor: { kind: 'shard', v: L10(1.1), text: 'Shard gain ×1.1' } },
+    ] },
+};
+const ARCH_BRANCH = {
+  q: k => (k === 'res' || k === 'clock') ? 1 : (k === 'tier' || k === 'qexp') ? 2 : 0,
+  s: k => (k === 'qmult' || k === 'tier') ? 0 : (k === 'clock' || k === 'idle' || k === 'pulse') ? 1 : 2,
+};
+// Force layout: springs along edges, repulsion between nodes, anchors pull notables to their branch.
+function relax(nodes, edges, pos, iters) {
+  const ids = Object.keys(nodes), n = ids.length, idx = {};
+  ids.forEach((id, i) => { idx[id] = i; });
+  const Pp = ids.map(id => pos[id]), kind = ids.map(id => nodes[id].type), anc = ids.map(id => nodes[id].anchor || null);
+  if (n > 400) iters = Math.min(iters, 30);
+  for (let it = 0; it < iters; it++) {
+    const F = ids.map(() => [0, 0]);
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+      const dx = Pp[i][0] - Pp[j][0], dy = Pp[i][1] - Pp[j][1], d2 = dx * dx + dy * dy + 1;
+      if (d2 > 90000) continue;
+      const d = Math.sqrt(d2), f = 2600 / d2;
+      F[i][0] += dx / d * f; F[i][1] += dy / d * f; F[j][0] -= dx / d * f; F[j][1] -= dy / d * f;
+    }
+    for (const [a, b] of edges) {
+      const i = idx[a], j = idx[b]; if (i === undefined || j === undefined) continue;
+      const dx = Pp[j][0] - Pp[i][0], dy = Pp[j][1] - Pp[i][1], d = Math.sqrt(dx * dx + dy * dy) + 0.01;
+      const rest = kind[i] === 'minor' && kind[j] === 'minor' ? 62 : 90, f = (d - rest) * 0.07;
+      F[i][0] += dx / d * f; F[i][1] += dy / d * f; F[j][0] -= dx / d * f; F[j][1] -= dy / d * f;
+    }
+    for (let i = 0; i < n; i++) {
+      if (kind[i] === 'root') { Pp[i][0] = 0; Pp[i][1] = 0; continue; }
+      if (anc[i]) { const s = kind[i] === 'notable' ? 0.3 : 0.04; F[i][0] += (anc[i][0] - Pp[i][0]) * s; F[i][1] += (anc[i][1] - Pp[i][1]) * s; }
+      Pp[i][0] += Math.max(-14, Math.min(14, F[i][0])); Pp[i][1] += Math.max(-14, Math.min(14, F[i][1]));
+    }
+  }
+}
+const WEB_STATIC = {};
+function webStatic(layer) {
+  if (WEB_STATIC[layer]) return WEB_STATIC[layer];
+  const W = WEB_DEF[layer], nodes = {}, edges = [], first = [], at = [];
+  const add = n => (nodes[n.id] = n);
+  const link = (a, b) => edges.push([a, b]);
+  add({ id: W.root, type: 'root', br: -1, upg: W.root, costLog: W.costLog(W.root), anchor: [0, 0] });
+  W.branches.forEach((br, b) => {
+    const th0 = br.angle * Math.PI / 180;
+    const P = (r, off) => { const th = th0 + 0.12 * Math.sin(r / 150); const dx = Math.cos(th), dy = Math.sin(th); return [dx * r - dy * off, dy * r + dx * off]; };
+    let prev = [W.root], prevCost = W.costLog(W.root), r = 0;
+    at[b] = [];
+    br.nodes.forEach((entry, d) => {
+      const ids = Array.isArray(entry) ? entry : [entry], cost = W.costLog(ids[0]), rT = 210 + d * 170;
+      let chain = prev;
+      for (let k = 1; k <= 2; k++) {
+        const id = `m:${layer}:${b}:${d}:${k}`, rng = seeded(hashStr(id)), f = k / 3;
+        add({ id, type: 'minor', br: b, costLog: prevCost + (cost - prevCost) * f, eff: br.minor, anchor: P(r + (rT - r) * f, (rng() - 0.5) * 70) });
+        for (const p of chain) link(p, id);
+        chain = [id];
+        if (d === 0 && k === 1) first[b] = id;
+      }
+      ids.forEach((id, k) => {
+        add({ id, type: 'notable', br: b, upg: id, costLog: W.costLog(id), anchor: P(rT, ids.length > 1 ? (k ? 85 : -85) : 0) });
+        for (const p of chain) link(p, id);
+      });
+      at[b][d] = ids; prev = ids; prevCost = cost; r = rT;
+    });
+  });
+  const nb = W.branches.length;
+  for (let b = 0; b < nb; b++) {
+    const b2 = (b + 1) % nb;
+    let a1 = W.branches[b].angle, a2 = W.branches[b2].angle; if (a2 < a1) a2 += 360;
+    const mid = (a1 + a2) / 2 * Math.PI / 180, id = `r:${layer}:${b}`;
+    add({ id, type: 'minor', br: -1, costLog: W.costLog(W.root) + 0.3, eff: W.ring, anchor: [Math.cos(mid) * 160, Math.sin(mid) * 160] });
+    link(first[b], id); link(id, first[b2]);
+    const A = at[b][3], B = at[b2][3];
+    if (A && B) {
+      const pa = nodes[A[0]].anchor, pc = nodes[B[0]].anchor;
+      let chain = A;
+      for (let k = 1; k <= 3; k++) {
+        const f = k / 4, bid = `b:${layer}:${b}:${k}`;
+        add({ id: bid, type: 'minor', br: k < 2 ? b : k > 2 ? b2 : -1, costLog: nodes[A[0]].costLog + (nodes[B[0]].costLog - nodes[A[0]].costLog) * f,
+          eff: k < 2 ? W.branches[b].minor : k > 2 ? W.branches[b2].minor : W.ring, anchor: [(pa[0] + (pc[0] - pa[0]) * f) * 1.12, (pa[1] + (pc[1] - pa[1]) * f) * 1.12] });
+        for (const p of chain) link(p, bid);
+        chain = [bid];
+      }
+      for (const c of B) link(chain[0], c);
+    }
+  }
+  const adj = {};
+  for (const id in nodes) adj[id] = [];
+  for (const [a, b] of edges) { adj[a].push(b); adj[b].push(a); }
+  const pos = {};
+  for (const id in nodes) pos[id] = nodes[id].anchor.slice();
+  relax(nodes, edges, pos, 220);
+  return (WEB_STATIC[layer] = { nodes, edges, adj, pos });
+}
+let MINOR_VER = 0;
+const MINOR_AGG = {};
+function minorAgg(layer) {
+  const c = MINOR_AGG[layer];
+  if (c && c.v === MINOR_VER && c.S === S) return c.a;
+  const a = { qmult: 0, res: 0, clock: 0, shard: 0 }, st = webStatic(layer);
+  for (const id in S.minor[layer]) { const n = st.nodes[id]; if (n && n.eff) a[n.eff.kind] += n.eff.v; }
+  MINOR_AGG[layer] = { v: MINOR_VER, S, a };
+  return a;
+}
+const minorSum = k => minorAgg('q')[k] + minorAgg('s')[k];
+function webNode(layer, id) {
+  if (id[0] === 'a' && id[1] !== undefined && /^a\d+$/.test(id)) { const i = +id.slice(1), u = S.forge[layer][i]; return u ? { id, type: 'arch', arch: i, br: u.branch, parent: u.parent } : null; }
+  return webStatic(layer).nodes[id] || null;
+}
+function webOwned(layer, n) {
+  if (n.type === 'arch') return n.arch < S.proc[layer];
+  if (n.type === 'minor') return !!S.minor[layer][n.id];
+  return WEB_DEF[layer].owned(n.upg);
+}
+const webForked = (layer, n) => layer === 's' && n.type === 'notable' && sForkTaken(n.upg);
+function webAvail(layer, n) {
+  if (webOwned(layer, n) || webForked(layer, n)) return false;
+  if (n.type === 'root') return true;
+  if (n.type === 'arch') { const p = webNode(layer, n.parent || WEB_DEF[layer].root); return n.arch === S.proc[layer] && !!p && webOwned(layer, p); }
+  const st = webStatic(layer);
+  for (const nb of st.adj[n.id]) if (webOwned(layer, st.nodes[nb])) return true;
+  return false;
+}
+const webCostLog = (layer, n) => n.type === 'arch' ? procCost(layer, n.arch) : n.costLog;
+function webBuy(layer, id) {
+  const n = typeof id === 'string' ? webNode(layer, id) : id;
+  if (!n || !webAvail(layer, n)) return false;
+  const W = WEB_DEF[layer], cost = webCostLog(layer, n);
+  if (S[W.cur].log10() < cost) return false;
+  if (n.type === 'arch') return buyProc(layer);
+  if (n.type === 'minor') { S[W.cur] = S[W.cur].sub(D.fromLog(cost)).max0(); S.minor[layer][n.id] = true; MINOR_VER++; return true; }
+  return layer === 'q' ? buyQ(n.upg) : buyS(n.upg);
+}
+function webFrontier(layer) {
+  const st = webStatic(layer), out = [];
+  for (const id in st.nodes) { const n = st.nodes[id]; if (webAvail(layer, n)) out.push(n); }
+  if (S.forge[layer].length > S.proc[layer] || layer !== 'e') { const a = webNode(layer, 'a' + S.proc[layer]); if (a && webAvail(layer, a)) out.push(a); }
+  return out;
+}
+// buy the cheapest affordable nodes next to what you own (used by the Quanta upgrade autobuyer)
+function webAutoBuy(layer, max = 40) {
+  const cur = WEB_DEF[layer].cur;
+  let bought = 0;
+  if (S.forge[layer].length <= S.proc[layer]) procUpg(layer, S.proc[layer]);
+  for (let g = 0; g < max; g++) {
+    let best = null, bc = Infinity;
+    for (const n of webFrontier(layer)) { const c = webCostLog(layer, n); if (c < bc) { bc = c; best = n; } }
+    if (!best || S[cur].log10() < bc || !webBuy(layer, best)) break;
+    bought++;
+  }
+  return bought;
+}
+function pickParentWeb(layer, b) {
+  const W = WEB_DEF[layer]; if (!W) return null;
+  const st = webStatic(layer), cands = [];
+  for (const id in st.nodes) { const n = st.nodes[id]; if (n.br === b && webOwned(layer, n)) cands.push(id); }
+  const list = S.forge[layer];
+  for (let i = 0; i < list.length && i < S.proc[layer]; i++) if (list[i].branch === b) cands.push('a' + i);
+  if (!cands.length) return W.root;
+  return Math.random() < 0.6 ? cands[cands.length - 1] : rnd(cands);
+}
+// The full web for drawing: static nodes plus the Architect's growth, with re-settled positions.
+const WEB_CACHE = {}, WEB_POS = { q: {}, s: {} };
+function webGraph(layer) {
+  const st = webStatic(layer), W = WEB_DEF[layer];
+  if (S.forge[layer].length <= S.proc[layer]) procUpg(layer, S.proc[layer]);
+  const nArch = Math.min(S.forge[layer].length, S.proc[layer] + 1), c = WEB_CACHE[layer];
+  if (c && c.nArch === nArch && c.S === S) return c;
+  const pos = WEB_POS[layer];
+  if (!c || c.S !== S) for (const k in pos) if (/^a\d+$/.test(k)) delete pos[k];
+  const nodes = Object.assign({}, st.nodes), edges = st.edges.slice();
+  for (const id in st.nodes) if (!pos[id]) pos[id] = st.pos[id].slice();
+  let grew = false;
+  for (let i = 0; i < nArch; i++) {
+    const u = S.forge[layer][i];
+    if (u.branch === undefined) { u.branch = ARCH_BRANCH[layer](u.kind); u.parent = W.root; }
+    const id = 'a' + i, parent = nodes[u.parent] ? u.parent : W.root;
+    nodes[id] = { id, type: 'arch', arch: i, br: u.branch, parent };
+    edges.push([parent, id]);
+    if (!pos[id]) {
+      const pp = pos[parent] || [0, 0], rng = seeded(hashStr(layer + id));
+      const base = (pp[0] || pp[1]) ? Math.atan2(pp[1], pp[0]) : W.branches[u.branch].angle * Math.PI / 180, a = base + (rng() - 0.5) * 1.5;
+      pos[id] = [pp[0] + Math.cos(a) * 90, pp[1] + Math.sin(a) * 90];
+      grew = true;
+    }
+  }
+  if (grew) relax(nodes, edges, pos, 70);
+  const adj = {};
+  for (const id in nodes) adj[id] = [];
+  for (const [a, b] of edges) { adj[a].push(b); adj[b].push(a); }
+  return (WEB_CACHE[layer] = { nodes, edges, adj, pos, nArch, S });
+}
+// cheapest route (fewest nodes) from what you own to a target, for "buy the whole path"
+function webPath(layer, targetId) {
+  const G = webGraph(layer), tgt = G.nodes[targetId]; if (!tgt) return null;
+  if (webOwned(layer, tgt)) return [];
+  const prev = {}, q = [];
+  let any = false;
+  for (const id in G.nodes) if (webOwned(layer, G.nodes[id])) { prev[id] = null; q.push(id); any = true; }
+  if (!any) { if (targetId === WEB_DEF[layer].root) return [targetId]; prev[WEB_DEF[layer].root] = null; q.push(WEB_DEF[layer].root); }
+  while (q.length) {
+    const id = q.shift();
+    if (id === targetId) break;
+    for (const nb of G.adj[id]) {
+      if (nb in prev) continue;
+      const n = G.nodes[nb];
+      if (webForked(layer, n)) continue;
+      if (n.type === 'arch' && nb !== targetId) continue;
+      prev[nb] = id; q.push(nb);
+    }
+  }
+  if (!(targetId in prev)) return null;
+  const path = [];
+  for (let id = targetId; id !== null && !webOwned(layer, G.nodes[id]); id = prev[id]) path.unshift(id);
+  return path;
+}
+function webInfo(layer, n) {
+  const W = WEB_DEF[layer], br = W.branches[n.br];
+  if (n.type === 'arch') { const u = S.forge[layer][n.arch]; return { name: u.name, label: 'The Architect\u2019s idea' + (br ? ' · ' + br.name : ''), desc: forgeDesc(u), reason: u.reason }; }
+  if (n.type === 'minor') return { name: n.eff.text, label: 'Minor node' + (br ? ' · ' + br.name : ''), desc: n.eff.text + '.' };
+  const u = layer === 'q' ? QBY[n.upg] : SBY[n.upg];
+  return { name: u.name, label: n.type === 'root' ? 'The root' : 'Notable · ' + (br ? br.name : ''), desc: u.desc, eff: u.eff };
+}
+const BR_HUE = [['var(--es)', 'var(--esr)'], ['var(--q)', 'var(--qr)'], ['var(--sh)', 'var(--shr)']];
+function buildWebView(T, layer, tabId) {
+  const W = WEB_DEF[layer];
+  const wrap = h('div', { class: 'treeview' });
+  const svg = sv('svg', { class: 'treesvg' }), world = sv('g'), gE = sv('g'), gN = sv('g');
+  world.append(gE, gN); svg.append(world);
+  const pType = h('div', { class: 'pb' }), pName = h('div', { class: 'pn' }), pDesc = h('div', { class: 'pd' }), pEff = h('div', { class: 'pe' }), pWhy = h('div', { class: 'pw' }), pCost = h('div', { class: 'pc' });
+  const pBuy = h('button', {}, 'Buy');
+  const panel = h('div', { class: 'nodepanel' }, pType, pName, pDesc, pEff, pWhy, pCost, pBuy);
+  const tools = h('div', { class: 'treetools' }, h('button', { onclick: () => zoomBy(1.25) }, '+'), h('button', { onclick: () => zoomBy(0.8) }, '−'), h('button', { onclick: () => fit(true) }, 'Fit'));
+  const hint = h('div', { class: 'treehint' }, 'Drag to move · scroll to zoom · click a node to inspect it · double-click to buy (the whole path if needed)');
+  wrap.append(svg, tools, panel, hint);
+  T.append(wrap);
+  let view = { x: 0, y: 0, k: 0.5 }, anim = null, sel = null, hover = null, fitted = false, builtG = null, els = {}, edgeEls = [], shown = {}, tweening = false;
+  const apply = () => world.setAttribute('transform', `translate(${view.x.toFixed(1)},${view.y.toFixed(1)}) scale(${view.k.toFixed(4)})`);
+  function animateTo(v) {
+    const start = !anim; anim = v;
+    if (!start) return;
+    const step = () => {
+      if (!anim) return;
+      view.x += (anim.x - view.x) * 0.18; view.y += (anim.y - view.y) * 0.18; view.k += (anim.k - view.k) * 0.18; apply();
+      if (Math.abs(anim.x - view.x) + Math.abs(anim.y - view.y) + Math.abs(anim.k - view.k) * 300 < 0.6) { view = Object.assign({}, anim); anim = null; apply(); return; }
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  function fit(smooth) {
+    const Wd = wrap.clientWidth, Hd = wrap.clientHeight; if (!Wd) return;
+    const G = webGraph(layer); let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (const id in G.nodes) { if ((dist[id] === undefined ? 99 : dist[id]) > 2) continue; const p = G.pos[id]; x0 = Math.min(x0, p[0]); y0 = Math.min(y0, p[1]); x1 = Math.max(x1, p[0]); y1 = Math.max(y1, p[1]); }
+    if (x0 > x1) { x0 = -200; x1 = 200; y0 = -200; y1 = 200; }
+    const k = Math.max(0.15, Math.min(1.25, (Wd - 280) / (x1 - x0 + 160), Hd / (y1 - y0 + 180)));
+    const v = { k, x: (Wd - 270) / 2 - (x0 + x1) / 2 * k, y: Hd / 2 - (y0 + y1) / 2 * k };
+    if (smooth) animateTo(v); else { view = v; apply(); }
+  }
+  function zoomBy(f, cx = wrap.clientWidth / 2, cy = wrap.clientHeight / 2) {
+    anim = null; const k2 = Math.max(0.12, Math.min(2.5, view.k * f));
+    view.x = cx - (cx - view.x) * (k2 / view.k); view.y = cy - (cy - view.y) * (k2 / view.k); view.k = k2; apply();
+  }
+  function reveal(id) {
+    const p = webGraph(layer).pos[id]; if (!p) return;
+    const Wd = wrap.clientWidth, Hd = wrap.clientHeight, sx = view.x + p[0] * view.k, sy = view.y + p[1] * view.k;
+    if (sx < 60 || sx > Wd - 300 || sy < 60 || sy > Hd - 60) animateTo({ k: view.k, x: (Wd - 270) / 2 - p[0] * view.k, y: Hd / 2 - p[1] * view.k });
+  }
+  let drag = null;
+  svg.addEventListener('pointerdown', e => { if (e.button !== 0 || e.target.closest('.tn')) return; anim = null; drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, moved: 0 }; svg.setPointerCapture(e.pointerId); wrap.classList.add('dragging'); });
+  svg.addEventListener('pointermove', e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.moved = Math.max(drag.moved, Math.abs(dx) + Math.abs(dy)); view.x = drag.vx + dx; view.y = drag.vy + dy; apply(); });
+  const endDrag = () => { if (drag && drag.moved < 4) sel = null; drag = null; wrap.classList.remove('dragging'); };
+  svg.addEventListener('pointerup', endDrag); svg.addEventListener('pointercancel', endDrag);
+  svg.addEventListener('wheel', e => { e.preventDefault(); const r = svg.getBoundingClientRect(); zoomBy(e.deltaY < 0 ? 1.12 : 1 / 1.12, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  const buyPath = id => { const path = webPath(layer, id); if (!path || !path.length) return 0; let n = 0; for (const pid of path) { if (!webBuy(layer, pid)) break; n++; } return n; };
+  pBuy.addEventListener('click', () => { if (sel) sfx(buyPath(sel) ? 'upgrade' : 'fail'); });
+  function placeAll() {
+    for (const id in els) { const p = shown[id]; els[id].setAttribute('transform', `translate(${p[0].toFixed(1)},${p[1].toFixed(1)})`); }
+    for (const [ln, a, b] of edgeEls) { const p = shown[a], q = shown[b]; if (!p || !q) continue; ln.setAttribute('x1', p[0].toFixed(1)); ln.setAttribute('y1', p[1].toFixed(1)); ln.setAttribute('x2', q[0].toFixed(1)); ln.setAttribute('y2', q[1].toFixed(1)); }
+  }
+  function tween() {
+    if (tweening) return; tweening = true;
+    const step = () => {
+      const G = webGraph(layer); let moving = false;
+      for (const id in els) { const s = shown[id], g = G.pos[id]; if (!g) continue; const dx = g[0] - s[0], dy = g[1] - s[1]; if (Math.abs(dx) + Math.abs(dy) > 0.4) { s[0] += dx * 0.12; s[1] += dy * 0.12; moving = true; } else { s[0] = g[0]; s[1] = g[1]; } }
+      placeAll();
+      if (moving) requestAnimationFrame(step); else tweening = false;
+    };
+    requestAnimationFrame(step);
+  }
+  function rebuild(grown) {
+    const G = webGraph(layer);
+    gE.textContent = ''; gN.textContent = ''; els = {}; edgeEls = [];
+    for (const [a, b] of G.edges) { const ln = sv('line', { class: 'te' }); ln.style.setProperty('--ec', BR_HUE[Math.max(0, G.nodes[b].br)] ? `rgba(${BR_HUE[Math.max(0, G.nodes[b].br)][1]},.7)` : 'rgba(200,200,255,.6)'); gE.append(ln); edgeEls.push([ln, a, b]); }
+    let i = 0;
+    for (const id in G.nodes) {
+      const n = G.nodes[id], g = sv('g', { class: 'tn ' + n.type });
+      g.style.setProperty('--bc', n.br < 0 ? '#e7eaff' : BR_HUE[n.br][0]);
+      const body = sv('g', { class: 'tbody' }); body.style.animationDelay = (-((i++ * 0.37) % 5)).toFixed(2) + 's';
+      const r = n.type === 'root' ? 30 : n.type === 'notable' ? 19 : n.type === 'arch' ? 15 : 8;
+      const shape = n.type === 'arch' ? sv('polygon', { class: 'tshape', points: `0,${-r} ${r},0 0,${r} ${-r},0` }) : sv('circle', { class: 'tshape', r });
+      body.append(shape);
+      if (n.type !== 'minor') { body.append(sv('circle', { class: 'tcore', r: n.type === 'root' ? 9 : 5 })); const lbl = sv('text', { class: 'tl', y: r + 16 }); lbl.textContent = webInfo(layer, n).name; body.append(lbl); }
+      g.append(body);
+      if (grown && n.type === 'arch' && n.arch === G.nArch - 1) g.classList.add('fresh');
+      g.addEventListener('click', e => { e.stopPropagation(); sel = id; });
+      g.addEventListener('dblclick', e => { e.stopPropagation(); sel = id; sfx(buyPath(id) ? 'upgrade' : 'fail'); });
+      g.addEventListener('pointerenter', () => { hover = id; });
+      g.addEventListener('pointerleave', () => { if (hover === id) hover = null; });
+      gN.append(g); els[id] = g;
+      if (!shown[id]) { const par = n.type === 'arch' ? shown[n.parent] : null; shown[id] = (par || G.pos[id]).slice(); }
+    }
+    placeAll(); tween();
+  }
+  let distKey = '', dist = {};
+  up(() => {
+    const G = webGraph(layer);
+    if (builtG !== G) { const grown = builtG && builtG.S === S && G.nArch > builtG.nArch; if (!builtG || builtG.S !== S) shown = {}; rebuild(grown); if (grown) reveal('a' + (G.nArch - 1)); builtG = G; }
+    // hop distance from what you own (drives the fog of the unexplored web)
+    const ownedIds = []; for (const id in G.nodes) if (webOwned(layer, G.nodes[id])) ownedIds.push(id);
+    const key = ownedIds.join(',') + '|' + G.nArch;
+    if (key !== distKey) {
+      distKey = key; dist = {}; const q = ownedIds.length ? ownedIds.slice() : [W.root];
+      for (const id of q) dist[id] = 0;
+      while (q.length) { const id = q.shift(); for (const nb of G.adj[id]) if (!(nb in dist)) { dist[nb] = dist[id] + 1; q.push(nb); } }
+      const count = [0, 0, 0]; for (const id of ownedIds) { const b = G.nodes[id].br; if (b >= 0) count[b]++; }
+      const tot = count[0] + count[1] + count[2], top = count.indexOf(Math.max(...count));
+      wrap.style.setProperty('--tint', tot ? `rgba(${BR_HUE[top][1]},${(0.05 + Math.min(0.12, tot / 300)).toFixed(3)})` : 'rgba(var(--shr),.05)');
+    }
+    if (!fitted && wrap.clientWidth) { fit(false); fitted = true; }
+    const curLog = S[W.cur].log10(), owned = {};
+    for (const id in els) {
+      const n = G.nodes[id], g = els[id], o = webOwned(layer, n), av = !o && webAvail(layer, n), d = dist[id] === undefined ? 99 : dist[id];
+      owned[id] = o;
+      setC(g, 'owned', o); setC(g, 'can', av && curLog >= webCostLog(layer, n)); setC(g, 'avail', av);
+      setC(g, 'forked', webForked(layer, n)); setC(g, 'far', !o && !av && d <= 3); setC(g, 'fog', !o && !av && d > 3);
+      setC(g, 'sel', sel === id);
+    }
+    for (const [ln, a, b] of edgeEls) { setC(ln, 'on', !!owned[a] && !!owned[b]); setC(ln, 'fogged', !owned[a] && !owned[b] && (dist[a] > 3 || dist[b] > 3)); }
+    const f = sel || hover, n = f && G.nodes[f];
+    show(panel, !!n);
+    if (n) {
+      const info = webInfo(layer, n), o = webOwned(layer, n), forked = webForked(layer, n);
+      setT(pType, info.label); setT(pName, info.name); setT(pDesc, info.desc);
+      show(pEff, !!info.eff); if (info.eff) setT(pEff, 'Currently ' + info.eff());
+      show(pWhy, !!info.reason); if (info.reason) setT(pWhy, '“' + info.reason + '”');
+      let costTxt, can = false, label = 'Buy';
+      if (o) costTxt = 'Owned';
+      else if (forked) costTxt = 'Path not taken (the other side of this fork is yours)';
+      else {
+        const path = webPath(layer, f);
+        if (!path) costTxt = n.type === 'arch' ? 'The Architect will offer this once you own what it grows from' : 'Not reachable yet';
+        else {
+          let tot = D.Z; for (const pid of path) tot = tot.add(D.fromLog(webCostLog(layer, G.nodes[pid])));
+          costTxt = (path.length > 1 ? path.length + ' nodes · total ' : 'Cost: ') + fmt(tot) + ' ' + W.curName;
+          can = S[W.cur].gte(D.fromLog(webCostLog(layer, G.nodes[path[0]]))) && webAvail(layer, G.nodes[path[0]]);
+          label = path.length > 1 ? 'Buy path (' + path.length + ')' : 'Buy';
+        }
+      }
+      setT(pCost, costTxt); show(pBuy, !o && !forked); setT(pBuy, label); setDis(pBuy, !can); setC(pBuy, 'can', can);
+    }
+  }, tabId);
+}
+
 /* ---------------- Architect upgrade streams ---------------- */
 function buildStream(T, layer, kind, title, tabId) {
   const P = PROC[layer];
   const sub = h('span', { class: 'muted' });
-  const bmax = h('button', { onclick: () => { for (let k = 0; k < 200 && buyProc(layer); k++); } }, 'Buy all affordable');
+  const bmax = h('button', { onclick: act(() => { let k = 0; while (k < 200 && buyProc(layer)) k++; return k; }, 'upgrade') }, 'Buy all affordable');
   const n1 = h('div', { class: 'n' }), d1 = h('div', { class: 'd' }), r1 = h('div', { class: 'why' }), c1 = h('div', { class: 'c' });
-  const cur = h('div', { class: 'card ' + kind, onclick: () => buyProc(layer) }, n1, d1, r1, c1);
+  const cur = h('div', { class: 'card ' + kind, onclick: act(() => buyProc(layer), 'upgrade') }, n1, d1, r1, c1);
   const draft = h('div', { class: 'card draft' }, h('div', { class: 'n' }, 'Drafting…'), h('div', { class: 'd' }, 'The Architect writes the next upgrade the moment you buy this one, based on how you are playing right now.'));
-  const wrap = h('div', {}, h('h2', {}, title), h('div', { class: 'opt-row' }, bmax, sub), h('div', { class: 'cards' }, cur, draft));
+  const grid = h('div', { class: 'cards' }, cur, draft);
+  const more = h('button', { class: 'linkish', onclick: () => { showAll = !showAll; shown = -1; } });
+  const wrap = h('div', {}, h('h2', {}, title), h('div', { class: 'opt-row' }, bmax, sub), grid, h('div', { class: 'opt-row', style: 'margin-top:6px' }, more));
   T.append(wrap);
+  let shown = -1, shownS = null, shownNote = '', showAll = false;
+  const owned = [];
+  up(() => {
+    const n = S.proc[layer], note = S.settings.notation;
+    if (n === shown && shownS === S && note === shownNote) return;
+    shown = n; shownS = S; shownNote = note;
+    for (const el of owned) el.remove();
+    owned.length = 0;
+    const list = S.forge[layer].slice(0, n).reverse(), cap = showAll ? list.length : 24;
+    for (const u of list.slice(0, cap)) {
+      const el = h('div', { class: 'card bought ' + kind }, h('div', { class: 'n' }, u.name), h('div', { class: 'd' }, forgeDesc(u)), h('div', { class: 'why' }, '“' + u.reason + '”'), h('div', { class: 'c' }, 'Owned'));
+      grid.append(el); owned.push(el);
+    }
+    show(more, list.length > 24);
+    setT(more, showAll ? 'Show only the newest 24' : 'Show all ' + list.length + ' you own');
+  }, tabId);
   up(() => {
     const vis = streamVisible(layer); show(wrap, vis); if (!vis) return;
     const n = S.proc[layer], u = procUpg(layer, n), cost = procCost(layer, n), can = S[P.cur].log10() >= cost;
     setT(n1, u.name); setT(d1, forgeDesc(u)); setT(r1, '“' + u.reason + '”'); setT(c1, 'Cost: ' + fmt(D.fromLog(cost)) + ' ' + P.curName);
     setC(cur, 'can', can); setDis(bmax, !can);
-    setT(sub, n + ' owned · there is always another' + (layer === 'q' && !hasS('s2') ? ' · reset by Collapse until you own Memory' : ''));
+    setT(sub, 'Written by the Architect, there is always another' + (layer === 'q' && !hasS('s2') ? ' · lost on Collapse until you own Memory' : ''));
   }, tabId);
 }
 /* ---------------- Architect tab: current goal + everything it has said ---------------- */
 function buildArchTab() {
   const T = UI.tabs.arch;
-  const orb = h('div', { class: 'orb' });
+  const orb = h('div', { class: 'orb poke', onclick: poke, title: 'The Architect' });
   const goal = h('div', { class: 'tut-txt' });
   T.append(h('h2', {}, 'Current goal'), h('div', { class: 'tut' }, orb, h('div', { style: 'flex:1' }, h('div', { class: 'tut-who' }, 'THE ARCHITECT'), goal)));
   up(() => {
     let s;
     if (S.chal.active >= 0) s = `<b class="hl-bad">Challenge: ${CHALS[S.chal.active].name}</b>. ${CHALS[S.chal.active].desc} Reach <b>${fmt(D.fromLog(chalGoalLog(S.chal.active)))}</b> Quanta to complete it.`;
-    else if (!S.reached.collapse) s = `At <b>${fmt(D.fromLog(CFG.collapseReq))}</b> Quanta you can <b class="hl-sh">Collapse</b> everything into Shards.`;
-    else if (!S.reached.limit) s = `Shards grow with Quanta past ${fmt(D.fromLog(CFG.collapseReq))}. The next Shard arrives at <b>${fmt(D.fromLog(nextShardAtLog()))}</b> Quanta. Far ahead lies <b class="hl-es">the Limit</b>: ${fmt(D.fromLog(CFG.limit))}.`;
+    else if (!S.reached.collapse) s = `At <b>${fmt(D.fromLog(collapseReqLog()))}</b> Quanta you can <b class="hl-sh">Collapse</b> everything into Shards.`;
+    else if (!S.reached.limit) s = `Shards grow with Quanta past ${fmt(D.fromLog(collapseReqLog()))}. The next Shard arrives at <b>${fmt(D.fromLog(nextShardAtLog()))}</b> Quanta. Far ahead lies <b class="hl-es">the Limit</b>: ${fmt(D.fromLog(CFG.limit))}.`;
     else if (!hasE('e6')) s = `Quanta cannot exceed <b class="hl-es">the Limit</b> (${fmt(D.fromLog(CFG.limit))}). Ascend for Essence and buy <b>Unbounded</b> to break it.`;
     else s = `Past the Limit, Essence gain grows ×10 every ${fmt(D.fromNum(CFG.ascDiv))} orders of magnitude of Quanta, and my Inspiration keeps growing. There is no end.`;
     setH(goal, s);
@@ -1510,11 +2296,13 @@ function buildGuideTab() {
     [() => true, 'Clock Speed', 'Multiplies every generator at once. It gets more expensive quickly, but it is always worth buying.'],
     [() => true, 'Upgrades', 'One-time boosts paid in Quanta. A dot on a tab means something there is affordable. <b>Max all</b> (key M) buys as many generators and Clock Speed levels as you can afford.'],
     [() => S.ai.log.length > 0, 'The Architect', 'The game\'s own AI. It writes endless upgrades for every layer (Quanta, Shards, Essence) and names every new generator tier. Each new upgrade is invented when you buy the previous one, shaped by how you play: it builds for your favourite and newest generators, rewards clicking if you click a lot, and rewards idling if you leave the game running.'],
-    [shardsVisible, 'Collapse and Shards', 'At 1e25 Quanta you can Collapse: Quanta, generators and Clock Speed reset, and you get Shards. Shards buy permanent upgrades. More Quanta at the moment you Collapse means more Shards. Collapse often early on, because each run goes faster than the last.'],
-    [autoVisible, 'Automation', 'Shard upgrades unlock autobuyers for generators, Clock Speed and upgrades, and later Auto-Collapse. Configure them in the Automation tab.'],
+    [shardsVisible, 'Collapse and Shards', 'At 1e25 Quanta you can Collapse: Quanta, generators and Clock Speed reset, and you get Shards. Shards buy upgrades in the <b>Shard tree</b>: start at Fracture, then grow three branches. Radiance is raw power, Clockwork is speed and automation, Echoes is the Shard economy and the active abilities <b>Surge</b> and <b>Time Fold</b>. At each fork you choose one of two paths. <b>Reshape the tree</b> refunds every Shard so you can try a different build. More Quanta at the moment you Collapse means more Shards.'],
+    [autoVisible, 'Automation', 'The Clockwork branch of the Shard tree unlocks autobuyers for generators, Clock Speed and upgrades, and later Auto-Collapse. Until then, everything is in your hands. Configure them in the Automation tab.'],
     [ascVisible, 'The Limit and Ascension', 'Quanta stops at 1e308, the Limit. There you can Ascend: Quanta, generators, Shards and Shard repeatables reset, but Shard upgrades stay and you gain Essence. Spend your first Essence on <b>Unbounded</b> to break the Limit for good. Past it, every order of magnitude is a little harder to reach (dampening), but the Architect starts gathering <b>Inspiration</b>: Quanta production ×10 every 30 seconds, forever, so you never stop moving.'],
     [() => hasE('e3'), 'Challenges', 'Runs with a handicap. Reach the goal to complete one; every Challenge can be completed again and again with a higher goal and a stronger reward.'],
-    [() => true, 'Saving', 'The game saves itself every 10 seconds in this browser and keeps progressing while you are away. Use Options → Export to make a backup.'],
+    [() => SECRETS.some(s => S.ach[s.id]), 'Secrets', 'Some achievements are hidden. Each one shows only a hint until you earn it, and each unlocks something special: a <b>Relic</b> (a permanent upgrade in the Upgrades tab) or an <b>Anomaly</b> (a generator in the Generators tab that never resets). Pay attention to the hints, and to odd things you might try.'],
+    [() => true, 'Appearance', 'Options → Appearance lets you change the color theme, the UI size, and turn the starfield, animations, rainbow generator colors and pop-up notifications on or off.'],
+    [() => true, 'Saving','The game saves itself every 10 seconds in this browser and keeps progressing while you are away. Use Options → Export to make a backup.'],
   ];
   for (const [vis, title, body] of sections) {
     const el = h('div', {}, h('h2', {}, title), h('div', { class: 'info', html: body }));
@@ -1524,7 +2312,7 @@ function buildGuideTab() {
 
 function upgCard(kind, u, buyFn, owned, can, costText, visible) {
   const e = h('div', { class: 'e' }), c = h('div', { class: 'c' });
-  const el = h('div', { class: 'card ' + kind, onclick: () => buyFn(u.id) }, h('div', { class: 'n' }, u.name), h('div', { class: 'd' }, u.desc), e, c);
+  const el = h('div', { class: 'card ' + kind, onclick: () => { if (owned()) { lastSfxAt = performance.now(); return; } sfx(buyFn(u.id) ? 'upgrade' : 'fail'); } }, h('div', { class: 'n' }, u.name), h('div', { class: 'd' }, u.desc), e, c);
   return [el, () => {
     const vis = visible ? visible() : true; show(el, vis); if (!vis) return;
     const o = owned(), k = !o && can();
@@ -1535,7 +2323,7 @@ function upgCard(kind, u, buyFn, owned, can, costText, visible) {
 }
 function repCard(kind, def, store, cur, curName) {
   const lv = h('div', { class: 'e' }), c = h('div', { class: 'c' });
-  const b1 = h('button', { onclick: () => buyRep(def, store, cur, '1') }, 'Buy'), bm = h('button', { onclick: () => buyRep(def, store, cur, 'max') }, 'Max');
+  const b1 = h('button', { onclick: act(() => buyRep(def, store, cur, '1'), 'upgrade') }, 'Buy'), bm = h('button', { onclick: act(() => buyRep(def, store, cur, 'max'), 'upgrade') }, 'Max');
   const el = h('div', { class: 'card rep ' + kind }, h('div', { class: 'n' }, def.name), h('div', { class: 'd' }, def.desc), lv, c, h('div', { class: 'btns' }, b1, bm));
   return [el, () => {
     const L = S[store][def.id], cl = repCostLog(def, L), k = S[cur].log10() >= cl;
@@ -1547,36 +2335,36 @@ function repCard(kind, def, store, cur, curName) {
 
 function buildUpgTab() {
   const T = UI.tabs.upg;
-  T.append(h('h2', {}, 'Quanta upgrades'));
-  const grid = h('div', { class: 'cards' }); T.append(grid);
-  for (const u of QUPG) {
-    const [el, fn] = upgCard('', u, buyQ, () => hasQ(u.id), () => lq() >= u.cost, () => 'Cost: ' + fmt(D.fromLog(u.cost)) + ' Quanta',
-      () => hasQ(u.id) || u.cost <= Math.max(lq(), S.stats.bestQ.log10()) + 4);
-    grid.append(el); up(fn, 'upg');
+  T.append(h('h2', {}, 'Upgrade web'));
+  const note = h('div', { class: 'muted', style: 'margin:-2px 0 8px' }); T.append(note);
+  buildWebView(T, 'q', 'upg');
+  up(() => setT(note, 'Buy any node next to one you own. Big nodes are upgrades, small ones are small bonuses, diamonds are the Architect’s ideas. ' + (hasS('s2') ? 'Memory keeps this web through Collapses.' : 'The web resets when you Collapse until you own Memory (Shard web).')), 'upg');
+  const relHead = h('h2', {}, 'Relics');
+  const relNote = h('div', { class: 'muted', style: 'margin:-4px 0 8px' }, 'Found through secret achievements. Once bought, a Relic is yours forever.');
+  const relGrid = h('div', { class: 'cards' });
+  T.append(relHead, relNote, relGrid);
+  up(() => { const v = RELICS.some(r => rewardUnlocked(r.id)); show(relHead, v); show(relNote, v); }, 'upg');
+  for (const r of RELICS) {
+    const [el, fn] = upgCard('es', r, buyRelic, () => hasR(r.id), () => lq() >= r.cost, () => 'Cost: ' + fmt(D.fromLog(r.cost)) + ' Quanta', () => rewardUnlocked(r.id));
+    relGrid.append(el); up(fn, 'upg');
   }
-  const note = h('div', { class: 'muted', style: 'margin-top:10px' }); T.append(note);
-  up(() => setT(note, hasS('s2') ? 'Memory keeps these upgrades through Collapses.' : 'Quanta upgrades are lost when you Collapse (until you buy Memory). More appear as you grow.'), 'upg');
-  buildStream(T, 'q', '', 'Endless upgrades', 'upg');
 }
 
 function buildShardTab() {
   const T = UI.tabs.shard;
   const info = h('div', { class: 'info' }); T.append(info);
   up(() => setH(info, `You have <b class="hl-sh">${fmt(S.shards.floor(), 0)}</b> Shards (${fmt(S.totalShards.floor(), 0)} earned this Ascension, ${S.collapses} Collapses).<br>` +
-    `Collapsing needs ${fmt(D.fromLog(CFG.collapseReq))} Quanta and resets Quanta, generators, Clock Speed${hasS('s2') ? '' : ' and Quanta upgrades'}. ` +
+    `Collapsing needs ${fmt(D.fromLog(collapseReqLog()))} Quanta and resets Quanta, generators, Clock Speed${hasS('s2') ? '' : ' and Quanta upgrades'}. ` +
     `Shard gain: ×10 every ${CFG.shardDiv} orders of magnitude past the requirement, then ${fmtMult(shardMultLog())} from bonuses.` +
+    ` Shards are based on the most Quanta you reached this run: <b>${fmt(D.fromLog(Math.max(0, runBestLog())))}</b>.` +
     (canCollapse() ? ` Collapsing now gives <b class="hl-sh">${fmt(R.sg, 0)}</b>.` : '')), 'shard');
-  T.append(h('h2', {}, 'Shard upgrades'));
-  const grid = h('div', { class: 'cards' }); T.append(grid);
-  SUPG.forEach((u, idx) => {
-    const [el, fn] = upgCard('sh', u, buyS, () => !!S.sUpg[u.id], () => S.shards.gte(u.cost), () => 'Cost: ' + fmt(u.cost, 0) + ' Shards',
-      () => !!S.sUpg[u.id] || idx < 4 || S.totalShards.gte(u.cost / 10) || S.ascensions > 0);
-    grid.append(el); up(fn, 'shard');
-  });
+  T.append(h('h2', {}, 'Shard web'));
+  const reshape = h('button', { onclick: () => modal('Reshape the tree', 'Refund every Shard you spent on the tree so you can choose different paths. Your current run restarts (no Shards are gained or lost).', [['Reshape', () => { if (reshapeTree()) { sfx('collapse'); toast('The tree is bare again. All your Shards are back.', 'sh'); } }], ['Cancel', () => true]]) }, 'Reshape the tree');
+  T.append(h('div', { class: 'opt-row' }, reshape, h('span', { class: 'muted' }, 'Buy any node next to one you own. At a fork you pick one of two paths. The Architect grows new diamond nodes off whatever you own. Reshaping refunds everything except the Architect’s nodes.')));
+  buildWebView(T, 's', 'shard');
   T.append(h('h2', {}, 'Repeatable'));
   const rg = h('div', { class: 'cards' }); T.append(rg);
   for (const d of SREP) { const [el, fn] = repCard('sh', d, 'sRep', 'shards', 'Shards'); rg.append(el); up(fn, 'shard'); }
-  buildStream(T, 's', 'sh', 'Endless Shard upgrades', 'shard');
   const iso = h('div', { class: 'muted', style: 'margin-top:8px' }, 'Isolation is active: non-automation Shard upgrades and repeatables are disabled.');
   T.append(iso); up(() => show(iso, isolated()), 'shard');
 }
@@ -1665,16 +2453,79 @@ function buildChalTab() {
 function buildAchTab() {
   const T = UI.tabs.ach;
   const info = h('div', { class: 'info' }); T.append(info);
-  up(() => { const n = Object.keys(S.ach).length; setH(info, `<b>${n}</b> / ${ACH.length} achievements — each one multiplies Quanta production by ×1.1 (currently <b class="hl-ok">${fmtMult(achMultLog())}</b>).`); }, 'ach');
+  up(() => { const n = Object.keys(S.ach).length; setH(info, `<b>${ACH.filter(a => S.ach[a[0]]).length}</b> / ${ACH.length} achievements and <b>${SECRETS.filter(s => S.ach[s.id]).length}</b> / ${SECRETS.length} secrets — each one multiplies Quanta production by ×1.1 (currently <b class="hl-ok">${fmtMult(achMultLog())}</b>).`); }, 'ach');
   const grid = h('div', { class: 'ach-grid' }); T.append(grid);
   for (const [id, name, desc] of ACH) {
     const el = h('div', { class: 'ach' }, h('div', { class: 'n' }, name), desc);
     grid.append(el); up(() => setC(el, 'got', !!S.ach[id]), 'ach');
   }
+  T.append(h('h2', {}, 'Secret achievements'));
+  const sgrid = h('div', { class: 'ach-grid' }); T.append(sgrid);
+  for (const s of SECRETS) {
+    const n = h('div', { class: 'n' }), d = h('div'), rw = h('div', { class: 'rwd' });
+    const el = h('div', { class: 'ach secret' }, n, d, rw);
+    sgrid.append(el);
+    up(() => {
+      const got = !!S.ach[s.id]; setC(el, 'got', got);
+      setT(n, got ? s.name : '???');
+      setT(d, got ? s.desc : 'Hint: ' + s.hint);
+      setT(rw, got ? 'Unlocked ' + (s.reward[0] === 'relic' ? 'Relic: ' + RELBY[s.reward[1]].name : 'Anomaly: ' + ANBY[s.reward[1]].name) : '');
+    }, 'ach');
+  }
 }
 
+function buildStatsGraph(T) {
+  const SER = [['best', 'Best Quanta', '--q', []], ['q', 'Quanta now', '--dim', [4, 4]], ['sh', 'Shards', '--sh', []], ['es', 'Essence', '--es', []]];
+  const on = { best: true, q: true, sh: true, es: true };
+  const css = v => getComputedStyle(document.body).getPropertyValue(v).trim() || '#888';
+  const legend = h('div', { class: 'opt-row' });
+  for (const [k, label, col, dash] of SER) {
+    const sw = h('span', { class: 'gsw' }); const b = h('button', { class: 'gleg on', onclick: () => { on[k] = !on[k]; setC(b, 'on', on[k]); key = ''; } }, sw, label);
+    up(() => { sw.style.borderTopColor = css(col); sw.style.borderTopStyle = dash.length ? 'dashed' : 'solid'; }, 'stats'); legend.append(b);
+  }
+  const box = h('div', { class: 'graphbox' }), cv = h('canvas'), tip = h('div', { class: 'gtip' });
+  box.append(cv, tip);
+  T.append(h('h2', {}, 'Progress over time'), legend, box);
+  let key = '', hx = null;
+  function draw() {
+    const Hh = S.hist, n = Hh.t.length, dpr = window.devicePixelRatio || 1, Wd = box.clientWidth, Hd = 300;
+    if (!Wd) return;
+    cv.width = Wd * dpr; cv.height = Hd * dpr; cv.style.width = Wd + 'px'; cv.style.height = Hd + 'px';
+    const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, Wd, Hd);
+    const L = 58, R = 14, Tp = 14, B = 30, pw = Wd - L - R, ph = Hd - Tp - B;
+    g.font = '11px ' + (getComputedStyle(document.body).fontFamily || 'sans-serif');
+    if (n < 2) { g.fillStyle = css('--faint'); g.fillText('Play a little longer: a point is recorded every ' + Hh.every + ' seconds.', L, Tp + ph / 2); tip.style.display = 'none'; return; }
+    const tMax = Math.max(1, Hh.t[n - 1]);
+    let yMax = 10; for (const [k] of SER) if (on[k]) for (const v of Hh[k]) if (v > yMax) yMax = v;
+    const stepY = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000, 1e4, 2e4, 5e4, 1e5].find(s => yMax / s <= 5) || Math.pow(10, Math.ceil(L10(yMax / 5)));
+    yMax = Math.ceil(yMax / stepY) * stepY;
+    const X = t => L + t / tMax * pw, Y = v => Tp + ph - v / yMax * ph;
+    g.strokeStyle = 'rgba(130,160,255,.10)'; g.lineWidth = 1; g.fillStyle = css('--faint'); g.textAlign = 'right';
+    for (let v = 0; v <= yMax + 1e-9; v += stepY) { const y = Y(v); g.beginPath(); g.moveTo(L, y); g.lineTo(L + pw, y); g.stroke(); g.fillText(v === 0 ? '1' : '1e' + v, L - 6, y + 4); }
+    const stepT = [60, 300, 600, 1800, 3600, 7200, 14400, 28800, 86400, 172800, 604800].find(s => tMax / s <= 8) || 604800;
+    g.textAlign = 'center';
+    for (let s = 0; s <= tMax; s += stepT) g.fillText(s < 3600 ? Math.round(s / 60) + 'm' : s < 86400 ? (s / 3600).toFixed(s % 3600 ? 1 : 0) + 'h' : (s / 86400).toFixed(1) + 'd', X(s), Tp + ph + 18);
+    for (const [k, , col, dash] of SER) {
+      if (!on[k]) continue;
+      g.strokeStyle = css(col); g.lineWidth = k === 'best' ? 2 : 1.5; g.setLineDash(dash); g.lineJoin = 'round'; g.beginPath();
+      Hh[k].forEach((v, i) => { const x = X(Hh.t[i]), y = Y(v); i ? g.lineTo(x, y) : g.moveTo(x, y); });
+      g.stroke(); g.setLineDash([]);
+    }
+    if (hx !== null && hx >= L && hx <= L + pw) {
+      const tt = (hx - L) / pw * tMax; let bi = 0; for (let i = 0; i < n; i++) if (Math.abs(Hh.t[i] - tt) < Math.abs(Hh.t[bi] - tt)) bi = i;
+      const x = X(Hh.t[bi]); g.strokeStyle = 'rgba(200,210,255,.35)'; g.beginPath(); g.moveTo(x, Tp); g.lineTo(x, Tp + ph); g.stroke();
+      tip.innerHTML = '<b>' + fmtTime(Hh.t[bi]) + ' played</b>' + SER.filter(s => on[s[0]]).map(s => `<div>${s[1]}: ${Hh[s[0]][bi] > 0 ? '1e' + Hh[s[0]][bi].toFixed(1) : '0'}</div>`).join('');
+      tip.style.display = 'block'; tip.style.left = Math.min(Wd - 170, x + 12) + 'px';
+    } else tip.style.display = 'none';
+  }
+  cv.addEventListener('mousemove', e => { hx = e.offsetX; draw(); });
+  cv.addEventListener('mouseleave', () => { hx = null; draw(); });
+  up(() => { const k = S.hist.t.length + '|' + S.settings.ui.theme + '|' + box.clientWidth + '|' + JSON.stringify(on); if (k !== key) { key = k; draw(); } }, 'stats');
+}
 function buildStatsTab() {
   const T = UI.tabs.stats;
+  buildStatsGraph(T);
+  T.append(h('h2', {}, 'Numbers'));
   const tb = h('table', { class: 'stats' }); T.append(tb);
   const rows = [
     ['Time played', () => fmtTime(S.stats.time)],
@@ -1706,9 +2557,22 @@ function buildOptTab() {
   up(() => { if (document.activeElement !== sel) sel.value = S.settings.notation; }, 'opt');
   const chk = (label, key) => { const cb = h('input', { type: 'checkbox', onchange: () => { S.settings[key] = cb.checked; } }); up(() => { cb.checked = !!S.settings[key]; }, 'opt'); return h('label', { class: 'chk' }, cb, label); };
   const vol = h('input', { type: 'range', min: '0', max: '1', step: '0.05', oninput: () => { S.settings.volume = +vol.value; } });
+  const sfxVol = h('input', { type: 'range', min: '0', max: '1', step: '0.05', oninput: () => { S.settings.sfxVol = +sfxVol.value; } });
+  up(() => { if (document.activeElement !== sfxVol) sfxVol.value = S.settings.sfxVol; }, 'opt');
   up(() => { if (document.activeElement !== vol) vol.value = S.settings.volume; }, 'opt');
   T.append(h('h2', {}, 'Display'), h('div', { class: 'opt-row' }, h('span', {}, 'Notation'), sel));
-  T.append(h('h2', {}, 'Sound and story'), h('div', { class: 'opt-row' }, chk('Architect voice', 'sound'), h('span', {}, 'Volume'), vol, h('button', { onclick: () => { blip(1.15); } }, 'Test'), h('button', { onclick: playIntro }, 'Replay intro'), h('button', { onclick: () => { S.tut = { step: 0, off: false }; setTab('gen'); } }, 'Restart tutorial')));
+  const ui = S => S.settings.ui;
+  const uchk = (label, key) => { const cb = h('input', { type: 'checkbox', onchange: () => { ui(S)[key] = cb.checked; applyUI(); } }); up(() => { cb.checked = !!ui(S)[key]; }, 'opt'); return h('label', { class: 'chk' }, cb, label); };
+  const theme = h('select', { onchange: () => { ui(S).theme = theme.value; applyUI(); } },
+    ...[['nebula', 'Nebula'], ['ember', 'Ember'], ['verdant', 'Verdant'], ['abyss', 'Abyss'], ['rose', 'Rose'], ['mono', 'Monochrome']].map(([v, l]) => h('option', { value: v }, l)));
+  const scale = h('input', { type: 'range', min: '0.8', max: '1.3', step: '0.05', oninput: () => { ui(S).scale = +scale.value; applyUI(); } });
+  const scaleLbl = h('span', { class: 'muted' });
+  up(() => { if (document.activeElement !== theme) theme.value = ui(S).theme; if (document.activeElement !== scale) scale.value = ui(S).scale; setT(scaleLbl, Math.round(ui(S).scale * 100) + '%'); }, 'opt');
+  T.append(h('h2', {}, 'Appearance'),
+    h('div', { class: 'opt-row' }, h('span', {}, 'Theme'), theme, h('span', {}, 'UI size'), scale, scaleLbl),
+    h('div', { class: 'opt-row' }, uchk('Starfield', 'stars'), uchk('Animations', 'motion'), uchk('Compact rows', 'compact'), uchk('Rainbow generator colors', 'tint'), uchk('Pop-up notifications', 'toasts')));
+  T.append(h('h2', {}, 'Sound and story'), h('div', { class: 'opt-row' }, chk('Architect voice', 'sound'), h('span', {}, 'Volume'), vol, h('button', { onclick: () => { blip(1.15); } }, 'Test')),
+    h('div', { class: 'opt-row' }, chk('UI sounds', 'sfx'), h('span', {}, 'Volume'), sfxVol, h('button', { onclick: () => { sfx('upgrade'); } }, 'Test'), h('button', { onclick: playIntro }, 'Replay intro'), h('button', { onclick: () => { S.tut = { step: 0, off: false }; setTab('gen'); } }, 'Restart tutorial')));
   T.append(h('h2', {}, 'Saving'),
     h('div', { class: 'opt-row' }, chk('Autosave every 10s', 'autosave'), chk('Offline progress', 'offline')),
     h('div', { class: 'opt-row' },
@@ -1716,7 +2580,7 @@ function buildOptTab() {
       h('button', { onclick: exportDialog }, 'Export'),
       h('button', { onclick: importDialog }, 'Import'),
       h('button', { onclick: resetDialog, style: 'border-color:var(--bad);color:var(--bad)' }, 'Hard reset')));
-  T.append(h('h2', {}, 'Hotkeys'), h('div', { class: 'info', html: '<kbd>M</kbd> max all &nbsp; <kbd>1</kbd>–<kbd>8</kbd> buy a generator &nbsp; <kbd>T</kbd> buy Clock Speed &nbsp; <kbd>P</kbd> pulse &nbsp; <kbd>C</kbd> collapse &nbsp; <kbd>A</kbd> ascend' }));
+  T.append(h('h2', {}, 'Hotkeys'), h('div', { class: 'info', html: '<kbd>M</kbd> max all &nbsp; <kbd>T</kbd> buy Clock Speed &nbsp; <kbd>P</kbd> pulse &nbsp; <kbd>C</kbd> collapse &nbsp; <kbd>A</kbd> ascend &nbsp; <kbd>S</kbd> Surge &nbsp; <kbd>F</kbd> Time Fold' }));
   T.append(h('h2', {}, 'About'), h('div', { class: 'info', html: '<b>Apeiron</b> (Greek: the boundless) — an infinite incremental. Numbers are stored as mantissa × 10<sup>exponent</sup>, so they can grow far past 1e308 (to about 10<sup>10<sup>308</sup></sup>). Saves live in this browser\'s local storage; export to keep a backup.' }));
 }
 function exportDialog() {
@@ -1727,12 +2591,12 @@ function exportDialog() {
 function importDialog() {
   const ta = h('textarea', { placeholder: 'Paste an exported save here' });
   modal('Import save', ta, [['Import', () => {
-    try { const ns = decodeSave(ta.value); S = ns; S.last = Date.now(); save(); setTab(S.settings.tab); toast('Save imported.'); }
+    try { const ns = decodeSave(ta.value); S = ns; S.last = Date.now(); S.ai.lastInput = S.stats.time; applyUI(); save(); setTab(S.settings.tab); toast('Save imported.'); }
     catch (e) { toast('That save could not be read.', 'bad'); return false; }
   }], ['Cancel', () => true]]);
 }
 function resetDialog() {
-  modal('Hard reset', 'This wipes your save completely. There is no undo.', [['Wipe everything', () => { S = newState(); save(); setTab('gen'); toast('Fresh start.'); }], ['Cancel', () => true]]);
+  modal('Hard reset', 'This wipes your save completely. There is no undo.', [['Wipe everything', () => { S = newState(); applyUI(); save(); setTab('gen'); toast('Fresh start.'); }], ['Cancel', () => true]]);
 }
 
 /* ---------------- Progress bar ---------------- */
@@ -1742,7 +2606,7 @@ function buildProgress() {
     const L = Math.max(0, lq());
     let goal, label;
     if (S.chal.active >= 0) { goal = chalGoalLog(S.chal.active); label = CHALS[S.chal.active].name + ' goal'; }
-    else if (L < CFG.collapseReq) { goal = CFG.collapseReq; label = 'Collapse'; }
+    else if (L < collapseReqLog()) { goal = collapseReqLog(); label = 'Collapse'; }
     else if (!hasE('e6')) { goal = CFG.limit; label = 'the Limit'; }
     else { const k = Math.floor((L - CFG.limit) / CFG.ascDiv) + 1; goal = CFG.limit + k * CFG.ascDiv; label = 'next ×10 Essence'; }
     const p = Math.max(0, Math.min(1, L / goal));
@@ -1765,16 +2629,28 @@ document.addEventListener('keydown', e => {
   const tg = e.target.tagName; if (tg === 'INPUT' || tg === 'TEXTAREA' || tg === 'SELECT') return;
   if ($('modal').classList.contains('open')) { if (e.key === 'Escape') closeModal(); return; }
   const k = e.key.toLowerCase();
-  if (k === 'm') maxAll();
-  else if (k === 'p') pulse();
-  else if (k === 't') buyClock(S.settings.buyMode === 'max' ? 'max' : '1');
-  else if (k === 'c') doCollapse();
-  else if (k === 'a') doAscend();
-  else if (k >= '1' && k <= '8') buyGen(+k - 1, S.settings.buyMode);
+  if (!e.repeat && ['m', 'p', 't', 'c', 'a', 's', 'f'].includes(k)) sfx('click');
+  if (k === 'm') sfx(maxAll() ? 'buy' : 'fail');
+  else if (k === 'p') sfx(pulse() ? 'pulse' : 'fail');
+  else if (k === 't') sfx(buyClock(S.settings.buyMode === 'max' ? 'max' : '1') ? 'buy' : 'fail');
+  else if (k === 'c') { if (!doCollapse()) sfx('fail'); }
+  else if (k === 'a') { if (!doAscend()) sfx('fail'); }
+  else if (k === 's') sfx(useAbility('surge') ? 'upgrade' : 'fail');
+  else if (k === 'f') sfx(useAbility('fold') ? 'buy' : 'fail');
   else return;
   render(true);
 });
 $('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+// every button, card, toggle and menu clicks down and clacks back up like a mechanical key
+const CLICKY = 'button, .card, label.chk, select, .orb.poke, input[type=range], .tn';
+let pressedEl = null;
+document.addEventListener('pointerdown', e => {
+  if (e.button !== 0) return;
+  const el = e.target.closest(CLICKY); if (!el || el.closest('#intro')) return;
+  const dead = el.disabled || el.classList.contains('bought') || el.classList.contains('draft');
+  pressedEl = el; sfx(dead ? 'dud' : 'press');
+}, true);
+document.addEventListener('pointerup', () => { if (pressedEl) { const el = pressedEl; pressedEl = null; if (!el.disabled && !el.classList.contains('bought') && !el.classList.contains('draft')) sfx('release'); } }, true);
 for (const ev of ['pointerdown', 'keydown']) document.addEventListener(ev, () => { if (S) S.ai.lastInput = S.stats.time; }, true);
 
 /* ---------------- Main loop ---------------- */
@@ -1782,7 +2658,9 @@ let paused = false, lastRender = 0, lastSave = Date.now();
 function frame() {
   const now = Date.now();
   const dt = (now - S.last) / 1000; S.last = now;
-  if (!paused && dt > 0) { if (dt > 0.5) simulate(dt); else tick(dt); }
+  const inIntro = $('intro').classList.contains('open'); // the world waits while the Architect talks
+  if (!paused && !inIntro && dt > 0) { if (dt > 0.5) simulate(dt); else tick(dt); }
+  if (S.settings.tab === 'guide' && dt > 0 && dt < 1) { S.secret.guide += dt; if (S.secret.guide >= 60) grantSecret('x8'); }
   if (now - lastRender > 90) { render(); lastRender = now; }
   if (S.settings.autosave && now - lastSave > 10000) { save(); lastSave = now; }
 }
@@ -1804,6 +2682,8 @@ function init() {
     modal('Welcome back', h('div', { html: `You were away for <b>${fmtTime(away)}</b>.<br><br>` + parts.join('<br>') }), [['Continue', () => true]]);
   }
   S.last = Date.now();
+  S.ai.lastInput = S.stats.time;
+  applyUI();
   if (!S.introSeen) playIntro();
   setTab(TABS.some(t => t[0] === S.settings.tab) ? S.settings.tab : 'gen');
   setInterval(frame, 50);

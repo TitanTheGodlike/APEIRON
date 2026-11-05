@@ -23,22 +23,28 @@ Start with a single Flicker and a handful of **Quanta**, the first light. Every 
 
 - **An Architect that never runs out of ideas.** Every upgrade you buy prompts it to write the next one, shaped by how you play: your favorite generators, your newest tier, whether you click or idle.
 - **Endless generators.** Buy the highest tier and a new one appears above it, named by the Architect.
+- **Sprawling skill webs.** Upgrades and Shard upgrades live on two big pannable, zoomable webs: notable upgrades joined by small bonus nodes, cross-linked branches, forks where you pick one of two paths, and a Reshape button to rebuild your Shard build. The Architect grows new nodes off whatever you own, and the web re-settles around them.
+- **Active abilities.** Surge and Time Fold reward playing actively instead of only idling.
 - **Three layers of progression:** Quanta, Shards and Essence, each with its own upgrades, repeatables and automation.
 - **Seven Challenges** you can complete forever, each completion harder and more rewarding.
+- **Secrets.** Hidden achievements show only a hint until you find them, and each unlocks a Relic (a permanent upgrade) or an Anomaly (a generator that never resets).
+- **Make it yours.** Six color themes, adjustable UI size, compact layout, and toggles for the starfield, animations, generator colors and pop-ups.
 - **Steady pacing.** Progress is meant to unfold over hours, not explode in minutes.
 - **Plays while you're away.** Offline progress, autosave and save export/import.
-- **Plenty to work toward.** 40+ achievements, four number notations, a narrated tutorial and an in-game Guide.
+- **Plenty to work toward.** 40+ achievements, four number notations, a narrated tutorial, an in-game Guide and a progress graph in Statistics.
+- **Feels good to click.** Mechanical click-clack button sounds and action sounds, all synthesized in the browser (adjustable or off in Options).
 
 ## Controls
 
 | Key | Action |
 | --- | --- |
 | `M` | Max all (buy everything you can afford) |
-| `1`–`8` | Buy a generator |
 | `T` | Buy Clock Speed |
 | `P` | Pulse |
 | `C` | Collapse |
 | `A` | Ascend |
+| `S` | Surge (once unlocked) |
+| `F` | Time Fold (once unlocked) |
 
 ## Saves
 

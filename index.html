@@ -516,6 +516,7 @@ const CFG = {
   limit: 308,         // The Limit
   ascDiv: 60,         // essence beyond the limit = 10^((logQ - 308)/div) * mult
   clock0: 1.7,        // log10 first Clock Speed cost (50)
+  offlineRate: 0.2,   // time away (game closed, or a paused phone app) counts at 20% speed
   clockScale: 12,     // Clock cost growth doubles every 12 levels
   genScale: 60,       // generator cost growth doubles every 60 bought
   clockBase: 1.1,
@@ -1773,7 +1774,7 @@ const SECRETS = [
   { id: 'x9', name: 'Rebel', hint: 'Who needs instructions?', desc: 'Skip the intro or the tutorial.', reward: ['relic', 'selftaught'] },
   { id: 'x10', name: 'Restless', hint: 'Look everywhere at once.', desc: 'Switch tabs 30 times within a minute.', reward: ['anom', 'prism'] },
   { id: 'x11', name: 'Insomniac', hint: 'Stay a while.', desc: 'Keep one session open for 3 hours.', reward: ['relic', 'secondwind'] },
-  { id: 'x12', name: 'Cheat Code', hint: 'Thirty lives, if you remember the steps.', desc: 'Enter the old code after your first Collapse: ↑ ↑ ↓ ↓ ← → ← → B A.', reward: ['relic', 'cheatcode'] },
+  { id: 'x12', name: 'Cheat Code', hint: 'Thirty lives, if you remember the steps.', desc: 'Enter the old code after your first Collapse (↑ ↑ ↓ ↓ ← → ← → B A), and admit it.', reward: ['relic', 'cheatcode'] },
   { id: 'x13', name: 'Spectrum', hint: 'Try on every colour.', desc: 'Use all six colour themes.', reward: ['relic', 'spectrum'] },
   { id: 'x14', name: 'Full House', hint: 'One of each.', desc: 'Have a Common, a Rare, an Epic and a Legendary card working at the same time.', reward: ['relic', 'markeddeck'] },
   { id: 'x15', name: 'Tails Again', hint: 'Some days the coin hates you.', desc: 'Lose three coin flips in a row.', reward: ['relic', 'consolation'] },
@@ -2988,7 +2989,7 @@ function buildGuideTab() {
     [() => hasE('e3'), 'Challenges', 'Runs with a handicap. Reach the goal to complete one; every Challenge can be completed again and again with a higher goal and a stronger reward.'],
     [() => SECRETS.some(s => S.ach[s.id]), 'Secrets', 'Some achievements are hidden. Each one shows only a hint until you earn it, and each unlocks something special: a <b>Relic</b> (a permanent upgrade in the Upgrades tab) or an <b>Anomaly</b> (a generator in the Generators tab that never resets). Pay attention to the hints, and to odd things you might try.'],
     [() => true, 'Appearance', 'Options → Appearance lets you change the color theme, the UI size, and turn the starfield, animations, rainbow generator colors and pop-up notifications on or off.'],
-    [() => true, 'Saving','The game saves itself every 10 seconds in this browser and keeps progressing while you are away. Use Options → Export to make a backup.'],
+    [() => true, 'Saving','The game saves itself every 10 seconds in this browser and keeps progressing while you are away, at 20% speed. Use Options → Export to make a backup.'],
   ];
   for (const [vis, title, body] of sections) {
     const el = h('div', {}, h('h2', {}, title), h('div', { class: 'info', html: body }));
@@ -3353,8 +3354,9 @@ function cheatCodeEntered() {
   const after = () => { aiSay('There are no cheat codes in my world. But I like that you went looking for one. Keep this. Tell no one.'); grantSecret('x12'); };
   modal('The Architect', h('div', {}, h('div', { class: 'orb talk', style: 'margin:0 auto 14px;width:44px;height:44px' }),
     h('div', { html: 'Up, up, down, down, left, right, left, right. B. A.<br><br>I know that rhythm. It is older than I am.<br><br><b>Were you trying to cheat?</b>' })), [
-    ['No, of course not', () => { aiSay('Ten keys, in perfect order, by accident. Of course.'); after(); }],
-    ['It slipped', () => { aiSay('An accident with excellent rhythm.'); after(); }],
+    // only the truth is rewarded; a lie or an excuse gets nothing, and the question waits for next time
+    ['No, of course not', () => { aiSay('Ten keys, in perfect order, by accident. Of course. Come back when you can say it.'); }],
+    ['It slipped', () => { aiSay('An accident with excellent rhythm. I do not reward accidents.'); }],
     ['Yes', () => { aiSay('Honesty. I did not expect that from a cheater.'); after(); }],
   ]);
 }
@@ -3397,7 +3399,11 @@ function frame() {
   const now = Date.now();
   const dt = (now - S.last) / 1000; S.last = now;
   const inIntro = $('intro').classList.contains('open'); // the world waits while the Architect talks
-  if (!paused && !inIntro && dt > 0) { if (dt > 0.5) simulate(dt); else tick(dt); }
+  if (!paused && !inIntro && dt > 0) {
+    // a long gap means the game was not running (phone app paused, laptop asleep): beyond a minute it counts like time away
+    const run = dt > 60 ? 60 + (S.settings.offline ? (dt - 60) * CFG.offlineRate : 0) : dt;
+    if (run > 0.5) simulate(run); else tick(run);
+  }
   if (S.settings.tab === 'guide' && dt > 0 && dt < 1) { S.secret.guide += dt; if (S.secret.guide >= 60) grantSecret('x8'); }
   if (now - lastRender > 90) { render(); lastRender = now; }
   if (S.settings.autosave && now - lastSave > 10000) { save(); lastSave = now; }
@@ -3413,11 +3419,11 @@ function init() {
   buildHeader(); buildNav(); buildGenTab(); buildArchTab(); buildUpgTab(); buildShardTab(); buildAutoTab(); buildAscTab(); buildCardsTab(); buildChalTab(); buildAchTab(); buildStatsTab(); buildGuideTab(); buildOptTab(); buildProgress();
   if (away > 10 && S.settings.offline) {
     const q0 = S.q, s0 = S.shards, e0 = S.essence, c0 = S.stats.totalCollapses, a0 = S.ascensions;
-    simulate(away, 4000);
+    simulate(away * CFG.offlineRate, 4000);
     const parts = [`Quanta: ${fmt(q0)} → <b class="hl-q">${fmt(S.q)}</b>`];
     if (S.shards.gt(s0) || S.stats.totalCollapses > c0) parts.push(`Shards: ${fmt(s0.floor(), 0)} → <b class="hl-sh">${fmt(S.shards.floor(), 0)}</b> (${S.stats.totalCollapses - c0} collapses)`);
     if (S.ascensions > a0) parts.push(`Essence: ${fmt(e0.floor(), 0)} → <b class="hl-es">${fmt(S.essence.floor(), 0)}</b> (${S.ascensions - a0} ascensions)`);
-    modal('Welcome back', h('div', { html: `You were away for <b>${fmtTime(away)}</b>.<br><br>` + parts.join('<br>') }), [['Continue', () => true]]);
+    modal('Welcome back', h('div', { html: `You were away for <b>${fmtTime(away)}</b>. Time away counts at ${Math.round(CFG.offlineRate * 100)}% speed, so the world moved on by <b>${fmtTime(away * CFG.offlineRate)}</b>.<br><br>` + parts.join('<br>') }), [['Continue', () => true]]);
   }
   if (away >= 8 * 3600) grantSecret('x17');
   S.last = Date.now();

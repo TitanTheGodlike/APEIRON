@@ -37,7 +37,7 @@ Start with a single Flicker and a handful of **Quanta**, the first light. Every 
 - **Secrets.** Hidden achievements show only a hint until you find them, and each unlocks a Relic (a permanent upgrade) or an Anomaly (a generator that never resets).
 - **Make it yours.** Six color themes, adjustable UI size, compact layout, and toggles for the starfield, animations, generator colors and pop-ups.
 - **Steady pacing.** Progress is meant to unfold over hours, not explode in minutes.
-- **Plays while you're away.** Offline progress, autosave and save export/import.
+- **Plays while you're away.** Offline progress at 20% speed, autosave and save export/import.
 - **Plenty to work toward.** 72 achievements reaching far past the Limit, 22 secrets, four number notations, a narrated tutorial, an in-game Guide and a progress graph in Statistics.
 - **Feels good to click.** Mechanical click-clack button sounds and action sounds, all synthesized in the browser (adjustable or off in Options).
 

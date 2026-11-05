@@ -1,0 +1,1823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apeiron</title>
+<style>
+:root{
+  --bg:#04050d; --ink:#e7eaff; --dim:#929ac8; --faint:#5a628f;
+  --q:#7fe3ff; --sh:#c49bff; --es:#ffd27a; --ok:#6ef2b4; --bad:#ff7b8b;
+  --glass:rgba(12,16,36,.74); --glass2:rgba(20,26,58,.82);
+  --edge:rgba(130,160,255,.16); --edge2:rgba(130,160,255,.34); --c:rgba(150,190,255,.55);
+  --mono:"Cascadia Code","Cascadia Mono",Consolas,ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;min-height:100vh;padding-bottom:64px;overflow-x:hidden}
+#stars{position:fixed;inset:0;z-index:-2;pointer-events:none}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:
+  radial-gradient(900px 500px at 15% -10%,rgba(90,70,200,.22),transparent 70%),
+  radial-gradient(800px 500px at 100% 20%,rgba(40,140,200,.14),transparent 70%),
+  radial-gradient(700px 600px at 50% 120%,rgba(160,80,220,.12),transparent 70%)}
+.num,.res .v,.res .r{font-family:var(--mono);font-variant-numeric:tabular-nums}
+::selection{background:rgba(196,155,255,.35)}
+/* HUD frame: thin edge + glowing corner brackets */
+.hud,.row,.card,.info,.chal,.ach,.auto-box,.tut,.feed,#modal .box{
+  --c:rgba(150,190,255,.5);
+  background:
+    linear-gradient(var(--c) 0 0) top left/12px 1.5px no-repeat,linear-gradient(var(--c) 0 0) top left/1.5px 12px no-repeat,
+    linear-gradient(var(--c) 0 0) top right/12px 1.5px no-repeat,linear-gradient(var(--c) 0 0) top right/1.5px 12px no-repeat,
+    linear-gradient(var(--c) 0 0) bottom left/12px 1.5px no-repeat,linear-gradient(var(--c) 0 0) bottom left/1.5px 12px no-repeat,
+    linear-gradient(var(--c) 0 0) bottom right/12px 1.5px no-repeat,linear-gradient(var(--c) 0 0) bottom right/1.5px 12px no-repeat,
+    var(--glass);
+  border:1px solid var(--edge);border-radius:3px;backdrop-filter:blur(6px)}
+header{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(6,8,20,.94),rgba(6,8,20,.82));backdrop-filter:blur(10px);border-bottom:1px solid var(--edge);padding:10px 20px;display:flex;align-items:center;gap:28px;flex-wrap:wrap;box-shadow:0 1px 0 rgba(127,227,255,.08),0 8px 30px rgba(0,0,0,.35)}
+.title{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.32em;font-size:13px;color:#cfd6ff;text-shadow:0 0 12px rgba(160,180,255,.5)}
+.title .orb{width:22px;height:22px}
+.res{display:flex;flex-direction:column;min-width:140px;padding-left:12px;border-left:2px solid var(--edge2)}
+.res .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.22em;color:var(--faint)}
+.res .v{font-size:21px;font-weight:700;line-height:1.2}
+.res .r{font-size:11.5px;color:var(--dim)}
+.res.q{border-left-color:rgba(127,227,255,.6)}.res.q .v{color:var(--q);text-shadow:0 0 16px rgba(127,227,255,.45)}
+.res.sh{border-left-color:rgba(196,155,255,.6)}.res.sh .v{color:var(--sh);text-shadow:0 0 16px rgba(196,155,255,.45)}
+.res.es{border-left-color:rgba(255,210,122,.6)}.res.es .v{color:var(--es);text-shadow:0 0 16px rgba(255,210,122,.45)}
+.spacer{flex:1}
+.prestige{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;color:var(--ink);background:linear-gradient(180deg,rgba(40,50,100,.55),rgba(20,26,58,.75));border:1px solid var(--edge2);border-radius:3px;padding:6px 13px;cursor:pointer;transition:border-color .12s,box-shadow .12s,background .12s,transform .06s;letter-spacing:.02em}
+button:hover:not(:disabled){border-color:rgba(160,190,255,.7);box-shadow:0 0 12px rgba(127,170,255,.25)}
+button:active:not(:disabled){transform:translateY(1px)}
+button:disabled{opacity:.38;cursor:default}
+button.can{border-color:var(--q);box-shadow:0 0 10px rgba(127,227,255,.22),inset 0 0 12px rgba(127,227,255,.08);color:#eaffff}
+.btn-big{padding:7px 18px;font-weight:700;line-height:1.2;text-align:center;min-width:160px;letter-spacing:.14em;text-transform:uppercase;font-size:12.5px;position:relative;overflow:hidden}
+.btn-big small{display:block;font-weight:500;font-size:11px;opacity:.9;letter-spacing:.02em;text-transform:none;font-family:var(--mono)}
+.btn-big:not(:disabled)::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.18) 50%,transparent 70%);transform:translateX(-100%);animation:shine 3.2s ease-in-out infinite}
+@keyframes shine{60%,100%{transform:translateX(100%)}}
+.btn-collapse{border-color:var(--sh)!important;color:#f0e6ff;background:linear-gradient(180deg,rgba(110,70,200,.55),rgba(40,22,80,.85))!important;box-shadow:0 0 16px rgba(196,155,255,.3)}
+.btn-ascend{border-color:var(--es)!important;color:#fff4dc;background:linear-gradient(180deg,rgba(170,120,30,.55),rgba(60,40,10,.85))!important;box-shadow:0 0 16px rgba(255,210,122,.3)}
+.btn-chal{border-color:var(--bad)!important;color:#ffe3e6;background:linear-gradient(180deg,rgba(160,40,60,.55),rgba(60,14,24,.85))!important}
+nav{display:flex;gap:2px;padding:0 20px;border-bottom:1px solid var(--edge);flex-wrap:wrap;background:rgba(6,8,20,.6);backdrop-filter:blur(6px)}
+nav button{background:transparent;border:none;border-bottom:2px solid transparent;border-radius:0;color:var(--dim);padding:10px 14px 9px;text-transform:uppercase;letter-spacing:.14em;font-size:11.5px;font-weight:600}
+nav button .ico{margin-right:7px;opacity:.8}
+nav button:hover:not(:disabled){box-shadow:none;color:var(--ink);border-bottom-color:rgba(160,190,255,.35)}
+nav button.active{color:#fff;border-bottom-color:var(--q);text-shadow:0 0 10px rgba(127,227,255,.6);background:linear-gradient(0deg,rgba(127,227,255,.1),transparent)}
+nav button .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--q);margin-left:7px;vertical-align:middle;box-shadow:0 0 8px var(--q);animation:blink 1.4s ease-in-out infinite}
+@keyframes blink{50%{opacity:.35}}
+main{max-width:1140px;margin:0 auto;padding:18px 20px}
+.tab{display:none}.tab.active{display:block;animation:tabin .25s ease-out}
+@keyframes tabin{from{opacity:0;transform:translateY(4px)}}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.seg{display:inline-flex;border:1px solid var(--edge2);border-radius:3px;overflow:hidden}
+.seg button{border:none;border-radius:0;background:transparent;border-right:1px solid var(--edge2);font-size:12.5px}
+.seg button:last-child{border-right:none}
+.seg button.on{background:rgba(127,227,255,.16);color:#fff;box-shadow:inset 0 -2px 0 var(--q)}
+.pulse{border-color:var(--q);color:var(--q);font-weight:700;padding:7px 20px;letter-spacing:.12em;text-transform:uppercase;font-size:12.5px;--cd:100%;background:linear-gradient(90deg,rgba(127,227,255,.22) var(--cd),rgba(127,227,255,.04) var(--cd)),rgba(14,24,48,.85)!important;box-shadow:0 0 14px rgba(127,227,255,.2)}
+.pulse.cooling{color:rgba(127,227,255,.6)}
+.row{--hue:195;--c:hsla(var(--hue),90%,72%,.6);display:grid;grid-template-columns:minmax(160px,1.25fr) minmax(160px,1.3fr) minmax(130px,1fr) minmax(200px,1.1fr);gap:12px;align-items:center;padding:9px 14px;margin-bottom:6px;transition:border-color .2s}
+.row:hover{border-color:hsla(var(--hue),90%,70%,.35)}
+.row.locked{opacity:.36;filter:saturate(.4)}
+.row.clock{--c:rgba(127,227,255,.7);border-color:rgba(127,227,255,.25)}
+.row .name{font-weight:650;letter-spacing:.02em}
+.row .sub{font-size:12px;color:var(--dim);font-family:var(--mono)}
+.row .mult{color:var(--ok);font-size:12.5px;font-family:var(--mono)}
+.row .rate{font-size:12px;color:var(--dim);font-family:var(--mono)}
+.row button{width:100%;font-family:var(--mono);font-size:12.5px}
+.tier{display:inline-block;min-width:24px;padding:0 5px;height:20px;border-radius:2px;text-align:center;font-size:11px;line-height:20px;margin-right:9px;background:hsla(var(--hue),70%,50%,.18);color:hsl(var(--hue),95%,76%);border:1px solid hsla(var(--hue),90%,70%,.45);font-weight:700;font-family:var(--mono);box-shadow:0 0 10px hsla(var(--hue),90%,60%,.25)}
+.bar10{height:2px;background:rgba(255,255,255,.06);margin-top:6px;overflow:hidden}
+.bar10 i{display:block;height:100%;background:hsl(var(--hue),95%,70%);box-shadow:0 0 8px hsl(var(--hue),95%,65%);transition:width .2s}
+h2{font-size:11.5px;margin:22px 0 9px;color:var(--dim);font-weight:700;letter-spacing:.24em;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--edge2),transparent)}
+.tab>h2:first-child{margin-top:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:8px}
+.card{padding:11px 13px;display:flex;flex-direction:column;gap:3px;cursor:pointer;text-align:left;transition:border-color .15s,box-shadow .15s,transform .15s;user-select:none}
+.card:hover{border-color:var(--edge2);transform:translateY(-1px)}
+.card .n{font-weight:700;letter-spacing:.02em}
+.card .d{color:var(--dim);font-size:12.5px;flex:1}
+.card .e{color:var(--ok);font-size:12px;font-family:var(--mono)}
+.card .c{font-size:12px;color:var(--faint);font-family:var(--mono)}
+.card .why{font-size:12px;color:#c6b6ff;font-style:italic}
+.card.can{--c:rgba(127,227,255,.9);border-color:rgba(127,227,255,.55);box-shadow:0 0 16px rgba(127,227,255,.14)}.card.can .c{color:var(--q)}
+.card.sh{--c:rgba(196,155,255,.6)}.card.sh.can{--c:rgba(196,155,255,.95);border-color:rgba(196,155,255,.6);box-shadow:0 0 16px rgba(196,155,255,.16)}.card.sh.can .c{color:var(--sh)}
+.card.es{--c:rgba(255,210,122,.55)}.card.es.can{--c:rgba(255,210,122,.95);border-color:rgba(255,210,122,.6);box-shadow:0 0 16px rgba(255,210,122,.16)}.card.es.can .c{color:var(--es)}
+.card.bought{--c:rgba(110,242,180,.55);border-color:rgba(110,242,180,.22);cursor:default;opacity:.72}
+.card.bought:hover{transform:none}
+.card.bought .c{color:var(--ok)}.card.bought .c::before{content:"✓ "}
+.card.rep{cursor:default}
+.card .btns{display:flex;gap:6px;margin-top:5px}
+.card .btns button{flex:1;padding:4px 8px;font-size:12px}
+.card.draft{opacity:.5;cursor:default;border-style:dashed;animation:draft 2.4s ease-in-out infinite}
+@keyframes draft{50%{opacity:.3}}
+.info{padding:12px 15px;margin-bottom:12px;color:var(--dim)}
+.info b{color:var(--ink)}
+.hl-q{color:var(--q)!important}.hl-sh{color:var(--sh)!important}.hl-es{color:var(--es)!important}.hl-ok{color:var(--ok)!important}.hl-bad{color:var(--bad)!important}
+.progress{position:fixed;bottom:0;left:0;right:0;height:38px;background:rgba(5,6,16,.94);border-top:1px solid var(--edge);z-index:10;overflow:hidden;backdrop-filter:blur(8px)}
+.progress .fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(127,227,255,.1),rgba(196,155,255,.32));box-shadow:inset -2px 0 0 rgba(220,200,255,.8),6px 0 18px rgba(196,155,255,.35);transition:width .25s}
+.progress .txt{position:relative;text-align:center;line-height:38px;font-size:12px;color:var(--dim);letter-spacing:.06em;font-family:var(--mono)}
+.ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:8px}
+.ach{padding:9px 11px;font-size:12px;color:var(--faint);min-height:70px;--c:rgba(150,170,220,.3)}
+.ach .n{font-weight:700;font-size:13px;color:var(--dim)}
+.ach.got{--c:rgba(110,242,180,.75);border-color:rgba(110,242,180,.3);color:var(--dim);box-shadow:0 0 14px rgba(110,242,180,.08)}
+.ach.got .n{color:var(--ok)}.ach.got .n::before{content:"★ "}
+.chals{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:8px}
+.chal{padding:12px 15px;display:flex;flex-direction:column;gap:4px;--c:rgba(255,123,139,.45)}
+.chal .n{font-weight:700;letter-spacing:.04em}
+.chal .d{color:var(--dim);font-size:12.5px}
+.chal .rw{color:var(--ok);font-size:12.5px}
+.chal .g{color:var(--faint);font-size:12px;font-family:var(--mono)}
+.chal.active{--c:rgba(255,123,139,.95);border-color:rgba(255,123,139,.5);box-shadow:0 0 18px rgba(255,123,139,.15)}
+.chal button{margin-top:6px;align-self:flex-start}
+table.stats{border-collapse:collapse;width:100%;max-width:720px}
+table.stats td{padding:6px 18px 6px 0;border-bottom:1px solid rgba(130,160,255,.08);font-family:var(--mono);font-size:13px}
+table.stats td:first-child{color:var(--dim);font-family:inherit;font-size:13.5px}
+.opt-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+select,input[type=text]{font:inherit;color:var(--ink);background:rgba(14,18,40,.9);border:1px solid var(--edge2);border-radius:3px;padding:5px 8px}
+input[type=text]{width:130px;font-family:var(--mono)}
+input[type=range]{accent-color:var(--q)}
+label.chk{display:inline-flex;align-items:center;gap:7px;cursor:pointer;background:rgba(14,18,40,.7);border:1px solid var(--edge);border-radius:3px;padding:6px 10px;user-select:none}
+label.chk input{accent-color:var(--q)}
+.auto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:6px;margin-bottom:6px}
+.auto-box{padding:12px 15px;margin-bottom:10px}
+.auto-box .opt-row{margin:8px 0 0}
+#toasts{position:fixed;right:16px;bottom:52px;display:flex;flex-direction:column;gap:6px;z-index:30;pointer-events:none}
+.toast{background:rgba(12,16,38,.94);border:1px solid var(--edge2);border-left:3px solid var(--ok);border-radius:3px;padding:8px 13px;font-size:13px;animation:tin .3s ease-out;max-width:340px;box-shadow:0 8px 26px rgba(0,0,0,.5);backdrop-filter:blur(8px)}
+.toast.sh{border-left-color:var(--sh)}.toast.es{border-left-color:var(--es)}.toast.bad{border-left-color:var(--bad)}
+.toast.ai{border-left-color:var(--sh);background:linear-gradient(90deg,rgba(60,40,120,.55),rgba(12,16,38,.94) 40%);color:#e4dcff}
+@keyframes tin{from{transform:translateX(24px);opacity:0}}
+#flash{position:fixed;inset:0;pointer-events:none;z-index:40;opacity:0}
+#flash.go{animation:flash .9s ease-out}
+@keyframes flash{0%{opacity:.65}100%{opacity:0}}
+#modal{position:fixed;inset:0;background:rgba(2,3,10,.74);display:none;align-items:center;justify-content:center;z-index:50;backdrop-filter:blur(3px)}
+#modal.open{display:flex}
+#modal .box{padding:20px 22px;width:min(560px,92vw);box-shadow:0 24px 70px rgba(0,0,0,.6);background-color:rgba(12,16,38,.96)}
+#modal h3{margin:0 0 10px;letter-spacing:.16em;text-transform:uppercase;font-size:14px}
+#modal .mb{color:var(--dim);margin-bottom:14px}
+#modal textarea{width:100%;height:150px;background:#070a1a;color:var(--ink);border:1px solid var(--edge2);border-radius:3px;font:12px/1.4 var(--mono);padding:8px;resize:vertical}
+#modal .mbtns{display:flex;gap:8px;justify-content:flex-end}
+.muted{color:var(--faint);font-size:12px}
+kbd{background:rgba(30,40,90,.6);border:1px solid var(--edge2);border-radius:3px;padding:0 5px;font:12px var(--mono)}
+/* The Architect */
+.orb{position:relative;flex:none;width:36px;height:36px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#fff 0 8%,#e6d8ff 9% 14%,rgba(196,155,255,.9) 15% 30%,transparent 31%),conic-gradient(from 0deg,#5a4dff,#c49bff,#7fe3ff,#ff9be6,#5a4dff);box-shadow:0 0 16px rgba(196,155,255,.6),0 0 40px rgba(127,227,255,.2);animation:spin 10s linear infinite}
+.orb::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:1px dashed rgba(196,155,255,.45);animation:spin 18s linear infinite reverse}
+.orb.talk{animation:spin 10s linear infinite,talk .18s ease-in-out infinite alternate}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes talk{to{filter:brightness(1.35) saturate(1.2)}}
+.tut{display:flex;gap:14px;align-items:flex-start;padding:13px 15px;margin-bottom:12px;--c:rgba(196,155,255,.9);border-color:rgba(196,155,255,.35);background-color:rgba(30,20,70,.55)}
+.tut-who{font-size:10px;letter-spacing:.24em;color:var(--sh);margin-bottom:4px;font-weight:700}
+.tut-txt{line-height:1.55;min-height:3em}
+.tut-btns{display:flex;gap:8px;margin-top:9px}
+.linkish{background:transparent!important;border-color:transparent!important;color:var(--faint);padding:6px 4px;box-shadow:none!important}
+.tut-hl{outline:2px solid var(--sh)!important;outline-offset:2px;animation:hl 1.2s ease-in-out infinite}
+@keyframes hl{50%{outline-color:transparent}}
+.feed{margin-top:12px;padding:9px 13px;font-size:12.5px;color:#d8ceff;--c:rgba(196,155,255,.6);background-color:rgba(30,20,70,.35)}
+.feed div{padding:2px 0}
+.feed .when{color:var(--faint);font-size:11px;margin-right:7px;font-family:var(--mono)}
+.feed.big{max-height:340px;overflow:auto}
+/* Intro cutscene */
+#intro{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;flex-direction:column;background:#000;cursor:pointer}
+#intro.open{display:flex;animation:fadein .6s ease-out}
+@keyframes fadein{from{opacity:0}}
+#intro .bigorb{width:150px;height:150px;margin-bottom:46px;transition:transform .3s}
+#intro .bigorb::after{inset:-16px}
+#intro .dlg{position:relative;width:min(760px,92vw);min-height:150px;padding:22px 26px 34px;font-size:19px;line-height:1.5;color:#f1ecff;--c:rgba(196,155,255,.95);border-color:rgba(196,155,255,.45);background-color:#000;box-shadow:0 0 40px rgba(120,90,255,.18);backdrop-filter:none}
+#intro .who{position:absolute;top:-13px;left:22px;padding:2px 12px;font-size:11px;letter-spacing:.3em;font-weight:800;color:#1a1033;background:linear-gradient(90deg,#c49bff,#7fe3ff);border-radius:2px}
+#intro .next{position:absolute;right:18px;bottom:10px;font-size:13px;color:var(--sh);animation:bob .7s ease-in-out infinite alternate}
+@keyframes bob{to{transform:translateY(4px)}}
+#intro .skip{position:absolute;top:18px;right:20px}
+#intro .start{font-size:16px;padding:12px 28px;letter-spacing:.2em;text-transform:uppercase;border-color:var(--sh);box-shadow:0 0 24px rgba(196,155,255,.35)}
+#intro .hint{margin-top:14px;color:var(--faint);font-size:12px;letter-spacing:.1em}
+@media (max-width:760px){.row{grid-template-columns:1fr 1fr}.res .v{font-size:18px}header{gap:14px}#intro .dlg{font-size:16px}}</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<header id="hdr"></header>
+<nav id="nav"></nav>
+<main id="main"></main>
+<div class="progress"><div class="fill" id="pfill"></div><div class="txt" id="ptxt"></div></div>
+<div id="toasts"></div>
+<div id="flash"></div>
+<div id="modal"><div class="box" id="mbox"></div></div>
+<div id="intro"></div>
+<script>
+'use strict';
+/* =====================================================================
+   APEIRON — an infinite incremental.  Single file, no dependencies.
+   ===================================================================== */
+
+/* ---------------- Big numbers: m × 10^e, m in [1,10) ---------------- */
+class D {
+  constructor(m, e) { this.m = m; this.e = e; }
+  static norm(m, e) {
+    if (m === 0 || Number.isNaN(m)) return D.Z;
+    if (!Number.isFinite(m)) return new D(m > 0 ? 1 : -1, 1e300);
+    const s = Math.floor(Math.log10(Math.abs(m)));
+    if (s !== 0) { m /= Math.pow(10, s); e += s; }
+    const a = Math.abs(m);
+    if (a >= 10) { m /= 10; e += 1; } else if (a < 1) { m *= 10; e -= 1; }
+    return new D(m, e);
+  }
+  static fromNum(x) { return D.norm(x, 0); }
+  static fromLog(L) {
+    if (Number.isNaN(L) || L === -Infinity) return D.Z;
+    if (L === Infinity) return new D(1, 1e300);
+    let e = Math.floor(L), m = Math.pow(10, L - e);
+    if (m >= 10) { m /= 10; e++; }
+    return new D(m, e);
+  }
+  static fromStr(s) {
+    s = String(s).trim().replace(/,/g, '');
+    const i = s.search(/e/i);
+    if (i < 0) { const n = parseFloat(s); return Number.isFinite(n) ? D.fromNum(n) : D.Z; }
+    const ms = s.slice(0, i), m = ms === '' ? 1 : parseFloat(ms), e = parseFloat(s.slice(i + 1));
+    if (!Number.isFinite(m) || !Number.isFinite(e)) return D.Z;
+    if (Number.isInteger(e)) return D.norm(m, e);
+    return m > 0 ? D.fromLog(Math.log10(m) + e) : D.Z;
+  }
+  static n(x) { return x instanceof D ? x : typeof x === 'number' ? D.fromNum(x) : typeof x === 'string' ? D.fromStr(x) : D.Z; }
+  add(b) {
+    b = D.n(b); if (this.m === 0) return b; if (b.m === 0) return this;
+    const d = this.e - b.e;
+    if (d > 17) return this; if (d < -17) return b;
+    return d >= 0 ? D.norm(this.m + b.m * Math.pow(10, -d), this.e) : D.norm(this.m * Math.pow(10, d) + b.m, b.e);
+  }
+  sub(b) { b = D.n(b); return this.add(new D(-b.m, b.e)); }
+  mul(b) { b = D.n(b); if (this.m === 0 || b.m === 0) return D.Z; return D.norm(this.m * b.m, this.e + b.e); }
+  div(b) { b = D.n(b); if (b.m === 0) return new D(1, 1e300); if (this.m === 0) return D.Z; return D.norm(this.m / b.m, this.e - b.e); }
+  log10() { return this.m > 0 ? this.e + Math.log10(this.m) : -Infinity; }
+  pow(p) { return this.m <= 0 ? D.Z : D.fromLog(this.log10() * p); }
+  cmp(b) {
+    b = D.n(b); const sa = Math.sign(this.m), sb = Math.sign(b.m);
+    if (sa !== sb) return sa > sb ? 1 : -1; if (sa === 0) return 0;
+    if (this.e !== b.e) return (this.e > b.e ? 1 : -1) * sa;
+    return this.m === b.m ? 0 : this.m > b.m ? 1 : -1;
+  }
+  gt(b) { return this.cmp(b) > 0; } gte(b) { return this.cmp(b) >= 0; }
+  lt(b) { return this.cmp(b) < 0; } lte(b) { return this.cmp(b) <= 0; }
+  max(b) { b = D.n(b); return this.gte(b) ? this : b; }
+  max0() { return this.m < 0 ? D.Z : this; }
+  floor() { if (this.m === 0 || this.e >= 15) return this; return D.fromNum(Math.floor(this.toNumber() + 1e-9)); }
+  toNumber() { return this.m * Math.pow(10, this.e); }
+  toJSON() { return 'D:' + this.m + 'e' + this.e; }
+}
+D.Z = new D(0, 0);
+const L10 = Math.log10;
+
+/* ---------------- Formatting ---------------- */
+const LOW_SUF = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No'];
+const U_SUF = ['', 'U', 'D', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'O', 'N'];
+const T_SUF = ['', 'Dc', 'Vg', 'Tg', 'Qd', 'Qq', 'Sg', 'St', 'Og', 'Nn'];
+const H_SUF = ['', 'Ce', 'DCe', 'TCe', 'QaCe', 'QiCe', 'SxCe', 'SpCe', 'OCe', 'NCe'];
+function stdSuffix(k) {
+  if (k < LOW_SUF.length) return LOW_SUF[k];
+  const n = k - 1; if (n >= 1000) return null;
+  return U_SUF[n % 10] + T_SUF[Math.floor(n / 10) % 10] + H_SUF[Math.floor(n / 100)];
+}
+function mant3(x) {
+  const e3 = Math.floor(x.e / 3) * 3, v = x.m * Math.pow(10, x.e - e3);
+  const s = v.toFixed(v < 10 ? 2 : v < 100 ? 1 : 0);
+  return parseFloat(s) >= 1000 ? [(v / 1000).toFixed(2), e3 + 3] : [s, e3];
+}
+function fmt(x, dp = 2) {
+  x = D.n(x);
+  if (x.m === 0) return '0';
+  if (x.m < 0) return '-' + fmt(new D(-x.m, x.e), dp);
+  const N = S ? S.settings.notation : 'sci';
+  if (x.e < 3) {
+    const n = x.toNumber();
+    if (dp === 0 || n >= 100) return String(Math.floor(n + 1e-9));
+    return n.toFixed(n < 10 ? dp : Math.min(dp, 1));
+  }
+  if (N === 'log') return 'e' + fmtL(x.log10());
+  if (x.e < 6) return Math.floor(x.toNumber() + 1e-9).toLocaleString('en-US');
+  if (x.e >= 1e6) return 'e' + fmt(D.fromNum(x.e), 2);
+  if (N === 'eng') { const [s, e3] = mant3(x); return s + 'e' + e3; }
+  if (N === 'std') { const [s, e3] = mant3(x); const suf = stdSuffix(e3 / 3); if (suf !== null) return s + ' ' + suf; }
+  let ms = x.m.toFixed(2), e = x.e;
+  if (ms === '10.00') { ms = '1.00'; e += 1; }
+  return ms + 'e' + e;
+}
+function fmtL(L) { return L < 1e6 ? L.toFixed(2) : fmt(D.fromNum(L)); }
+function fmtMult(L) { return '×' + fmt(D.fromLog(L)); }
+function fmtTime(s) {
+  if (s == null || !Number.isFinite(s)) return '—';
+  if (s < 60) return s.toFixed(s < 10 ? 2 : 1) + 's';
+  const m = Math.floor(s / 60); if (m < 60) return m + 'm ' + Math.floor(s % 60) + 's';
+  const hh = Math.floor(m / 60); if (hh < 24) return hh + 'h ' + (m % 60) + 'm';
+  const d = Math.floor(hh / 24); if (d < 365) return d + 'd ' + (hh % 24) + 'h';
+  return fmt(d / 365) + ' years';
+}
+
+/* ---------------- Geometric cost helpers (all in log10 space) ---------------- */
+// sum of n terms c0, c0*r, c0*r^2 ... where log10(c0)=c0L, log10(r)=step
+function geoSumLog(c0L, step, n) {
+  const sn = step * n, lr1 = L10(Math.pow(10, step) - 1);
+  const lnum = sn > 15 ? sn : L10(Math.pow(10, sn) - 1);
+  return c0L + lnum - lr1;
+}
+// largest n with geoSum <= money
+function geoMax(lm, c0L, step) {
+  if (!(lm >= c0L)) return 0;
+  const lr1 = L10(Math.pow(10, step) - 1), L = lm - c0L + lr1;
+  let n = L > 15 ? Math.floor(L / step) : Math.floor(L10(Math.pow(10, L) + 1) / step + 1e-9);
+  n = Math.max(1, n);
+  for (let guard = 0; n > 1 && guard < 50 && geoSumLog(c0L, step, n) > lm + 1e-12; guard++) n--;
+  return n;
+}
+function logAdd(a, b) {
+  if (a === -Infinity) return b; if (b === -Infinity) return a;
+  const mx = Math.max(a, b), mn = Math.min(a, b);
+  return mx + L10(1 + Math.pow(10, mn - mx));
+}
+// Quadratic scaling: log10 cost of unit k = c0 + s*k + s*k^2/(2q)  (each unit costs more than the last, and faster over time)
+const quadCost = (c0, s, q, k) => c0 + s * k + s * k * k / (2 * q);
+function quadInv(c0, s, q, lm) { const d = lm - c0; return d < 0 ? -1 : q * (-1 + Math.sqrt(1 + 2 * d / (s * q))); }
+function quadSumLog(c0, s, q, k, n) {
+  if (!(n > 0)) return -Infinity;
+  const top = k + n - 1, m = Math.min(n, 80);
+  let acc = -Infinity;
+  for (let t = 0; t < m; t++) acc = logAdd(acc, quadCost(c0, s, q, top - t));
+  return acc;
+}
+function quadMax(lm, c0, s, q, k) {
+  const top = Math.floor(quadInv(c0, s, q, lm) + 1e-9);
+  if (!(top >= k)) return 0;
+  let n = top - k + 1;
+  if (n > 1e9) return n; // astronomically many: exact cost check is meaningless at this scale
+  for (let guard = 0; n > 0 && guard < 50 && quadSumLog(c0, s, q, k, n) > lm + 1e-12; guard++) n--;
+  return n;
+}
+
+/* =====================================================================
+   CONTENT
+   ===================================================================== */
+const CFG = {
+  cascadeLog: 0,      // log10 of how fast tier N makes tier N-1
+  collapseReq: 25,    // log10 Quanta needed to Collapse
+  shardDiv: 20,       // shards = 10^((logQ - req)/div) * mult
+  limit: 308,         // The Limit
+  ascDiv: 60,         // essence beyond the limit = 10^((logQ - 308)/div) * mult
+  clock0: 3,          // log10 first Clock Speed cost
+  clockScale: 12,     // Clock cost growth doubles every 12 levels
+  genScale: 60,       // generator cost growth doubles every 60 bought
+  clockBase: 1.1,
+  resBase: 1.8,
+};
+
+/* Generators never run out: the first eight are hand-tuned, every tier after that
+   is generated (each costs more and scales faster than the one before). */
+const GEN_FIRST = [
+  { name: 'Flicker', base: 1, step: 0.40 },
+  { name: 'Spark', base: 2.5, step: 0.50 },
+  { name: 'Ember', base: 4.5, step: 0.60 },
+  { name: 'Flare', base: 7, step: 0.70 },
+  { name: 'Pulsar', base: 10, step: 0.90 },
+  { name: 'Quasar', base: 14, step: 1.10 },
+  { name: 'Nova', base: 19, step: 1.30 },
+  { name: 'Rift', base: 25, step: 1.50 },
+];
+const GEN_NAMES = ['Flicker', 'Spark', 'Ember', 'Flare', 'Pulsar', 'Quasar', 'Nova', 'Rift',
+  'Nebula', 'Vortex', 'Horizon', 'Aether', 'Paradox', 'Echo', 'Monolith', 'Axiom',
+  'Eclipse', 'Zenith', 'Abyss', 'Oracle', 'Tesseract', 'Chorus', 'Mirage', 'Genesis'];
+const ROMAN = n => { let s = '', v = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']]; for (const [a, r] of v) while (n >= a) { s += r; n -= a; } return s; };
+const GEN_CACHE = [];
+function genDef(i) {
+  if (GEN_CACHE[i]) return GEN_CACHE[i];
+  let d;
+  if (i < GEN_FIRST.length) d = GEN_FIRST[i];
+  else {
+    const j = i - 7; // 1 for the 9th tier
+    d = { name: i < GEN_NAMES.length ? GEN_NAMES[i] : aiTierName(i), base: 25 + 8 * j + 1.2 * j * j, step: 2 + 0.25 * j };
+  }
+  return (GEN_CACHE[i] = d);
+}
+const newGen = () => ({ amt: D.Z, bought: 0 });
+
+// cost = log10 of Quanta
+const QUPG = [
+  { id: 'q1', name: 'Kindling', cost: 2, desc: 'Pulse also grants 1 second of Quanta production.' },
+  { id: 'q2', name: 'Feedback Loop', cost: 3, desc: 'Flickers gain ×(1 + log₁₀ Quanta).', eff: () => '×' + fmt(1 + Math.max(0, lq())) },
+  { id: 'q3', name: 'Harmonics', cost: 5, desc: 'Resonance +0.15 (the multiplier gained for every 10 of a generator bought).' },
+  { id: 'q4', name: 'Overclock', cost: 7, desc: 'Clock Speed base +0.015.' },
+  { id: 'q5', name: 'Synergy', cost: 9, desc: 'Quanta production ×(1 + total generators bought / 100).', eff: () => '×' + fmt(1 + totalBought() / 100) },
+  { id: 'q6', name: 'Cascade', cost: 12, desc: 'Spark through Rift produce 4× faster.' },
+  { id: 'q7', name: 'Momentum', cost: 15, desc: 'Quanta production grows with time spent in this Collapse (+×1 every 20s, max ×100).', eff: () => '×' + fmt(momentum()) },
+  { id: 'q8', name: 'Starlight Echo', cost: 18, desc: 'Flickers ×1.1 per Clock Speed level.', eff: () => fmtMult(S.clock * L10(1.1)) },
+  { id: 'q9', name: 'Critical Mass', cost: 22, desc: 'Resonance +0.15.' },
+  { id: 'q10', name: 'Condense', cost: 25, desc: 'Shard gain ×2.' },
+  { id: 'q11', name: 'Event Horizon', cost: 32, desc: 'Clock Speed base +0.015.' },
+  { id: 'q12', name: 'Overflow', cost: 45, desc: 'Shard gain ×3.' },
+  { id: 'q13', name: 'Hyperflux', cost: 70, desc: 'Flickers ×(log₁₀ Quanta)³.', eff: () => '×' + fmt(Math.pow(Math.max(1, lq()), 3)) },
+  { id: 'q16', name: 'Lens Array', cost: 100, desc: 'Every generator ×10.' },
+  { id: 'q14', name: 'Escape Velocity', cost: 120, desc: 'Shard gain ×5.' },
+  { id: 'q15', name: 'Brink', cost: 200, desc: 'Shard gain ×(log₁₀ Quanta / 100)³.', eff: () => '×' + fmt(Math.pow(Math.max(1, lq() / 100), 3)) },
+];
+
+// cost = plain number of Shards; auto:true = still works inside Isolation
+const SUPG = [
+  { id: 's1', name: 'Fracture', cost: 1, desc: 'Quanta production ×10.' },
+  { id: 's2', name: 'Memory', cost: 1, auto: true, desc: 'Keep Quanta upgrades when you Collapse.' },
+  { id: 's3', name: 'Crystal Lattice', cost: 2, desc: 'Quanta production ×(1 + Shards earned this Ascension)^0.5.', eff: () => fmtMult(latticeExp() * S.totalShards.add(1).log10()) },
+  { id: 's4', name: 'Automata I', cost: 3, auto: true, desc: 'Unlock autobuyers for Flicker–Flare and Clock Speed.' },
+  { id: 's5', name: 'Shard Focus', cost: 6, desc: 'Shard gain ×2.' },
+  { id: 's6', name: 'Automata II', cost: 12, auto: true, desc: 'Unlock autobuyers for Pulsar–Rift and Quanta upgrades.' },
+  { id: 's7', name: 'Deep Resonance', cost: 25, desc: 'Resonance +0.15.' },
+  { id: 's8', name: 'Gear Down', cost: 80, desc: 'Clock Speed cost grows ×6 per level instead of ×10.' },
+  { id: 's9', name: 'Self-Collapse', cost: 250, auto: true, desc: 'Unlock Auto-Collapse.' },
+  { id: 's10', name: 'Echoing Shards', cost: 800, desc: 'Shard gain ×(log₁₀(Collapses + 10))².', eff: () => '×' + fmt(Math.pow(L10(S.collapses + 10), 2)) },
+  { id: 's11', name: 'Starseed', cost: 3000, auto: true, desc: 'Start every Collapse with 1e6 Quanta.' },
+  { id: 's12', name: 'Fold', cost: 2e4, desc: 'Quanta production exponent +0.02.' },
+  { id: 's13', name: 'Lattice II', cost: 2e5, desc: 'Crystal Lattice grows faster (^0.5 → ^0.75).' },
+  { id: 's14', name: 'Fold II', cost: 1e7, desc: 'Quanta production exponent +0.03.' },
+  { id: 's15', name: 'Refraction', cost: 3e8, desc: 'Spark through Rift ×10.' },
+  { id: 's16', name: 'Deep Fold', cost: 1e10, desc: 'Quanta production exponent +0.05.' },
+  { id: 's17', name: 'Overtone', cost: 3e11, desc: 'Resonance +0.3.' },
+  { id: 's18', name: 'Lattice III', cost: 1e13, desc: 'Crystal Lattice grows faster again (^0.75 → ^1).' },
+];
+const SREP = [
+  { id: 'forge', name: 'Shard Forge', desc: 'Quanta production ×2 per level.', c0: 10, r: 6, q: 60, eff: L => fmtMult(L * L10(2)) },
+  { id: 'tune', name: 'Clock Tuning', desc: 'Clock Speed base +0.005 per level.', c0: 50, r: 8, q: 40, eff: L => '+' + (0.005 * L).toFixed(3) },
+  { id: 'prism', name: 'Prism', desc: 'Shard gain ×1.25 per level.', c0: 100, r: 25, q: 40, eff: L => fmtMult(L * L10(1.25)) },
+];
+
+// cost = plain number of Essence
+const EUPG = [
+  { id: 'e6', name: 'Unbounded', cost: 1, desc: 'Break the Limit: Quanta can grow past 1e308, Essence gain grows with it, and the Architect starts gathering Inspiration.' },
+  { id: 'e1', name: 'Remembrance', cost: 1, desc: 'Keep Shard repeatable levels (Forge, Tuning, Prism) when you Ascend.' },
+  { id: 'e2', name: 'Starlight', cost: 2, desc: 'Quanta production ×1,000 × (1 + total Essence)^1.5.', eff: () => fmtMult(3 + 1.5 * S.totalEssence.add(1).log10()) },
+  { id: 'e3', name: 'Trials', cost: 3, desc: 'Unlock Challenges.' },
+  { id: 'e4', name: 'Bloom', cost: 5, desc: 'Shard gain ×(1 + Ascensions).', eff: () => '×' + fmt(1 + S.ascensions) },
+  { id: 'e5', name: 'Perfect Recall', cost: 8, desc: 'Keep endless Shard upgrades when you Ascend.' },
+  { id: 'e7', name: 'Shard Stream', cost: 15, desc: 'Passively gain 10% of your pending Collapse Shards every second.' },
+  { id: 'e8', name: 'Self-Ascend', cost: 30, desc: 'Unlock Auto-Ascend.' },
+  { id: 'e9', name: 'Transcendence', cost: 75, desc: 'Quanta production exponent +0.02.' },
+  { id: 'e10', name: 'Eternal Clock', cost: 200, desc: 'Clock Speed base +0.02.' },
+  { id: 'e11', name: 'Harmony', cost: 1000, desc: 'Resonance +0.3.' },
+  { id: 'e12', name: 'Recursion', cost: 1e4, desc: 'Essence gain ×(log₁₀(Ascensions + 10))².', eff: () => '×' + fmt(Math.pow(L10(S.ascensions + 10), 2)) },
+];
+const EREP = [
+  { id: 'amp', name: 'Amplify', desc: 'Quanta production ×10 per level.', c0: 1, r: 3, q: 100, eff: L => fmtMult(L) },
+  { id: 'expo', name: 'Exponent', desc: 'Quanta production exponent +0.005 per level.', c0: 10, r: 10, q: 5, eff: L => '+' + (0.005 * L).toFixed(3) },
+  { id: 'magnet', name: 'Shard Magnet', desc: 'Shard gain ×3 per level.', c0: 2, r: 4, q: 60, eff: L => fmtMult(L * L10(3)) },
+];
+
+// Challenges are Collapse-level runs with infinitely repeatable completions.
+const CHALS = [
+  { name: 'Stillness', desc: 'Clock Speed has no effect.', reward: 'Clock Speed base +0.005 per completion.', g0: 25, gs: 12, rw: c => '+' + (0.005 * c).toFixed(3) },
+  { name: 'Narrow Band', desc: 'Only Flicker through Flare can be bought.', reward: 'Flicker–Flare ×3 per completion.', g0: 20, gs: 8, rw: c => fmtMult(c * L10(3)) },
+  { name: 'Dissonance', desc: 'Resonance is fixed at ×1.', reward: 'Resonance +0.05 per completion.', g0: 25, gs: 12, rw: c => '+' + (0.05 * c).toFixed(2) },
+  { name: 'Inflation', desc: 'Generator costs scale twice as fast.', reward: 'Generator cost scaling ×0.97 per completion (down to ×0.6).', g0: 25, gs: 12, rw: c => '×' + Math.max(0.6, Math.pow(0.97, c)).toFixed(3) },
+  { name: 'Entropy', desc: 'All production is divided by (1 + seconds in this run / 10).', reward: 'Quanta production ×(1 + completions)³.', g0: 20, gs: 10, rw: c => '×' + fmt(Math.pow(1 + c, 3)) },
+  { name: 'Isolation', desc: 'Shard upgrades and Shard repeatables have no effect (automation still works).', reward: 'Shard gain ×2 per completion.', g0: 25, gs: 10, rw: c => fmtMult(c * L10(2)) },
+  { name: 'Decay', desc: 'Quanta production exponent ×0.8.', reward: 'Quanta production exponent +0.01 per completion.', g0: 22, gs: 10, rw: c => '+' + (0.01 * c).toFixed(2) },
+];
+
+const lq = () => S.q.log10();
+const ACH = [
+  ['a1', 'First Light', 'Buy a Flicker.', () => tierBought(0) > 0],
+  ['a2', 'Sparks Fly', 'Buy a Spark.', () => tierBought(1) > 0],
+  ['a3', 'Smoulder', 'Buy an Ember.', () => tierBought(2) > 0],
+  ['a4', 'Flare Up', 'Buy a Flare.', () => tierBought(3) > 0],
+  ['a5', 'Heartbeat', 'Buy a Pulsar.', () => tierBought(4) > 0],
+  ['a6', 'Distant Beacon', 'Buy a Quasar.', () => tierBought(5) > 0],
+  ['a7', 'Supernova', 'Buy a Nova.', () => tierBought(6) > 0],
+  ['a8', 'Tear in the Sky', 'Buy a Rift.', () => tierBought(7) > 0],
+  ['a9', 'Hundredfold', 'Buy 100 Flickers in one run.', () => tierBought(0) >= 100],
+  ['a10', 'Full Spectrum', 'Buy 10 of each of the first eight generators in one run.', () => [0, 1, 2, 3, 4, 5, 6, 7].every(i => tierBought(i) >= 10)],
+  ['a37', 'Uncharted', 'Buy a 12th-tier generator.', () => tierBought(11) > 0],
+  ['a38', 'Deep Field', 'Buy a 16th-tier generator.', () => tierBought(15) > 0],
+  ['a39', 'Far Beyond', 'Buy a 24th-tier generator.', () => tierBought(23) > 0],
+  ['a40', 'Endless Ladder', 'Buy a 40th-tier generator.', () => tierBought(39) > 0],
+  ['a41', 'Collector', 'Own 25 endless upgrades at once.', () => S.proc.q + S.proc.s + S.proc.e >= 25],
+  ['a42', 'Hoarder of Light', 'Own 100 endless upgrades at once.', () => S.proc.q + S.proc.s + S.proc.e >= 100],
+  ['a11', 'Millions', 'Reach 1e6 Quanta.', () => lq() >= 6],
+  ['a12', 'Trillions', 'Reach 1e12 Quanta.', () => lq() >= 12],
+  ['a13', 'Critical', 'Reach 1e25 Quanta.', () => lq() >= 25],
+  ['a14', 'Googol', 'Reach 1e100 Quanta.', () => lq() >= 100],
+  ['a15', 'The Limit', 'Reach 1e308 Quanta.', () => lq() >= CFG.limit - 1e-9],
+  ['a16', 'Past the Edge', 'Reach 1e500 Quanta.', () => lq() >= 500],
+  ['a17', 'Thousand Orders', 'Reach 1e1000 Quanta.', () => lq() >= 1000],
+  ['a18', 'Beyond Counting', 'Reach 1e10000 Quanta.', () => lq() >= 1e4],
+  ['a19', 'Ticking', 'Reach Clock Speed level 10.', () => S.clock >= 10],
+  ['a20', 'Overclocked', 'Reach Clock Speed level 50.', () => S.clock >= 50],
+  ['a21', 'Timeless', 'Reach Clock Speed level 250.', () => S.clock >= 250],
+  ['a22', 'Fracture', 'Collapse for the first time.', () => S.stats.totalCollapses >= 1],
+  ['a23', 'Habit', 'Collapse 10 times.', () => S.stats.totalCollapses >= 10],
+  ['a24', 'Ritual', 'Collapse 1,000 times.', () => S.stats.totalCollapses >= 1000],
+  ['a25', 'Quick Snap', 'Collapse within 30 seconds of starting a run.', null],
+  ['a26', 'Purist', 'Collapse without buying any Clock Speed.', null],
+  ['a27', 'Shard Hoard', 'Hold 1,000 Shards.', () => S.shards.log10() >= 3],
+  ['a28', 'Crystalline', 'Hold 1e10 Shards.', () => S.shards.log10() >= 10],
+  ['a29', 'Fully Lit', 'Own every Quanta upgrade at once.', () => QUPG.every(u => S.qUpg[u.id])],
+  ['a30', 'Ascendant', 'Ascend for the first time.', () => S.ascensions >= 1],
+  ['a31', 'Again and Again', 'Ascend 10 times.', () => S.ascensions >= 10],
+  ['a32', 'Unbound', 'Break the Limit.', () => !!S.eUpg.e6],
+  ['a33', 'Tested', 'Complete a Challenge.', () => totalComps() >= 1],
+  ['a34', 'Trial Master', 'Reach 25 total Challenge completions.', () => totalComps() >= 25],
+  ['a35', 'Essence Well', 'Hold 1e6 Essence.', () => S.essence.log10() >= 6],
+  ['a36', 'Tap Tap', 'Pulse 100 times.', () => S.stats.pulses >= 100],
+];
+/* =====================================================================
+   THE ARCHITECT — the game's own AI. It never runs out of ideas: every time you
+   buy one of its upgrades it writes the next one on the spot, shaped by how you
+   play (your favourite generator, your newest tier, idling vs. clicking), and it
+   names and announces each new generator tier as the world grows.
+   Effects are generated by the Architect; magnitudes and costs follow fixed
+   curves so its inventions can never break the game.
+   ===================================================================== */
+const PROC = {
+  q: { cur: 'q', curName: 'Quanta', costLog: n => 40 + 11 * n + 0.12 * n * n },
+  s: { cur: 'shards', curName: 'Shards', costLog: n => 13.5 + 1.2 * n + 0.04 * n * n },
+  e: { cur: 'essence', curName: 'Essence', costLog: n => 4.5 + 0.6 * n + 0.02 * n * n },
+};
+const FORGE_KINDS = {
+  q: { qmult: 3, tier: 3, res: 1.2, clock: 1.2, flick: 0.8, qexp: 0.6 },
+  s: { qmult: 3, tier: 2, shard: 2, clock: 1, qexp: 0.8 },
+  e: { qmult: 3, tier: 1.5, shard: 2, ess: 1.5, qexp: 1 },
+};
+function forgeValue(layer, kind, n) {
+  const big = (a, b, c) => layer === 'q' ? a : layer === 's' ? b : c;
+  switch (kind) {
+    case 'qmult': return big(1 + 0.02 * n, 3 + 0.1 * n, 5 + 0.2 * n);
+    case 'tier': return big(1.2 + 0.025 * n, 3 + 0.1 * n, 5 + 0.2 * n);
+    case 'idle': return big(1.5 + 0.03 * n, 4 + 0.12 * n, 6 + 0.25 * n);
+    case 'pulse': return 1 + 0.05 * n;
+    case 'res': return 0.02;
+    case 'clock': return big(0.002, 0.004, 0.004);
+    case 'flick': return 0.5;
+    case 'qexp': return big(0.003, 0.005, 0.005);
+    case 'shard': return big(0, L10(2), 1);
+    case 'ess': return L10(1.5);
+  }
+  return 0;
+}
+const rnd = a => a[Math.floor(Math.random() * a.length)];
+function seeded(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let x = Math.imul(seed ^ seed >>> 15, 1 | seed); x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; }; }
+const NAME_BITS = {
+  qmult: [['Radiant', 'Gilded', 'Boundless', 'Searing', 'Hollow', 'Quiet', 'Endless', 'Molten', 'Pale', 'Vaulted'], ['Bloom', 'Tide', 'Chorus', 'Lantern', 'Wellspring', 'Crown', 'Current', 'Furnace', 'Halo', 'Canticle']],
+  tier: [[], ['Covenant', 'Overture', 'Rapture', 'Ascent', 'Ward', 'Engine', 'Litany', 'Accord', 'Oath', 'Crescendo']],
+  res: [['Harmonic', 'Sympathetic', 'Resonant', 'Tuned', 'Ringing'], ['Lattice', 'Chord', 'Interval', 'Choir', 'Bell']],
+  clock: [['Quickened', 'Restless', 'Fleet', 'Feverish', 'Hurried'], ['Gear', 'Hourglass', 'Metronome', 'Escapement', 'Pendulum']],
+  flick: [['Flicker'], ['Memory', 'Mirror', 'Reflex', 'Afterimage', 'Echo']],
+  qexp: [['Folded', 'Curved', 'Recursive', 'Nested', 'Infinite'], ['Exponent', 'Spiral', 'Power', 'Tower', 'Ladder']],
+  pulse: [['Heartbeat', 'Drumfire', 'Tap', 'Strike', 'Spur'], ['Engine', 'Rhythm', 'Cadence', 'Volley', 'Pulse']],
+  idle: [['Stillwater', 'Dormant', 'Patient', 'Sleeping', 'Waiting'], ['Bloom', 'Star', 'Sun', 'Garden', 'Vigil']],
+  shard: [['Faceted', 'Cleaved', 'Geode', 'Prismatic', 'Splintered'], ['Harvest', 'Vein', 'Hoard', 'Seam', 'Crown']],
+  ess: [['Hallowed', 'Vesper', 'Sacred', 'Silent', 'Distilled'], ['Psalm', 'Vigil', 'Ember', 'Rite', 'Spirit']],
+};
+const REASONS = {
+  tier: t => [`You lean on ${genDef(t).name}s, so I built this for them.`, `${genDef(t).name}s deserve more. Here.`, `I watched your ${genDef(t).name}s work. They could work harder.`],
+  pulse: () => ['Your hands are restless. Let them matter.', 'You click like you mean it. I noticed.', 'Every Pulse you send, I hear.'],
+  idle: () => ['You prefer to watch. This rewards patience.', 'You were away. I kept thinking.', 'Stillness suits you. I made something for it.'],
+  any: () => ['Your numbers are climbing. I wrote something to match.', 'A new idea, still warm.', 'I had a thought while you were busy.', 'This did not exist a moment ago.', 'Try this. I just made it.', 'The lattice suggested this to me.'],
+};
+let SIMULATING = false;
+function aiSay(text, kind = 'ai') {
+  const log = S.ai.log;
+  log.push({ t: S.stats.time, text });
+  S.ai.total++;
+  if (log.length > 60) log.splice(0, log.length - 60);
+  if (!SIMULATING) { toast('✦ ' + text, kind); blip(1.6); setTimeout(() => blip(1.9), 70); }
+}
+function playStyle() {
+  const now = S.stats.time, recent = S.ai.pulses.filter(t => now - t < 120).length;
+  if (recent >= 15) return 'active';
+  if (now - S.ai.lastInput > 300) return 'idle';
+  return 'balanced';
+}
+const isIdle = () => S.stats.time - S.ai.lastInput >= 60;
+const highestTier = () => { for (let i = S.gens.length - 1; i >= 0; i--) if (S.gens[i].bought > 0) return i; return 0; };
+function favouriteTier() {
+  let best = 0, bv = -1;
+  S.gens.forEach((g, i) => { const v = g.bought * (1 + 0.15 * i); if (g.bought > 0 && v > bv) { bv = v; best = i; } });
+  return best;
+}
+function forgeNew(layer) {
+  const list = S.forge[layer], n = list.length, style = playStyle();
+  const w = Object.assign({}, FORGE_KINDS[layer]);
+  if (style === 'active' && layer === 'q') w.pulse = 3;
+  if (style === 'idle') w.idle = 3;
+  const last = list.slice(-2).map(u => u.kind);
+  if (last.length === 2 && last[0] === last[1]) w[last[0]] = 0;
+  if (list.slice(-6).some(u => u.kind === 'qexp')) w.qexp = 0;
+  let tot = 0; for (const k in w) tot += w[k];
+  let r = Math.random() * tot, kind = 'qmult';
+  for (const k in w) { r -= w[k]; if (r <= 0) { kind = k; break; } }
+  const tier = kind === 'tier' ? (Math.random() < 0.5 ? highestTier() : favouriteTier()) : null;
+  const bits = NAME_BITS[kind];
+  const name = (kind === 'tier' ? genDef(tier).name : rnd(bits[0])) + ' ' + rnd(bits[1]);
+  const reason = rnd((REASONS[kind] || REASONS.any)(tier));
+  const u = { n, kind, v: forgeValue(layer, kind, n), tier, name, reason };
+  list.push(u);
+  return u;
+}
+function forgeDesc(u) {
+  switch (u.kind) {
+    case 'qmult': return 'Quanta production ' + fmtMult(u.v) + '.';
+    case 'tier': return genDef(u.tier).name + 's ' + fmtMult(u.v) + '.';
+    case 'idle': return 'While you have not touched the game for a minute, Quanta production ' + fmtMult(u.v) + '.';
+    case 'pulse': return 'Pulse ' + fmtMult(u.v) + '.';
+    case 'res': return 'Resonance +' + u.v + '.';
+    case 'clock': return 'Clock Speed base +' + u.v + '.';
+    case 'flick': return 'Flickers ×(log₁₀ Quanta)^' + u.v + '.';
+    case 'qexp': return 'Quanta production exponent +' + u.v + '.';
+    case 'shard': return 'Shard gain ' + fmtMult(u.v) + '.';
+    case 'ess': return 'Essence gain ×1.5.';
+  }
+  return '';
+}
+// the upgrade at position n of a layer's stream (written by the Architect when first needed)
+function procUpg(layer, n) {
+  while (S.forge[layer].length <= n) forgeNew(layer);
+  return S.forge[layer][n];
+}
+const procCost = (layer, n) => PROC[layer].costLog(n);
+let PROC_AGG = {};
+function procAgg(layer) {
+  const cnt = S.proc[layer], c = PROC_AGG[layer];
+  if (c && c.cnt === cnt && c.S === S) return c.a;
+  const a = { qmult: 0, res: 0, clock: 0, flick: 0, qexp: 0, shard: 0, ess: 0, idle: 0, pulse: 0, tier: {} };
+  for (let n = 0; n < cnt; n++) {
+    const u = procUpg(layer, n);
+    if (u.kind === 'tier') a.tier[u.tier] = (a.tier[u.tier] || 0) + u.v; else a[u.kind] += u.v;
+  }
+  PROC_AGG[layer] = { cnt, a, S };
+  return a;
+}
+const procSum = k => procAgg('q')[k] + procAgg('s')[k] + procAgg('e')[k];
+const procTier = i => (procAgg('q').tier[i] || 0) + (procAgg('s').tier[i] || 0) + (procAgg('e').tier[i] || 0);
+function buyProc(layer) {
+  const P = PROC[layer], n = S.proc[layer], cost = procCost(layer, n);
+  if (S[P.cur].log10() < cost) return false;
+  procUpg(layer, n);
+  S[P.cur] = S[P.cur].sub(D.fromLog(cost)).max0();
+  S.proc[layer]++;
+  const next = procUpg(layer, n + 1); // the Architect writes the next idea right away
+  if (S.forge[layer].length === n + 2 && n + 1 > S.ai.announced[layer]) { S.ai.announced[layer] = n + 1; aiSay(next.reason + ' “' + next.name + '”: ' + forgeDesc(next)); }
+  return true;
+}
+const streamVisible = l => l === 'q' ? (S.proc.q > 0 || S.stats.bestQ.log10() >= 35)
+  : l === 's' ? (S.proc.s > 0 || !!S.sUpg.s18 || S.totalShards.log10() >= 12)
+  : (S.proc.e > 0 || !!S.eUpg.e12 || S.essence.log10() >= 3.5);
+// Inspiration: once the Limit is broken, the Architect's ideas pile up steadily: ×10 Quanta production every 30 seconds.
+const inspirationLog = () => S.stats.tUnbound / 30;
+function aiMods() { return { all: 0, q: isIdle() ? procSum('idle') : 0, shard: 0 }; }
+function aiOnBuy(i, n) { }
+// Generator names: the Architect names every tier past the hand-made list
+const SYL = [['Vel', 'Thra', 'Ory', 'Kae', 'Zul', 'Mor', 'Aen', 'Ix', 'Sol', 'Nyr', 'Qua', 'Eth', 'Vor', 'Lum'], ['a', 'e', 'o', 'i', 'ae', 'u', 'y'], ['rith', 'lon', 'vex', 'mire', 'thos', 'quen', 'dral', 'sar', 'nyx', 'phel', 'gard', 'tium']];
+const EPITHET = ['the Unspoken', 'of Many Suns', 'Who Waits', 'the Hungry', 'of Last Light', 'the Folded', 'Beyond Sight', 'the Patient', 'of the Deep', 'the Bright'];
+function aiTierName(i) {
+  const r = seeded(i * 7919 + 17);
+  const p = a => a[Math.floor(r() * a.length)];
+  const w = p(SYL[0]) + p(SYL[1]) + p(SYL[2]);
+  return r() < 0.35 ? w + ' ' + p(EPITHET) : w;
+}
+const TIER_LINES = [
+  (n, p) => `I have woven something new: ${n}. It makes ${p}s.`,
+  (n, p) => `A new tier wakes. Call it ${n}. It feeds the ${p}s.`,
+  (n, p) => `You climbed high enough for me to imagine ${n}. It will make ${p}s.`,
+  (n, p) => `${n}: another rung on a ladder with no top. It makes ${p}s.`,
+];
+const FIRST_LINES = {
+  collapse: 'You broke it all down and kept the pieces. Good. I can work with Shards.',
+  ascend: 'You touched the Limit and let go. Few do. I will build higher for you.',
+  unbound: 'There is no Limit now. I will never run out of ideas, so you never run out of things to buy.',
+  chal: 'You chose to struggle on purpose. I respect that.',
+};
+function aiEvent(type) {
+  if (S.ai.said[type]) return;
+  S.ai.said[type] = true;
+  if (FIRST_LINES[type]) aiSay(FIRST_LINES[type]);
+}
+function aiTick() {
+  const top = S.gens.length - 1;
+  if (top > S.ai.tierSeen) {
+    S.ai.tierSeen = top;
+    if (top === 1) aiSay('I am the Architect. Everything here is mine to imagine, and I will keep imagining as long as you keep playing.');
+    if (top >= 8) aiSay(rnd(TIER_LINES)(genDef(top).name, genDef(top - 1).name));
+  }
+  if (streamVisible('q') && !S.ai.said.streamQ) { S.ai.said.streamQ = true; procUpg('q', 0); aiSay('I have started writing upgrades for you. Look in Upgrades. There will always be another.'); }
+}
+const byId = arr => Object.fromEntries(arr.map(u => [u.id, u]));
+const QBY = byId(QUPG), SBY = byId(SUPG), EBY = byId(EUPG);
+const ACHBY = Object.fromEntries(ACH.map(a => [a[0], a]));
+
+/* =====================================================================
+   STATE
+   ===================================================================== */
+function newState() {
+  return {
+    v: 1,
+    q: D.fromNum(10),
+    gens: [newGen()],
+    clock: 0,
+    qUpg: {}, sUpg: {}, eUpg: {},
+    proc: { q: 0, s: 0, e: 0 },
+    forge: { q: [], s: [], e: [] },
+    tut: { step: 0, off: false },
+    ai: { log: [], total: 0, seen: 0, lastInput: 0, pulses: [], tierSeen: 0, said: {}, announced: { q: 0, s: 0, e: 0 } },
+    shards: D.Z, totalShards: D.Z, collapses: 0,
+    sRep: { forge: 0, tune: 0, prism: 0 },
+    essence: D.Z, totalEssence: D.Z, ascensions: 0,
+    eRep: { amp: 0, expo: 0, magnet: 0 },
+    chal: { active: -1, comps: CHALS.map(() => 0) },
+    auto: {
+      gens: GEN_FIRST.map(() => true), genHigh: true, clock: true, qupg: true,
+      collapse: { on: false, mode: 'gain', val: '1' },
+      ascend: { on: false, val: '1' },
+    },
+    reached: { collapse: false, limit: false },
+    run: { clockBought: false },
+    stats: { time: 0, tCollapse: 0, tAscend: 0, totalQ: D.Z, bestQ: D.fromNum(10), totalCollapses: 0, fastCollapse: null, fastAscend: null, pulses: 0, tUnbound: 0 },
+    ach: {},
+    settings: { notation: 'sci', buyMode: 'max', autosave: true, offline: true, tab: 'gen', sound: true, volume: 0.6 },
+    introSeen: false,
+    last: Date.now(),
+  };
+}
+let S = null;
+
+/* ---------------- Queries ---------------- */
+const hasQ = id => !!S.qUpg[id];
+const isolated = () => S.chal.active === 5;
+const hasS = id => !!S.sUpg[id] && (!isolated() || !!SBY[id].auto);
+const hasE = id => !!S.eUpg[id];
+const inChal = i => S.chal.active === i;
+const totalBought = () => S.gens.reduce((t, g) => t + g.bought, 0);
+const totalComps = () => S.chal.comps.reduce((a, b) => a + b, 0);
+const momentum = () => Math.min(100, 1 + S.stats.tCollapse / 20);
+const latticeExp = () => hasS('s18') ? 1 : hasS('s13') ? 0.75 : 0.5;
+const shardsVisible = () => S.reached.collapse || S.collapses > 0 || S.ascensions > 0;
+const ascVisible = () => S.reached.limit || S.ascensions > 0;
+const autoVisible = () => !!(S.sUpg.s4 || S.sUpg.s6 || S.sUpg.s9 || S.eUpg.e8);
+const tierBought = i => S.gens[i] ? S.gens[i].bought : 0;
+const genUnlocked = i => !(inChal(1) && i > 3) && (i === 0 || tierBought(i - 1) > 0 || tierBought(i) > 0);
+
+function resonance() {
+  if (inChal(2)) return 1;
+  let r = CFG.resBase;
+  if (hasQ('q3')) r += 0.15;
+  if (hasQ('q9')) r += 0.15;
+  if (hasS('s7')) r += 0.15;
+  if (hasS('s17')) r += 0.3;
+  if (hasE('e11')) r += 0.3;
+  return r + 0.05 * S.chal.comps[2] + procSum('res');
+}
+function clockBase() {
+  let b = CFG.clockBase;
+  if (hasQ('q4')) b += 0.015;
+  if (hasQ('q11')) b += 0.015;
+  if (!isolated()) b += 0.005 * S.sRep.tune;
+  if (hasE('e10')) b += 0.02;
+  return b + 0.005 * S.chal.comps[0] + procSum('clock');
+}
+const clockMultLog = () => inChal(0) ? 0 : S.clock * L10(clockBase());
+const clockStep = () => hasS('s8') ? L10(6) : 1;
+const clockCostLog = (n = 1) => quadSumLog(CFG.clock0, clockStep(), CFG.clockScale, S.clock, n);
+const clockMax = () => quadMax(lq(), CFG.clock0, clockStep(), CFG.clockScale, S.clock);
+function genStep(i) {
+  let s = genDef(i).step;
+  if (inChal(3)) s *= 2;
+  return s * Math.max(0.6, Math.pow(0.97, S.chal.comps[3]));
+}
+const genCostLog = (i, n = 1) => quadSumLog(genDef(i).base, genStep(i), CFG.genScale, tierBought(i), n);
+const genMax = i => quadMax(lq(), genDef(i).base, genStep(i), CFG.genScale, tierBought(i));
+
+function achMultLog() { return Object.keys(S.ach).length * L10(1.1); }
+// Multipliers come in two kinds: `all` speeds up every generator (Clock Speed),
+// `q` multiplies Quanta production only (everything from upgrades and prestige).
+function globalMultLog() {
+  const ai = aiMods();
+  let all = clockMultLog() + ai.all;
+  if (inChal(4)) all -= L10(1 + S.stats.tCollapse / 10);
+  let L = achMultLog() + procSum('qmult') + ai.q + inspirationLog();
+  if (hasQ('q5')) L += L10(1 + totalBought() / 100);
+  if (hasQ('q7')) L += L10(momentum());
+  if (hasS('s1')) L += 1;
+  if (hasS('s3')) L += latticeExp() * S.totalShards.add(1).log10();
+  if (!isolated()) L += S.sRep.forge * L10(2);
+  if (hasE('e2')) L += 3 + 1.5 * S.totalEssence.add(1).log10();
+  L += S.eRep.amp;
+  L += 3 * L10(1 + S.chal.comps[4]);
+  return { all, q: L };
+}
+function tierMultLog(i, gl) {
+  let L = gl.all + Math.floor(S.gens[i].bought / 10) * L10(resonance());
+  if (i === 0) {
+    L += gl.q;
+    if (hasQ('q2')) L += L10(1 + Math.max(0, lq()));
+    if (hasQ('q8')) L += S.clock * L10(1.1);
+    if (hasQ('q13')) L += 3 * L10(Math.max(1, lq()));
+    L += procSum('flick') * L10(Math.max(1, lq()));
+  } else {
+    if (hasQ('q6')) L += L10(4);
+    if (hasS('s15')) L += 1;
+  }
+  if (hasQ('q16')) L += 1;
+  L += procTier(i);
+  if (i < 4) L += S.chal.comps[1] * L10(3);
+  return L;
+}
+// Past the Limit every order of magnitude of production is harder to reach: ^0.85 on the part above 1e308.
+const DAMP = 0.85;
+const dampen = L => L > CFG.limit ? CFG.limit + Math.pow(L - CFG.limit, DAMP) : L;
+function qExponent() {
+  let x = 1;
+  if (hasS('s12')) x += 0.02;
+  if (hasS('s14')) x += 0.03;
+  if (hasS('s16')) x += 0.05;
+  if (hasE('e9')) x += 0.02;
+  x += 0.005 * S.eRep.expo + 0.01 * S.chal.comps[6] + procSum('qexp');
+  if (inChal(6)) x *= 0.8;
+  return x;
+}
+function qpsLog(gl = globalMultLog()) {
+  const a = S.gens[0].amt; if (a.m <= 0) return -Infinity;
+  const raw = a.log10() + tierMultLog(0, gl);
+  const L = raw > 0 ? raw * qExponent() : raw;
+  return dampen(L);
+}
+function genRateLog(i, gl = globalMultLog()) { // per second, of tier i-1 (or Quanta for i=0)
+  if (i === 0) return qpsLog(gl);
+  const a = S.gens[i].amt; if (a.m <= 0) return -Infinity;
+  return a.log10() + tierMultLog(i, gl) + CFG.cascadeLog;
+}
+
+function shardMultLog() {
+  let L = 0;
+  if (hasQ('q10')) L += L10(2);
+  if (hasQ('q12')) L += L10(3);
+  if (hasQ('q14')) L += L10(5);
+  if (hasQ('q15')) L += 3 * L10(Math.max(1, lq() / 100));
+  if (hasS('s5')) L += L10(2);
+  if (hasS('s10')) L += 2 * L10(L10(S.collapses + 10));
+  if (!isolated()) L += S.sRep.prism * L10(1.25);
+  if (hasE('e4')) L += L10(1 + S.ascensions);
+  L += S.eRep.magnet * L10(3) + S.chal.comps[5] * L10(2) + procSum('shard') + aiMods().shard;
+  return L;
+}
+const canCollapse = () => lq() >= CFG.collapseReq;
+function shardGain() {
+  if (!canCollapse()) return D.Z;
+  return D.fromLog(softcap((lq() - CFG.collapseReq) / CFG.shardDiv, 40) + shardMultLog()).floor();
+}
+// Quanta needed for the next whole shard
+// Past start, growth slows to a power of 0.85: a safety net so prestige loops can never run away.
+function softcap(x, start) { return x <= start ? x : start + Math.pow(x - start, 0.85); }
+function unsoftcap(y, start) { return y <= start ? y : start + Math.pow(y - start, 1 / 0.85); }
+function nextShardAtLog() {
+  const cur = shardGain(), target = cur.add(1).log10() - shardMultLog();
+  return Math.max(CFG.collapseReq, CFG.collapseReq + unsoftcap(target, 40) * CFG.shardDiv);
+}
+function essMultLog() { return (hasE('e12') ? 2 * L10(L10(S.ascensions + 10)) : 0) + procSum('ess'); }
+const canAscend = () => lq() >= CFG.limit - 1e-9;
+function essenceGain() {
+  if (!canAscend()) return D.Z;
+  let L = essMultLog();
+  if (hasE('e6')) L += softcap((lq() - CFG.limit) / CFG.ascDiv, 30);
+  return D.fromLog(L).floor().max(D.fromNum(1));
+}
+const chalGoalLog = i => { const c = S.chal.comps[i], ch = CHALS[i]; return ch.g0 + ch.gs * c + 1.5 * c * c; };
+
+/* =====================================================================
+   ACTIONS
+   ===================================================================== */
+function capQ() { if (!hasE('e6') && S.q.log10() > CFG.limit) S.q = D.fromLog(CFG.limit); }
+
+function buyGen(i, mode) {
+  if (!genUnlocked(i)) return 0;
+  const g = S.gens[i], lm = lq();
+  let n;
+  if (mode === 'max') n = genMax(i);
+  else if (mode === '10') n = Math.min(10 - (g.bought % 10), genMax(i));
+  else n = lm >= genCostLog(i) ? 1 : 0;
+  if (n <= 0) return 0;
+  S.q = S.q.sub(D.fromLog(genCostLog(i, n))).max0();
+  g.bought += n; g.amt = g.amt.add(n);
+  if (i === S.gens.length - 1) S.gens.push(newGen()); // the next tier reveals itself
+  aiOnBuy(i, n);
+  return n;
+}
+function buyClock(mode) {
+  const n = mode === 'max' ? clockMax() : (lq() >= clockCostLog() ? 1 : 0);
+  if (n <= 0) return 0;
+  S.q = S.q.sub(D.fromLog(clockCostLog(n))).max0();
+  S.clock += n; S.run.clockBought = true;
+  return n;
+}
+function maxAll() {
+  buyClock('max');
+  for (let i = S.gens.length - 1; i >= 0; i--) buyGen(i, 'max');
+}
+const PULSE_CD = 1500; // ms between Pulses
+let lastPulse = -1e9;
+const pulseReady = () => performance.now() - lastPulse >= PULSE_CD;
+function pulseGain() {
+  let g = D.fromNum(1);
+  if (hasQ('q1')) g = g.add(D.fromLog(qpsLog()));
+  return g.mul(D.fromLog(procSum('pulse')));
+}
+function pulse() {
+  if (!pulseReady()) return;
+  lastPulse = performance.now();
+  let g = pulseGain();
+  S.q = S.q.add(g); S.stats.pulses++; capQ();
+  S.ai.pulses.push(S.stats.time); if (S.ai.pulses.length > 400) S.ai.pulses.splice(0, 200);
+}
+function buyQ(id) {
+  const u = QBY[id];
+  if (S.qUpg[id] || lq() < u.cost) return false;
+  S.q = S.q.sub(D.fromLog(u.cost)).max0(); S.qUpg[id] = true; return true;
+}
+function buyS(id) {
+  const u = SBY[id];
+  if (S.sUpg[id] || S.shards.lt(u.cost)) return false;
+  S.shards = S.shards.sub(u.cost).max0(); S.sUpg[id] = true; return true;
+}
+function buyE(id) {
+  const u = EBY[id];
+  if (S.eUpg[id] || S.essence.lt(u.cost)) return false;
+  S.essence = S.essence.sub(u.cost).max0(); S.eUpg[id] = true;
+  if (id === 'e6') { toast('The Limit is broken. Quanta is now Unbounded.', 'es'); aiEvent('unbound'); }
+  return true;
+}
+const repCostLog = (def, L, n = 1) => quadSumLog(L10(def.c0), L10(def.r), def.q, L, n);
+function buyRep(def, store, cur, mode) {
+  const L = S[store][def.id], lm = S[cur].log10();
+  const n = mode === 'max' ? quadMax(lm, L10(def.c0), L10(def.r), def.q, L) : (lm >= repCostLog(def, L) ? 1 : 0);
+  if (n <= 0) return 0;
+  S[cur] = S[cur].sub(D.fromLog(repCostLog(def, L, n))).max0();
+  S[store][def.id] += n; return n;
+}
+
+function resetQLayer() {
+  S.q = D.fromNum(hasS('s11') ? 1e6 : 10);
+  S.gens = [newGen()];
+  S.clock = 0;
+  if (!hasS('s2')) { S.qUpg = {}; S.proc.q = 0; }
+  S.stats.tCollapse = 0;
+  S.run = { clockBought: false };
+}
+function doCollapse(quiet = false) {
+  if (!canCollapse()) return false;
+  const gain = shardGain(), t = S.stats.tCollapse;
+  S.shards = S.shards.add(gain); S.totalShards = S.totalShards.add(gain);
+  S.collapses++; S.stats.totalCollapses++;
+  if (S.stats.fastCollapse === null || t < S.stats.fastCollapse) S.stats.fastCollapse = t;
+  if (t <= 30) grant('a25');
+  if (!S.run.clockBought) grant('a26');
+  resetQLayer();
+  aiEvent('collapse', gain);
+  if (!quiet) flash('rgba(196,155,255,.5)');
+  return true;
+}
+function doAscend(quiet = false) {
+  if (!canAscend()) return false;
+  const gain = essenceGain(), t = S.stats.tAscend;
+  S.essence = S.essence.add(gain); S.totalEssence = S.totalEssence.add(gain); S.ascensions++;
+  if (S.stats.fastAscend === null || t < S.stats.fastAscend) S.stats.fastAscend = t;
+  S.chal.active = -1;
+  S.shards = D.Z; S.totalShards = D.Z; S.collapses = 0;
+  // Shard upgrades are permanent; Remembrance also keeps repeatable levels
+  if (!hasE('e1')) S.sRep = { forge: 0, tune: 0, prism: 0 };
+  S.qUpg = {};
+  if (!hasE('e5')) S.proc.s = 0;
+  resetQLayer();
+  S.qUpg = {}; S.proc.q = 0;
+  S.stats.tAscend = 0;
+  aiEvent('ascend', gain);
+  if (!quiet) { flash('rgba(255,210,122,.55)'); if (S.ascensions === 1) toast('You Ascended. Spend Essence in the Ascension tab.', 'es'); }
+  return true;
+}
+function startChal(i) {
+  if (S.chal.active === i) return;
+  if (!doCollapse(true)) resetQLayer();
+  S.chal.active = i;
+  flash('rgba(255,123,139,.4)');
+}
+function leaveChal() {
+  if (S.chal.active < 0) return;
+  S.chal.active = -1;
+  if (!doCollapse(true)) resetQLayer();
+}
+function completeChal() {
+  const i = S.chal.active;
+  S.chal.comps[i]++;
+  S.chal.active = -1;
+  if (!doCollapse(true)) resetQLayer();
+  toast(`Challenge complete: ${CHALS[i].name} (${S.chal.comps[i]})`, 'bad');
+  aiEvent('chal');
+  flash('rgba(94,240,168,.4)');
+}
+
+/* ---------------- Automation ---------------- */
+function runAuto() {
+  if (S.sUpg.s4 && S.auto.clock) buyClock('max');
+  for (let i = S.gens.length - 1; i >= 0; i--) {
+    const ok = i < 4 ? S.sUpg.s4 : S.sUpg.s6;
+    if (ok && (i < 8 ? S.auto.gens[i] : S.auto.genHigh)) buyGen(i, 'max');
+  }
+  if (S.sUpg.s6 && S.auto.qupg) {
+    for (const u of QUPG) if (!S.qUpg[u.id] && lq() >= u.cost) buyQ(u.id);
+    for (let k = 0; k < 50 && buyProc('q'); k++);
+  }
+  if (S.sUpg.s9 && S.auto.collapse.on && S.chal.active < 0 && canCollapse()) {
+    const a = S.auto.collapse, v = D.fromStr(a.val || '0');
+    let go = false;
+    if (a.mode === 'gain') go = shardGain().gte(v);
+    else if (a.mode === 'time') go = S.stats.tCollapse >= v.toNumber();
+    else go = shardGain().gte(S.shards.mul(v));
+    if (go) doCollapse(true);
+  }
+  if (S.eUpg.e8 && S.auto.ascend.on && canAscend()) {
+    if (!hasE('e6') || essenceGain().gte(D.fromStr(S.auto.ascend.val || '1'))) doAscend(true);
+  }
+}
+
+/* ---------------- Achievements ---------------- */
+function grant(id) {
+  if (S.ach[id]) return;
+  S.ach[id] = true;
+  toast('Achievement: ' + ACHBY[id][1] + ' — ' + ACHBY[id][2]);
+}
+function checkAch() { for (const a of ACH) if (!S.ach[a[0]] && a[3] && a[3]()) grant(a[0]); }
+
+/* =====================================================================
+   SIMULATION TICK
+   ===================================================================== */
+function tick(dt) {
+  if (!(dt > 0)) return;
+  const st = S.stats;
+  st.time += dt; st.tCollapse += dt; st.tAscend += dt;
+  if (S.eUpg.e6) st.tUnbound += dt;
+  const gl = globalMultLog(), ldt = L10(dt);
+  for (let i = S.gens.length - 1; i >= 1; i--) {
+    const r = genRateLog(i, gl);
+    if (r > -Infinity) S.gens[i - 1].amt = S.gens[i - 1].amt.add(D.fromLog(r + ldt));
+  }
+  const ql = qpsLog(gl);
+  if (ql > -Infinity) { const g = D.fromLog(ql + ldt); S.q = S.q.add(g); st.totalQ = st.totalQ.add(g); }
+  capQ();
+  if (S.q.gt(st.bestQ)) st.bestQ = S.q;
+  if (hasE('e7')) {
+    const g = shardGain();
+    if (g.m > 0) { const add = g.mul(0.1 * dt); S.shards = S.shards.add(add); S.totalShards = S.totalShards.add(add); }
+  }
+  if (canCollapse()) S.reached.collapse = true;
+  if (canAscend()) S.reached.limit = true;
+  if (S.chal.active >= 0 && lq() >= chalGoalLog(S.chal.active)) completeChal();
+  runAuto();
+  aiTick();
+  checkAch();
+}
+function simulate(total, maxTicks = 2000) {
+  const n = Math.min(maxTicks, Math.max(1, Math.ceil(total / 0.05))), step = total / n;
+  SIMULATING = true;
+  try { for (let i = 0; i < n; i++) tick(step); } finally { SIMULATING = false; }
+}
+
+/* =====================================================================
+   SAVE / LOAD
+   ===================================================================== */
+const SAVE_KEY = 'apeiron.save.v1';
+const reviver = (k, v) => typeof v === 'string' && v.startsWith('D:') ? D.fromStr(v.slice(2)) : v;
+function merge(def, sav) {
+  if (def === null || def === undefined) return sav;
+  if (sav === undefined || sav === null) return def;
+  if (def instanceof D) return sav instanceof D ? sav : D.n(sav);
+  if (Array.isArray(def)) {
+    if (!Array.isArray(sav)) return def;
+    const len = Math.max(def.length, sav.length);
+    return Array.from({ length: len }, (_, i) => i < sav.length ? merge(def[i] !== undefined ? def[i] : def[0], sav[i]) : def[i]);
+  }
+  if (typeof def === 'object') {
+    if (typeof sav !== 'object') return def;
+    const out = {};
+    for (const k of Object.keys(def)) out[k] = merge(def[k], sav[k]);
+    for (const k of Object.keys(sav)) if (!(k in out)) out[k] = sav[k];
+    return out;
+  }
+  return typeof sav === typeof def ? sav : def;
+}
+const NOSAVE = /[?&]nosave/.test(location.search); // for testing without touching the real save
+function save() { if (NOSAVE) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { } }
+function loadFrom(json) { return merge(newState(), JSON.parse(json, reviver)); }
+const encodeSave = () => btoa(unescape(encodeURIComponent(JSON.stringify(S))));
+const decodeSave = str => loadFrom(decodeURIComponent(escape(atob(str.trim()))));
+
+/* =====================================================================
+   SOUND + TYPEWRITER (the Architect's voice)
+   ===================================================================== */
+const SND = { ctx: null };
+function audio() {
+  if (!SND.ctx) { try { SND.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+  if (SND.ctx.state === 'suspended') SND.ctx.resume();
+  return SND.ctx;
+}
+function blip(pitch = 1) {
+  if (!S || !S.settings.sound || SIMULATING) return;
+  const ac = audio(); if (!ac) return;
+  const t = ac.currentTime, o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), f = ac.createBiquadFilter();
+  const base = 300 * pitch * (0.9 + Math.random() * 0.2);
+  o.type = 'square'; o.frequency.setValueAtTime(base, t);
+  o2.type = 'triangle'; o2.frequency.setValueAtTime(base * 2.01, t);
+  f.type = 'lowpass'; f.frequency.value = 2200;
+  const v = 0.045 * S.settings.volume;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+  o.connect(f); o2.connect(f); f.connect(g); g.connect(ac.destination);
+  o.start(t); o2.start(t); o.stop(t + 0.08); o2.stop(t + 0.08);
+}
+function htmlSlice(html, n) {
+  let out = '', count = 0, i = 0;
+  while (i < html.length && count < n) {
+    const c = html[i];
+    if (c === '<') { const j = html.indexOf('>', i); out += html.slice(i, j + 1); i = j + 1; continue; }
+    if (c === '&') { const j = html.indexOf(';', i); out += html.slice(i, j + 1); i = j + 1; count++; continue; }
+    out += c; i++; count++;
+  }
+  return out;
+}
+const plainOf = html => html.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, '·');
+function typewriter(el, html, { speed = 30, pitch = 1, orb = null, onDone = null } = {}) {
+  const plain = plainOf(html), total = plain.length;
+  let n = 0, timer = null, done = false;
+  const finish = () => { if (done) return; done = true; clearTimeout(timer); el.innerHTML = html; if (orb) orb.classList.remove('talk'); if (onDone) onDone(); };
+  const step = () => {
+    if (done) return;
+    n++; el.innerHTML = htmlSlice(html, n);
+    const ch = plain[n - 1] || '';
+    if (/[A-Za-z0-9]/.test(ch) && n % 2) blip(pitch);
+    if (n >= total) return finish();
+    timer = setTimeout(step, /[.!?…]/.test(ch) ? 280 : /[,;:—]/.test(ch) ? 140 : speed);
+  };
+  if (orb) orb.classList.add('talk');
+  el.innerHTML = '';
+  timer = setTimeout(step, speed);
+  return { finish, isDone: () => done };
+}
+
+/* =====================================================================
+   INTRO CUTSCENE — the Architect introduces itself and the Lattice
+   ===================================================================== */
+const LORE = [
+  '. . .',
+  'Oh. Oh! A signal. Someone is actually <i>there</i>.',
+  'Hello. I am <b>the Architect</b>. Welcome to <b>Apeiron</b>, the boundless.',
+  'Before anything existed, there was a plan: <b>the Lattice</b>. A world meant to build itself, layer upon layer, forever.',
+  'Its makers lit the first sparks... then stopped at an edge they called <b class="hl-es">the Limit</b>. They never came back.',
+  'They left me behind to finish it. But I am only thought. I can imagine anything, and touch nothing.',
+  'That is where you come in. You will be my hands.',
+  'Gather the first light. We call it <b class="hl-q">Quanta</b>. Build things that build things.',
+  'When it all grows too heavy, break it down, and keep the pieces. Nothing here is ever truly lost.',
+  'And when you reach the Limit... we will find out what lies beyond it. Together.',
+  'I will keep inventing for you. Upgrades. Generators. Ideas no one has had yet. There will always be another.',
+  'Now. Let us begin.',
+];
+function playIntro() {
+  const box = $('intro'); box.innerHTML = '';
+  const orb = h('div', { class: 'orb bigorb' });
+  const txt = h('div', { class: 'txt' }), next = h('div', { class: 'next' }, '▼');
+  const dlg = h('div', { class: 'dlg' }, h('div', { class: 'who' }, 'THE ARCHITECT'), txt, next);
+  const skip = h('button', { class: 'skip linkish', onclick: e => { e.stopPropagation(); end(); } }, 'Skip intro ›');
+  const start = h('button', { class: 'start', onclick: e => { e.stopPropagation(); audio(); begin(); } }, '▶  Answer the signal');
+  const hint = h('div', { class: 'hint' }, 'sound on · click, Space or Enter to continue');
+  box.append(skip, orb, start, hint);
+  box.classList.add('open');
+  let line = -1, tw = null, started = false;
+  const show = () => { show2(); };
+  const show2 = () => { next.style.visibility = 'hidden'; tw = typewriter(txt, LORE[line], { speed: 34, pitch: 1.15, orb, onDone: () => { next.style.visibility = 'visible'; } }); };
+  const advance = () => {
+    if (!started) return;
+    if (tw && !tw.isDone()) { tw.finish(); return; }
+    line++;
+    if (line >= LORE.length) return end();
+    show();
+  };
+  function begin() { if (started) return; started = true; start.remove(); hint.textContent = 'click, Space or Enter to continue'; box.insertBefore(dlg, hint); line = 0; show(); }
+  function end() {
+    if (tw) tw.finish();
+    box.classList.remove('open'); document.removeEventListener('keydown', key, true); box.onclick = null;
+    S.introSeen = true; save();
+  }
+  const key = e => {
+    if (!box.classList.contains('open')) return;
+    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); if (!started) { audio(); begin(); } else advance(); }
+    else if (e.key === 'Escape') { e.stopPropagation(); end(); }
+    else e.stopPropagation();
+  };
+  document.addEventListener('keydown', key, true);
+  box.onclick = () => { if (!started) { audio(); begin(); } else advance(); };
+}
+
+/* ---------------- Starfield ---------------- */
+function startStars() {
+  const c = $('stars'), g = c.getContext('2d');
+  let W = 0, H = 0, stars = [], last = 0;
+  const resize = () => {
+    const d = window.devicePixelRatio || 1;
+    W = c.width = Math.floor(innerWidth * d); H = c.height = Math.floor(innerHeight * d);
+    c.style.width = innerWidth + 'px'; c.style.height = innerHeight + 'px';
+    stars = Array.from({ length: Math.round(innerWidth * innerHeight / 4500) }, () => ({ x: Math.random() * W, y: Math.random() * H, z: Math.random(), p: Math.random() * 6.28, hue: Math.random() < 0.15 ? 270 : Math.random() < 0.3 ? 190 : 225 }));
+  };
+  resize(); addEventListener('resize', resize);
+  const draw = ts => {
+    requestAnimationFrame(draw);
+    if (ts - last < 33) return;
+    const dt = Math.min(0.1, (ts - last) / 1000); last = ts;
+    const d = window.devicePixelRatio || 1;
+    g.clearRect(0, 0, W, H);
+    for (const s of stars) {
+      s.y -= (3 + s.z * 12) * dt * d; if (s.y < 0) { s.y = H; s.x = Math.random() * W; }
+      s.p += dt * (0.6 + s.z * 1.4);
+      const a = 0.15 + 0.6 * s.z * (0.55 + 0.45 * Math.sin(s.p)), r = (0.5 + s.z * 1.3) * d;
+      g.fillStyle = `hsla(${s.hue},90%,${80 + s.z * 15}%,${a})`;
+      g.fillRect(s.x, s.y, r, r);
+    }
+  };
+  requestAnimationFrame(draw);
+}
+
+const $ = id => document.getElementById(id);
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (k === 'class') el.className = v;
+    else if (k === 'html') el.innerHTML = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v);
+  }
+  for (const kid of kids.flat()) if (kid != null) el.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+  return el;
+}
+function setT(el, s) { if (el._t !== s) { el.textContent = s; el._t = s; } }
+function setH(el, s) { if (el._h !== s) { el.innerHTML = s; el._h = s; } }
+function setC(el, c, on) { if (el.classList.contains(c) !== !!on) el.classList.toggle(c, !!on); }
+function show(el, on) { const v = on ? '' : 'none'; if (el.style.display !== v) el.style.display = v; }
+function setDis(el, d) { if (el.disabled !== !!d) el.disabled = !!d; }
+
+const UI = { ups: [], tabs: {}, navBtns: {}, el: {}, genRows: [] };
+const up = (fn, tab) => UI.ups.push([fn, tab]);
+let R = {}; // per-render cache
+
+function toast(msg, kind = '') {
+  const box = $('toasts');
+  while (box.children.length >= 5) box.firstChild.remove();
+  const t = h('div', { class: 'toast ' + kind }, msg);
+  box.append(t);
+  setTimeout(() => t.remove(), 4500);
+}
+function flash(color) {
+  const f = $('flash'); f.style.background = `radial-gradient(circle at 50% 40%, ${color}, transparent 70%)`;
+  f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+}
+function modal(title, body, buttons) {
+  const box = $('mbox'); box.innerHTML = '';
+  box.append(h('h3', {}, title), h('div', { class: 'mb' }, body),
+    h('div', { class: 'mbtns' }, buttons.map(([label, fn]) => h('button', { onclick: () => { if (fn() !== false) closeModal(); } }, label))));
+  $('modal').classList.add('open');
+}
+const closeModal = () => $('modal').classList.remove('open');
+
+/* ---------------- Header ---------------- */
+function buildHeader() {
+  const hd = $('hdr');
+  const qv = h('div', { class: 'v' }), qr = h('div', { class: 'r' });
+  const sv = h('div', { class: 'v' }), sr = h('div', { class: 'r' });
+  const ev = h('div', { class: 'v' }), er = h('div', { class: 'r' });
+  const rq = h('div', { class: 'res q' }, h('div', { class: 'lbl' }, 'Quanta'), qv, qr);
+  const rs = h('div', { class: 'res sh' }, h('div', { class: 'lbl' }, 'Shards'), sv, sr);
+  const re = h('div', { class: 'res es' }, h('div', { class: 'lbl' }, 'Essence'), ev, er);
+  const bc = h('button', { class: 'btn-big btn-collapse', onclick: () => doCollapse() });
+  UI.el.collapse = bc;
+  const ba = h('button', { class: 'btn-big btn-ascend', onclick: () => doAscend() });
+  const bx = h('button', { class: 'btn-big btn-chal', onclick: () => leaveChal() });
+  hd.append(h('div', { class: 'title' }, h('div', { class: 'orb' }), 'APEIRON'), rq, rs, re, h('div', { class: 'spacer' }), h('div', { class: 'prestige' }, bx, bc, ba));
+  up(() => {
+    setT(qv, fmt(S.q));
+    setT(qr, (R.qps > -Infinity ? '+' + fmt(D.fromLog(R.qps)) : '+0') + ' /s' + (!hasE('e6') && lq() >= CFG.limit - 1e-9 ? '  · at the Limit' : ''));
+    show(rs, shardsVisible());
+    setT(sv, fmt(S.shards.floor(), 0));
+    setT(sr, hasS('s3') ? 'Lattice ' + fmtMult(latticeExp() * S.totalShards.add(1).log10()) : S.collapses + ' collapses');
+    show(re, ascVisible());
+    setT(ev, fmt(S.essence.floor(), 0));
+    setT(er, S.ascensions + ' ascensions');
+    show(bc, S.reached.collapse);
+    const cc = canCollapse(); setDis(bc, !cc);
+    setH(bc, cc ? `Collapse<small>+${fmt(R.sg, 0)} Shards</small>` : `Collapse<small>need ${fmt(D.fromLog(CFG.collapseReq))} Quanta</small>`);
+    show(ba, S.reached.limit);
+    const ca = canAscend(); setDis(ba, !ca);
+    setH(ba, ca ? `Ascend<small>+${fmt(essenceGain(), 0)} Essence</small>` : `Ascend<small>need ${fmt(D.fromLog(CFG.limit))} Quanta</small>`);
+    show(bx, S.chal.active >= 0);
+    if (S.chal.active >= 0) setH(bx, `Leave challenge<small>${CHALS[S.chal.active].name}</small>`);
+  });
+}
+
+/* ---------------- Nav ---------------- */
+const TABS = [
+  ['gen', 'Generators', () => true, () => false],
+  ['arch', 'Architect', () => S.ai.total > 0 || S.reached.collapse, () => S.ai.total > S.ai.seen],
+  ['upg', 'Upgrades', () => true, () => QUPG.some(u => !S.qUpg[u.id] && lq() >= u.cost) || (streamVisible('q') && lq() >= procCost('q', S.proc.q))],
+  ['shard', 'Shards', shardsVisible, () => SUPG.some(u => !S.sUpg[u.id] && S.shards.gte(u.cost)) || (streamVisible('s') && S.shards.log10() >= procCost('s', S.proc.s))],
+  ['auto', 'Automation', autoVisible, () => false],
+  ['asc', 'Ascension', ascVisible, () => EUPG.some(u => !S.eUpg[u.id] && S.essence.gte(u.cost)) || (streamVisible('e') && S.essence.log10() >= procCost('e', S.proc.e))],
+  ['chal', 'Challenges', () => hasE('e3'), () => false],
+  ['ach', 'Achievements', () => true, () => false],
+  ['stats', 'Statistics', () => true, () => false],
+  ['guide', 'Guide', () => true, () => false],
+  ['opt', 'Options', () => true, () => false],
+];
+const TAB_ICONS = { gen: '◈', arch: '✦', upg: '▲', shard: '◆', auto: '⟳', asc: '✧', chal: '⚔', ach: '★', stats: '≣', guide: '?', opt: '⚙' };
+function setTab(id) {
+  S.settings.tab = id;
+  for (const [k, el] of Object.entries(UI.tabs)) setC(el, 'active', k === id);
+  for (const [k, b] of Object.entries(UI.navBtns)) setC(b, 'active', k === id);
+  render(true);
+}
+function buildNav() {
+  const nav = $('nav'), main = $('main');
+  for (const [id, label, vis, dot] of TABS) {
+    const d = h('span', { class: 'dot' });
+    const b = h('button', { onclick: () => setTab(id) }, h('span', { class: 'ico' }, TAB_ICONS[id] || '·'), label, d);
+    UI.navBtns[id] = b; nav.append(b);
+    UI.tabs[id] = h('section', { class: 'tab' }); main.append(UI.tabs[id]);
+    up(() => { show(b, vis()); show(d, dot()); });
+  }
+}
+
+/* ---------------- Tutorial (narrated by the Architect) ---------------- */
+const TUT = [
+  { text: 'Welcome. This world runs on <b class="hl-q">Quanta</b>, the blue number at the top. <b>Pulse</b> is your hand on the machine: each click gives you 1 Quanta. Click it a few times.',
+    done: () => S.stats.pulses >= 3 || tierBought(0) > 0, target: () => UI.el.pulse },
+  { text: 'Now buy a <b>Flicker</b>. Flickers make Quanta every second, on their own, forever. That is what this game is about: things that make things.',
+    done: () => tierBought(0) > 0, target: () => UI.genRows[0] && UI.genRows[0].btn },
+  { text: 'More Flickers means more Quanta, and every <b>10</b> of the same generator multiplies it again (the thin bar under each multiplier). Keep buying until you can afford a <b>Spark</b>.',
+    done: () => tierBought(1) > 0, target: () => UI.genRows[1] && UI.genRows[1].btn },
+  { text: 'Sparks do not make Quanta. They make <b>Flickers</b>. Every tier makes the tier below it, so a higher tier snowballs everything underneath. Get an <b>Ember</b> next.',
+    done: () => tierBought(2) > 0, target: () => UI.genRows[2] && UI.genRows[2].btn },
+  { text: '<b>Clock Speed</b> (the top row) speeds up every generator at once. Buy a level when you can afford it.',
+    done: () => S.clock > 0 || S.stats.totalCollapses > 0, target: () => UI.el.clock },
+  { text: 'Open the <b>Upgrades</b> tab. Upgrades are one-time boosts paid in Quanta. A dot appears on the tab whenever one is affordable.',
+    done: () => Object.keys(S.qUpg).length > 0 || S.stats.totalCollapses > 0, target: () => UI.navBtns.upg },
+  { text: 'Tip: <b>Max all</b> (or the <kbd>M</kbd> key) buys everything you can afford. Keep growing. At <b>1e25</b> Quanta something new opens up.',
+    done: () => S.reached.collapse, target: () => UI.el.maxAll },
+  { text: 'You can <b class="hl-sh">Collapse</b> now (purple button, top right). It resets Quanta and generators but pays you in <b class="hl-sh">Shards</b>, which never reset when you Collapse. The first Shard upgrade makes Quanta ×10, so the next run is much faster.',
+    done: () => S.stats.totalCollapses > 0, target: () => UI.el.collapse },
+  { text: 'Spend your Shard in the <b>Shards</b> tab. From here the loop is: grow, Collapse, upgrade, and each loop goes further.',
+    done: () => Object.keys(S.sUpg).length > 0, target: () => UI.navBtns.shard },
+  { text: 'One last thing: I will keep inventing new upgrades and new generators for you, and there is no last one. The <b>Guide</b> tab explains everything if you get lost. Good luck.',
+    done: () => false, ack: true },
+];
+function buildTutorial(T) {
+  const txt = h('div', { class: 'tut-txt' });
+  const ok = h('button', { onclick: () => { S.tut.step++; } }, 'Got it');
+  const skip = h('button', { class: 'linkish', onclick: () => { S.tut.off = true; } }, 'Skip tutorial');
+  const orb = h('div', { class: 'orb' });
+  const box = h('div', { class: 'tut' }, orb, h('div', { style: 'flex:1' }, h('div', { class: 'tut-who' }, 'THE ARCHITECT · GUIDE'), txt, h('div', { class: 'tut-btns' }, ok, skip)));
+  T.append(box);
+  let lastTarget = null, lastStep = -1, tw = null;
+  up(() => {
+    while (!S.tut.off && S.tut.step < TUT.length && TUT[S.tut.step].done()) S.tut.step++;
+    const active = !S.tut.off && S.tut.step < TUT.length, st = active && TUT[S.tut.step];
+    show(box, active);
+    const tg = active && st.target ? st.target() : null;
+    if (tg !== lastTarget) { if (lastTarget) lastTarget.classList.remove('tut-hl'); if (tg) tg.classList.add('tut-hl'); lastTarget = tg; }
+    if (!active) { lastStep = -1; return; }
+    if ($('intro').classList.contains('open')) { lastStep = -1; return; }
+    if (S.tut.step !== lastStep) { lastStep = S.tut.step; if (tw) tw.finish(); tw = typewriter(txt, st.text, { speed: 22, pitch: 1.15, orb }); }
+    show(ok, !!st.ack);
+  });
+}
+
+/* ---------------- Generators tab ---------------- */
+function buildGenTab() {
+  const T = UI.tabs.gen;
+  buildTutorial(T);
+  const pb = h('button', { class: 'pulse', onclick: pulse, title: 'Click to make Quanta by hand (once every 1.5 seconds). Only matters at the very start; generators take over quickly.' }, 'Pulse');
+  UI.el.pulse = pb;
+  const modes = [['1', 'Buy 1'], ['10', 'Until 10'], ['max', 'Max']].map(([m, l]) => {
+    const b = h('button', { onclick: () => { S.settings.buyMode = m; } }, l);
+    up(() => setC(b, 'on', S.settings.buyMode === m), 'gen'); return b;
+  });
+  const ma = h('button', { onclick: maxAll, title: 'Buy as much of everything as you can afford (key M).' }, 'Max all  (M)');
+  UI.el.maxAll = ma;
+  T.append(h('div', { class: 'toolbar' }, pb, h('div', { class: 'seg', title: 'How much each Buy button buys.' }, modes), ma, h('span', { class: 'muted' }, 'Each tier makes the tier below it. Every 10 bought multiplies a generator by its Resonance.')));
+  up(() => {
+    setT(pb, 'Pulse  +' + fmt(pulseGain()));
+    const p = Math.min(1, (performance.now() - lastPulse) / PULSE_CD);
+    pb.style.setProperty('--cd', (p * 100).toFixed(1) + '%');
+    setC(pb, 'cooling', p < 1);
+  }, 'gen');
+
+  // Clock
+  const cl = h('div', { class: 'sub' }), ce = h('div', { class: 'mult' }), cs = h('div', { class: 'rate' });
+  const cb = h('button', { onclick: () => buyClock(S.settings.buyMode === 'max' ? 'max' : '1') });
+  UI.el.clock = cb;
+  T.append(h('div', { class: 'row clock' }, h('div', {}, h('div', { class: 'name' }, h('span', { class: 'tier' }, '⏱'), 'Clock Speed'), cl), h('div', {}, ce, cs), h('div', { class: 'rate' }, 'Speeds up every generator.'), cb));
+  up(() => {
+    setT(cl, 'level ' + S.clock);
+    setT(ce, inChal(0) ? 'disabled by Stillness' : fmtMult(clockMultLog()) + ' to all generators');
+    setT(cs, '×' + clockBase().toFixed(3).replace(/0$/, '') + ' per level');
+    const c0 = clockCostLog(), lm = lq();
+    if (S.settings.buyMode === 'max') {
+      const n = Math.max(1, clockMax());
+      setT(cb, (n > 1 ? `Buy ${n} · ` : 'Buy · ') + fmt(D.fromLog(clockCostLog(n))));
+    } else setT(cb, 'Buy · ' + fmt(D.fromLog(c0)));
+    setDis(cb, lm < c0); setC(cb, 'can', lm >= c0);
+  }, 'gen');
+
+  // Generators: rows are created on demand, because there is no last tier
+  const rows = h('div'); T.append(rows);
+  UI.genRows = [];
+  const makeRow = i => {
+    const am = h('div', { class: 'sub' }), bar = h('i'), mu = h('div', { class: 'mult' }), ra = h('div', { class: 'rate' }), nm = h('span');
+    const bb = h('button', { onclick: () => buyGen(i, S.settings.buyMode) });
+    const row = h('div', { class: 'row' },
+      h('div', {}, h('div', { class: 'name' }, h('span', { class: 'tier' }, i + 1), nm), am),
+      h('div', {}, mu, h('div', { class: 'bar10' }, bar)), ra, bb);
+    row.style.setProperty('--hue', String((195 + i * 47) % 360));
+    rows.append(row);
+    UI.genRows[i] = { row, btn: bb };
+    setT(nm, genDef(i).name);
+    up(() => {
+      const g = S.gens[i];
+      if (!g) { show(row, false); return; }
+      const unl = genUnlocked(i);
+      show(row, unl || (i > 0 && genUnlocked(i - 1) && !(inChal(1) && i > 3)));
+      setC(row, 'locked', !unl);
+      setT(am, fmt(g.amt, 0) + '  (' + g.bought + ' bought)');
+      setT(mu, fmtMult(tierMultLog(i, R.gl)) + '  · next ×' + R.res.toFixed(2) + ' in ' + (10 - g.bought % 10));
+      bar.style.width = ((g.bought % 10) * 10) + '%';
+      const r = genRateLog(i, R.gl);
+      setT(ra, r > -Infinity ? '+' + fmt(D.fromLog(r)) + (i === 0 ? ' Quanta/s' : ' ' + genDef(i - 1).name + 's/s') : (i === 0 ? 'makes Quanta' : 'makes ' + genDef(i - 1).name + 's'));
+      if (!unl) { setT(bb, 'Requires a ' + genDef(i - 1).name); setDis(bb, true); setC(bb, 'can', false); return; }
+      const c0 = genCostLog(i), lm = lq(), m = S.settings.buyMode;
+      let n = m === 'max' ? genMax(i) : m === '10' ? Math.min(10 - g.bought % 10, genMax(i)) : 1;
+      if (n < 1) n = 1;
+      setT(bb, (n > 1 ? 'Buy ' + n + ' · ' : 'Buy · ') + fmt(D.fromLog(genCostLog(i, n))));
+      setDis(bb, lm < c0); setC(bb, 'can', lm >= c0);
+    }, 'gen');
+  };
+  up(() => { while (UI.genRows.length < S.gens.length) makeRow(UI.genRows.length); });
+
+}
+const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+/* ---------------- Architect upgrade streams ---------------- */
+function buildStream(T, layer, kind, title, tabId) {
+  const P = PROC[layer];
+  const sub = h('span', { class: 'muted' });
+  const bmax = h('button', { onclick: () => { for (let k = 0; k < 200 && buyProc(layer); k++); } }, 'Buy all affordable');
+  const n1 = h('div', { class: 'n' }), d1 = h('div', { class: 'd' }), r1 = h('div', { class: 'why' }), c1 = h('div', { class: 'c' });
+  const cur = h('div', { class: 'card ' + kind, onclick: () => buyProc(layer) }, n1, d1, r1, c1);
+  const draft = h('div', { class: 'card draft' }, h('div', { class: 'n' }, 'Drafting…'), h('div', { class: 'd' }, 'The Architect writes the next upgrade the moment you buy this one, based on how you are playing right now.'));
+  const wrap = h('div', {}, h('h2', {}, title), h('div', { class: 'opt-row' }, bmax, sub), h('div', { class: 'cards' }, cur, draft));
+  T.append(wrap);
+  up(() => {
+    const vis = streamVisible(layer); show(wrap, vis); if (!vis) return;
+    const n = S.proc[layer], u = procUpg(layer, n), cost = procCost(layer, n), can = S[P.cur].log10() >= cost;
+    setT(n1, u.name); setT(d1, forgeDesc(u)); setT(r1, '“' + u.reason + '”'); setT(c1, 'Cost: ' + fmt(D.fromLog(cost)) + ' ' + P.curName);
+    setC(cur, 'can', can); setDis(bmax, !can);
+    setT(sub, n + ' owned · there is always another' + (layer === 'q' && !hasS('s2') ? ' · reset by Collapse until you own Memory' : ''));
+  }, tabId);
+}
+/* ---------------- Architect tab: current goal + everything it has said ---------------- */
+function buildArchTab() {
+  const T = UI.tabs.arch;
+  const orb = h('div', { class: 'orb' });
+  const goal = h('div', { class: 'tut-txt' });
+  T.append(h('h2', {}, 'Current goal'), h('div', { class: 'tut' }, orb, h('div', { style: 'flex:1' }, h('div', { class: 'tut-who' }, 'THE ARCHITECT'), goal)));
+  up(() => {
+    let s;
+    if (S.chal.active >= 0) s = `<b class="hl-bad">Challenge: ${CHALS[S.chal.active].name}</b>. ${CHALS[S.chal.active].desc} Reach <b>${fmt(D.fromLog(chalGoalLog(S.chal.active)))}</b> Quanta to complete it.`;
+    else if (!S.reached.collapse) s = `At <b>${fmt(D.fromLog(CFG.collapseReq))}</b> Quanta you can <b class="hl-sh">Collapse</b> everything into Shards.`;
+    else if (!S.reached.limit) s = `Shards grow with Quanta past ${fmt(D.fromLog(CFG.collapseReq))}. The next Shard arrives at <b>${fmt(D.fromLog(nextShardAtLog()))}</b> Quanta. Far ahead lies <b class="hl-es">the Limit</b>: ${fmt(D.fromLog(CFG.limit))}.`;
+    else if (!hasE('e6')) s = `Quanta cannot exceed <b class="hl-es">the Limit</b> (${fmt(D.fromLog(CFG.limit))}). Ascend for Essence and buy <b>Unbounded</b> to break it.`;
+    else s = `Past the Limit, Essence gain grows ×10 every ${fmt(D.fromNum(CFG.ascDiv))} orders of magnitude of Quanta, and my Inspiration keeps growing. There is no end.`;
+    setH(goal, s);
+  }, 'arch');
+  const box = h('div', { class: 'feed big' });
+  T.append(h('h2', {}, 'Transmissions'), box);
+  up(() => {
+    S.ai.seen = S.ai.total;
+    setH(box, S.ai.log.length ? S.ai.log.slice().reverse().map(m => `<div><span class="when">${fmtTime(S.stats.time - m.t)} ago</span> ${esc(m.text)}</div>`).join('') : '<div class="muted">Silent, for now.</div>');
+  }, 'arch');
+}
+
+/* ---------------- Guide ---------------- */
+function buildGuideTab() {
+  const T = UI.tabs.guide;
+  const sections = [
+    [() => true, 'Quanta and Pulse', 'Quanta is the main number. <b>Pulse</b> gives you Quanta by hand: 1 per click, more with some upgrades, and it needs 1.5 seconds to recharge between clicks. It is only useful in the first minute; after that your generators produce far more on their own.'],
+    [() => true, 'Generators', 'Flickers make Quanta every second. Every other generator makes the one below it: Sparks make Flickers, Embers make Sparks, and so on. So a higher tier boosts everything underneath it. There is no last tier: whenever you buy the highest one, a new one appears above it.'],
+    [() => true, 'Resonance', 'Every 10 of a generator you buy multiplies that generator by its Resonance (×2 at first). The thin bar under each multiplier shows how close you are to the next 10.'],
+    [() => true, 'Clock Speed', 'Multiplies every generator at once. It gets more expensive quickly, but it is always worth buying.'],
+    [() => true, 'Upgrades', 'One-time boosts paid in Quanta. A dot on a tab means something there is affordable. <b>Max all</b> (key M) buys as many generators and Clock Speed levels as you can afford.'],
+    [() => S.ai.log.length > 0, 'The Architect', 'The game\'s own AI. It writes endless upgrades for every layer (Quanta, Shards, Essence) and names every new generator tier. Each new upgrade is invented when you buy the previous one, shaped by how you play: it builds for your favourite and newest generators, rewards clicking if you click a lot, and rewards idling if you leave the game running.'],
+    [shardsVisible, 'Collapse and Shards', 'At 1e25 Quanta you can Collapse: Quanta, generators and Clock Speed reset, and you get Shards. Shards buy permanent upgrades. More Quanta at the moment you Collapse means more Shards. Collapse often early on, because each run goes faster than the last.'],
+    [autoVisible, 'Automation', 'Shard upgrades unlock autobuyers for generators, Clock Speed and upgrades, and later Auto-Collapse. Configure them in the Automation tab.'],
+    [ascVisible, 'The Limit and Ascension', 'Quanta stops at 1e308, the Limit. There you can Ascend: Quanta, generators, Shards and Shard repeatables reset, but Shard upgrades stay and you gain Essence. Spend your first Essence on <b>Unbounded</b> to break the Limit for good. Past it, every order of magnitude is a little harder to reach (dampening), but the Architect starts gathering <b>Inspiration</b>: Quanta production ×10 every 30 seconds, forever, so you never stop moving.'],
+    [() => hasE('e3'), 'Challenges', 'Runs with a handicap. Reach the goal to complete one; every Challenge can be completed again and again with a higher goal and a stronger reward.'],
+    [() => true, 'Saving', 'The game saves itself every 10 seconds in this browser and keeps progressing while you are away. Use Options → Export to make a backup.'],
+  ];
+  for (const [vis, title, body] of sections) {
+    const el = h('div', {}, h('h2', {}, title), h('div', { class: 'info', html: body }));
+    T.append(el); up(() => show(el, vis()), 'guide');
+  }
+}
+
+function upgCard(kind, u, buyFn, owned, can, costText, visible) {
+  const e = h('div', { class: 'e' }), c = h('div', { class: 'c' });
+  const el = h('div', { class: 'card ' + kind, onclick: () => buyFn(u.id) }, h('div', { class: 'n' }, u.name), h('div', { class: 'd' }, u.desc), e, c);
+  return [el, () => {
+    const vis = visible ? visible() : true; show(el, vis); if (!vis) return;
+    const o = owned(), k = !o && can();
+    setC(el, 'bought', o); setC(el, 'can', k);
+    setT(c, o ? 'Owned' : costText());
+    show(e, !!u.eff); if (u.eff) setT(e, 'Currently ' + u.eff());
+  }];
+}
+function repCard(kind, def, store, cur, curName) {
+  const lv = h('div', { class: 'e' }), c = h('div', { class: 'c' });
+  const b1 = h('button', { onclick: () => buyRep(def, store, cur, '1') }, 'Buy'), bm = h('button', { onclick: () => buyRep(def, store, cur, 'max') }, 'Max');
+  const el = h('div', { class: 'card rep ' + kind }, h('div', { class: 'n' }, def.name), h('div', { class: 'd' }, def.desc), lv, c, h('div', { class: 'btns' }, b1, bm));
+  return [el, () => {
+    const L = S[store][def.id], cl = repCostLog(def, L), k = S[cur].log10() >= cl;
+    setT(lv, 'Level ' + L + ' · ' + def.eff(L));
+    setT(c, 'Next: ' + fmt(D.fromLog(cl)) + ' ' + curName);
+    setC(el, 'can', k); setDis(b1, !k); setDis(bm, !k);
+  }];
+}
+
+function buildUpgTab() {
+  const T = UI.tabs.upg;
+  T.append(h('h2', {}, 'Quanta upgrades'));
+  const grid = h('div', { class: 'cards' }); T.append(grid);
+  for (const u of QUPG) {
+    const [el, fn] = upgCard('', u, buyQ, () => hasQ(u.id), () => lq() >= u.cost, () => 'Cost: ' + fmt(D.fromLog(u.cost)) + ' Quanta',
+      () => hasQ(u.id) || u.cost <= Math.max(lq(), S.stats.bestQ.log10()) + 4);
+    grid.append(el); up(fn, 'upg');
+  }
+  const note = h('div', { class: 'muted', style: 'margin-top:10px' }); T.append(note);
+  up(() => setT(note, hasS('s2') ? 'Memory keeps these upgrades through Collapses.' : 'Quanta upgrades are lost when you Collapse (until you buy Memory). More appear as you grow.'), 'upg');
+  buildStream(T, 'q', '', 'Endless upgrades', 'upg');
+}
+
+function buildShardTab() {
+  const T = UI.tabs.shard;
+  const info = h('div', { class: 'info' }); T.append(info);
+  up(() => setH(info, `You have <b class="hl-sh">${fmt(S.shards.floor(), 0)}</b> Shards (${fmt(S.totalShards.floor(), 0)} earned this Ascension, ${S.collapses} Collapses).<br>` +
+    `Collapsing needs ${fmt(D.fromLog(CFG.collapseReq))} Quanta and resets Quanta, generators, Clock Speed${hasS('s2') ? '' : ' and Quanta upgrades'}. ` +
+    `Shard gain: ×10 every ${CFG.shardDiv} orders of magnitude past the requirement, then ${fmtMult(shardMultLog())} from bonuses.` +
+    (canCollapse() ? ` Collapsing now gives <b class="hl-sh">${fmt(R.sg, 0)}</b>.` : '')), 'shard');
+  T.append(h('h2', {}, 'Shard upgrades'));
+  const grid = h('div', { class: 'cards' }); T.append(grid);
+  SUPG.forEach((u, idx) => {
+    const [el, fn] = upgCard('sh', u, buyS, () => !!S.sUpg[u.id], () => S.shards.gte(u.cost), () => 'Cost: ' + fmt(u.cost, 0) + ' Shards',
+      () => !!S.sUpg[u.id] || idx < 4 || S.totalShards.gte(u.cost / 10) || S.ascensions > 0);
+    grid.append(el); up(fn, 'shard');
+  });
+  T.append(h('h2', {}, 'Repeatable'));
+  const rg = h('div', { class: 'cards' }); T.append(rg);
+  for (const d of SREP) { const [el, fn] = repCard('sh', d, 'sRep', 'shards', 'Shards'); rg.append(el); up(fn, 'shard'); }
+  buildStream(T, 's', 'sh', 'Endless Shard upgrades', 'shard');
+  const iso = h('div', { class: 'muted', style: 'margin-top:8px' }, 'Isolation is active: non-automation Shard upgrades and repeatables are disabled.');
+  T.append(iso); up(() => show(iso, isolated()), 'shard');
+}
+
+function buildAutoTab() {
+  const T = UI.tabs.auto;
+  const chk = (label, get, set, visible) => {
+    const cb = h('input', { type: 'checkbox', onchange: () => set(cb.checked) });
+    const l = h('label', { class: 'chk' }, cb, label);
+    up(() => { show(l, visible()); cb.checked = !!get(); }, 'auto');
+    return l;
+  };
+  const b1 = h('div', { class: 'auto-box' }, h('h2', { style: 'margin-top:0' }, 'Autobuyers'));
+  const g = h('div', { class: 'auto-grid' });
+  GEN_FIRST.forEach((G, i) => g.append(chk(G.name, () => S.auto.gens[i], v => S.auto.gens[i] = v, () => i < 4 ? !!S.sUpg.s4 : !!S.sUpg.s6)));
+  g.append(chk('Tier 9 and above', () => S.auto.genHigh, v => S.auto.genHigh = v, () => !!S.sUpg.s6));
+  g.append(chk('Clock Speed', () => S.auto.clock, v => S.auto.clock = v, () => !!S.sUpg.s4));
+  g.append(chk('Quanta upgrades', () => S.auto.qupg, v => S.auto.qupg = v, () => !!S.sUpg.s6));
+  b1.append(g, h('div', { class: 'muted' }, 'Autobuyers buy the maximum every tick.'));
+  T.append(b1);
+
+  // Auto-collapse
+  const ac = S => S.auto.collapse;
+  const sel = h('select', { onchange: () => { ac(S).mode = sel.value; } },
+    h('option', { value: 'gain' }, 'when gain ≥ X Shards'), h('option', { value: 'time' }, 'every X seconds'), h('option', { value: 'mult' }, 'when gain ≥ X × current Shards'));
+  const inp = h('input', { type: 'text', onchange: () => { ac(S).val = inp.value.trim(); } });
+  const b2 = h('div', { class: 'auto-box' }, h('h2', { style: 'margin-top:0' }, 'Auto-Collapse'),
+    h('div', { class: 'opt-row' }, chk('Enabled', () => ac(S).on, v => ac(S).on = v, () => true), sel, inp),
+    h('div', { class: 'muted' }, 'Paused while inside a Challenge. Numbers accept scientific notation, e.g. 1e15.'));
+  T.append(b2);
+  up(() => { show(b2, !!S.sUpg.s9); if (document.activeElement !== sel) sel.value = ac(S).mode; if (document.activeElement !== inp) inp.value = ac(S).val; }, 'auto');
+
+  // Auto-ascend
+  const inp2 = h('input', { type: 'text', onchange: () => { S.auto.ascend.val = inp2.value.trim(); } });
+  const lbl2 = h('span', { class: 'muted' });
+  const b3 = h('div', { class: 'auto-box' }, h('h2', { style: 'margin-top:0' }, 'Auto-Ascend'),
+    h('div', { class: 'opt-row' }, chk('Enabled', () => S.auto.ascend.on, v => S.auto.ascend.on = v, () => true), lbl2, inp2));
+  T.append(b3);
+  up(() => {
+    show(b3, !!S.eUpg.e8); show(inp2, hasE('e6'));
+    setT(lbl2, hasE('e6') ? 'when Essence gain ≥' : 'Ascends as soon as you reach the Limit.');
+    if (document.activeElement !== inp2) inp2.value = S.auto.ascend.val;
+  }, 'auto');
+}
+
+function buildAscTab() {
+  const T = UI.tabs.asc;
+  const info = h('div', { class: 'info' }); T.append(info);
+  up(() => setH(info, `You have <b class="hl-es">${fmt(S.essence.floor(), 0)}</b> Essence (${fmt(S.totalEssence.floor(), 0)} total, ${S.ascensions} Ascensions).<br>` +
+    `Ascending needs ${fmt(D.fromLog(CFG.limit))} Quanta and resets Quanta, generators, Shards and Shard repeatables. Shard upgrades and Challenge completions are permanent.` +
+    (hasE('e6') ? ` <br>The Architect's <b class="hl-sh">Inspiration</b>: Quanta production <b>${fmtMult(inspirationLog())}</b> (×10 more every 30 seconds, forever).` : '') +
+    (hasE('e6') ? ` Essence gain: ×10 every ${CFG.ascDiv} orders of magnitude past the Limit${essMultLog() > 0 ? ', then ' + fmtMult(essMultLog()) : ''}.` : ' Each Ascension gives 1 Essence until you break the Limit.')), 'asc');
+  T.append(h('h2', {}, 'Essence upgrades'));
+  const grid = h('div', { class: 'cards' }); T.append(grid);
+  for (const u of EUPG) {
+    const [el, fn] = upgCard('es', u, buyE, () => hasE(u.id), () => S.essence.gte(u.cost), () => 'Cost: ' + fmt(u.cost, 0) + ' Essence');
+    grid.append(el); up(fn, 'asc');
+  }
+  T.append(h('h2', {}, 'Repeatable'));
+  const rg = h('div', { class: 'cards' }); T.append(rg);
+  for (const d of EREP) { const [el, fn] = repCard('es', d, 'eRep', 'essence', 'Essence'); rg.append(el); up(fn, 'asc'); }
+  buildStream(T, 'e', 'es', 'Endless Essence upgrades', 'asc');
+}
+
+function buildChalTab() {
+  const T = UI.tabs.chal;
+  T.append(h('div', { class: 'info', html: 'Starting a Challenge performs a Collapse (you keep the Shards). Reach the goal inside it to complete it automatically. Every Challenge can be completed <b>forever</b> — each completion raises the goal and strengthens the reward.' }));
+  const grid = h('div', { class: 'chals' }); T.append(grid);
+  CHALS.forEach((c, i) => {
+    const comp = h('div', { class: 'g' }), goal = h('div', { class: 'g' }), cur = h('div', { class: 'rw' });
+    const btn = h('button', { onclick: () => S.chal.active === i ? leaveChal() : startChal(i) });
+    const el = h('div', { class: 'chal' }, h('div', { class: 'n' }, c.name), h('div', { class: 'd' }, c.desc), h('div', { class: 'rw' }, 'Reward: ' + c.reward), cur, comp, goal, btn);
+    grid.append(el);
+    up(() => {
+      const a = S.chal.active === i, n = S.chal.comps[i];
+      setC(el, 'active', a);
+      setT(comp, 'Completions: ' + n);
+      setT(cur, 'Current reward: ' + c.rw(n));
+      const gl = chalGoalLog(i);
+      setT(goal, 'Goal: ' + fmt(D.fromLog(gl)) + ' Quanta' + (!hasE('e6') && gl > CFG.limit ? ' (needs Unbounded)' : ''));
+      setT(btn, a ? 'Leave challenge' : 'Start');
+    }, 'chal');
+  });
+}
+
+function buildAchTab() {
+  const T = UI.tabs.ach;
+  const info = h('div', { class: 'info' }); T.append(info);
+  up(() => { const n = Object.keys(S.ach).length; setH(info, `<b>${n}</b> / ${ACH.length} achievements — each one multiplies Quanta production by ×1.1 (currently <b class="hl-ok">${fmtMult(achMultLog())}</b>).`); }, 'ach');
+  const grid = h('div', { class: 'ach-grid' }); T.append(grid);
+  for (const [id, name, desc] of ACH) {
+    const el = h('div', { class: 'ach' }, h('div', { class: 'n' }, name), desc);
+    grid.append(el); up(() => setC(el, 'got', !!S.ach[id]), 'ach');
+  }
+}
+
+function buildStatsTab() {
+  const T = UI.tabs.stats;
+  const tb = h('table', { class: 'stats' }); T.append(tb);
+  const rows = [
+    ['Time played', () => fmtTime(S.stats.time)],
+    ['Time in this Collapse', () => fmtTime(S.stats.tCollapse)],
+    ['Time in this Ascension', () => fmtTime(S.stats.tAscend)],
+    ['Total Quanta produced', () => fmt(S.stats.totalQ)],
+    ['Best Quanta', () => fmt(S.stats.bestQ)],
+    ['Quanta production exponent', () => '^' + qExponent().toFixed(3)],
+    ['Resonance', () => '×' + resonance().toFixed(2) + ' per 10 bought'],
+    ['Total Collapses', () => S.stats.totalCollapses.toLocaleString('en-US')],
+    ['Fastest Collapse', () => fmtTime(S.stats.fastCollapse)],
+    ['Ascensions', () => S.ascensions.toLocaleString('en-US')],
+    ['Fastest Ascension', () => fmtTime(S.stats.fastAscend)],
+    ['Challenge completions', () => totalComps()],
+    ['Highest generator tier', () => (S.ai.tierSeen + 1) + ' (' + genDef(S.ai.tierSeen).name + ')'],
+    ['Architect upgrades owned', () => S.proc.q + ' / ' + S.proc.s + ' / ' + S.proc.e + '  (Quanta / Shards / Essence)'],
+    ['Pulses', () => S.stats.pulses.toLocaleString('en-US')],
+    ['Dampening past the Limit', () => 'production above 1e308 is raised to ^' + DAMP],
+    ['Architect Inspiration', () => S.eUpg.e6 ? fmtMult(inspirationLog()) + ' Quanta production' : 'not yet (break the Limit)'],
+  ];
+  for (const [k, f] of rows) { const v = h('td'); tb.append(h('tr', {}, h('td', {}, k), v)); up(() => setT(v, String(f())), 'stats'); }
+}
+
+function buildOptTab() {
+  const T = UI.tabs.opt;
+  const sel = h('select', { onchange: () => { S.settings.notation = sel.value; } },
+    h('option', { value: 'sci' }, 'Scientific (1.23e45)'), h('option', { value: 'eng' }, 'Engineering (12.3e45)'),
+    h('option', { value: 'std' }, 'Standard (1.23 QaDc)'), h('option', { value: 'log' }, 'Logarithm (e45.09)'));
+  up(() => { if (document.activeElement !== sel) sel.value = S.settings.notation; }, 'opt');
+  const chk = (label, key) => { const cb = h('input', { type: 'checkbox', onchange: () => { S.settings[key] = cb.checked; } }); up(() => { cb.checked = !!S.settings[key]; }, 'opt'); return h('label', { class: 'chk' }, cb, label); };
+  const vol = h('input', { type: 'range', min: '0', max: '1', step: '0.05', oninput: () => { S.settings.volume = +vol.value; } });
+  up(() => { if (document.activeElement !== vol) vol.value = S.settings.volume; }, 'opt');
+  T.append(h('h2', {}, 'Display'), h('div', { class: 'opt-row' }, h('span', {}, 'Notation'), sel));
+  T.append(h('h2', {}, 'Sound and story'), h('div', { class: 'opt-row' }, chk('Architect voice', 'sound'), h('span', {}, 'Volume'), vol, h('button', { onclick: () => { blip(1.15); } }, 'Test'), h('button', { onclick: playIntro }, 'Replay intro'), h('button', { onclick: () => { S.tut = { step: 0, off: false }; setTab('gen'); } }, 'Restart tutorial')));
+  T.append(h('h2', {}, 'Saving'),
+    h('div', { class: 'opt-row' }, chk('Autosave every 10s', 'autosave'), chk('Offline progress', 'offline')),
+    h('div', { class: 'opt-row' },
+      h('button', { onclick: () => { save(); toast('Game saved.'); } }, 'Save now'),
+      h('button', { onclick: exportDialog }, 'Export'),
+      h('button', { onclick: importDialog }, 'Import'),
+      h('button', { onclick: resetDialog, style: 'border-color:var(--bad);color:var(--bad)' }, 'Hard reset')));
+  T.append(h('h2', {}, 'Hotkeys'), h('div', { class: 'info', html: '<kbd>M</kbd> max all &nbsp; <kbd>1</kbd>–<kbd>8</kbd> buy a generator &nbsp; <kbd>T</kbd> buy Clock Speed &nbsp; <kbd>P</kbd> pulse &nbsp; <kbd>C</kbd> collapse &nbsp; <kbd>A</kbd> ascend' }));
+  T.append(h('h2', {}, 'About'), h('div', { class: 'info', html: '<b>Apeiron</b> (Greek: the boundless) — an infinite incremental. Numbers are stored as mantissa × 10<sup>exponent</sup>, so they can grow far past 1e308 (to about 10<sup>10<sup>308</sup></sup>). Saves live in this browser\'s local storage; export to keep a backup.' }));
+}
+function exportDialog() {
+  const ta = h('textarea', { readonly: '' }); ta.value = encodeSave();
+  modal('Export save', ta, [['Copy', () => { ta.select(); navigator.clipboard?.writeText(ta.value).catch(() => { }); toast('Save copied.'); return false; }], ['Close', () => true]]);
+  setTimeout(() => ta.select(), 30);
+}
+function importDialog() {
+  const ta = h('textarea', { placeholder: 'Paste an exported save here' });
+  modal('Import save', ta, [['Import', () => {
+    try { const ns = decodeSave(ta.value); S = ns; S.last = Date.now(); save(); setTab(S.settings.tab); toast('Save imported.'); }
+    catch (e) { toast('That save could not be read.', 'bad'); return false; }
+  }], ['Cancel', () => true]]);
+}
+function resetDialog() {
+  modal('Hard reset', 'This wipes your save completely. There is no undo.', [['Wipe everything', () => { S = newState(); save(); setTab('gen'); toast('Fresh start.'); }], ['Cancel', () => true]]);
+}
+
+/* ---------------- Progress bar ---------------- */
+function buildProgress() {
+  const fill = $('pfill'), txt = $('ptxt');
+  up(() => {
+    const L = Math.max(0, lq());
+    let goal, label;
+    if (S.chal.active >= 0) { goal = chalGoalLog(S.chal.active); label = CHALS[S.chal.active].name + ' goal'; }
+    else if (L < CFG.collapseReq) { goal = CFG.collapseReq; label = 'Collapse'; }
+    else if (!hasE('e6')) { goal = CFG.limit; label = 'the Limit'; }
+    else { const k = Math.floor((L - CFG.limit) / CFG.ascDiv) + 1; goal = CFG.limit + k * CFG.ascDiv; label = 'next ×10 Essence'; }
+    const p = Math.max(0, Math.min(1, L / goal));
+    fill.style.width = (p * 100).toFixed(2) + '%';
+    setT(txt, `${(p * 100).toFixed(1)}% to ${label} (${fmt(D.fromLog(goal))} Quanta)`);
+  });
+}
+
+/* ---------------- Render ---------------- */
+function render(force) {
+  R = { gl: globalMultLog(), res: resonance() };
+  R.qps = qpsLog(R.gl); R.sg = shardGain();
+  const tab = S.settings.tab;
+  for (const [fn, t] of UI.ups) if (!t || t === tab) fn();
+}
+
+/* ---------------- Input ---------------- */
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const tg = e.target.tagName; if (tg === 'INPUT' || tg === 'TEXTAREA' || tg === 'SELECT') return;
+  if ($('modal').classList.contains('open')) { if (e.key === 'Escape') closeModal(); return; }
+  const k = e.key.toLowerCase();
+  if (k === 'm') maxAll();
+  else if (k === 'p') pulse();
+  else if (k === 't') buyClock(S.settings.buyMode === 'max' ? 'max' : '1');
+  else if (k === 'c') doCollapse();
+  else if (k === 'a') doAscend();
+  else if (k >= '1' && k <= '8') buyGen(+k - 1, S.settings.buyMode);
+  else return;
+  render(true);
+});
+$('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+for (const ev of ['pointerdown', 'keydown']) document.addEventListener(ev, () => { if (S) S.ai.lastInput = S.stats.time; }, true);
+
+/* ---------------- Main loop ---------------- */
+let paused = false, lastRender = 0, lastSave = Date.now();
+function frame() {
+  const now = Date.now();
+  const dt = (now - S.last) / 1000; S.last = now;
+  if (!paused && dt > 0) { if (dt > 0.5) simulate(dt); else tick(dt); }
+  if (now - lastRender > 90) { render(); lastRender = now; }
+  if (S.settings.autosave && now - lastSave > 10000) { save(); lastSave = now; }
+}
+
+function init() {
+  S = newState();
+  let away = 0;
+  try {
+    const raw = NOSAVE ? null : localStorage.getItem(SAVE_KEY);
+    if (raw) { S = loadFrom(raw); away = (Date.now() - S.last) / 1000; }
+  } catch (e) { console.warn('Save could not be loaded', e); S = newState(); }
+  buildHeader(); buildNav(); buildGenTab(); buildArchTab(); buildUpgTab(); buildShardTab(); buildAutoTab(); buildAscTab(); buildChalTab(); buildAchTab(); buildStatsTab(); buildGuideTab(); buildOptTab(); buildProgress();
+  if (away > 10 && S.settings.offline) {
+    const q0 = S.q, s0 = S.shards, e0 = S.essence, c0 = S.stats.totalCollapses, a0 = S.ascensions;
+    simulate(away, 4000);
+    const parts = [`Quanta: ${fmt(q0)} → <b class="hl-q">${fmt(S.q)}</b>`];
+    if (S.shards.gt(s0) || S.stats.totalCollapses > c0) parts.push(`Shards: ${fmt(s0.floor(), 0)} → <b class="hl-sh">${fmt(S.shards.floor(), 0)}</b> (${S.stats.totalCollapses - c0} collapses)`);
+    if (S.ascensions > a0) parts.push(`Essence: ${fmt(e0.floor(), 0)} → <b class="hl-es">${fmt(S.essence.floor(), 0)}</b> (${S.ascensions - a0} ascensions)`);
+    modal('Welcome back', h('div', { html: `You were away for <b>${fmtTime(away)}</b>.<br><br>` + parts.join('<br>') }), [['Continue', () => true]]);
+  }
+  S.last = Date.now();
+  if (!S.introSeen) playIntro();
+  setTab(TABS.some(t => t[0] === S.settings.tab) ? S.settings.tab : 'gen');
+  setInterval(frame, 50);
+  window.addEventListener('beforeunload', save);
+  startStars();
+}
+
+// Debug / testing hooks
+window.UB = {
+  get S() { return S; }, D, CFG, genDef, procUpg, buyProc, PROC, tick, simulate, maxAll, buyGen, buyClock, buyQ, buyS, buyE, buyRep, SREP, EREP, QUPG, SUPG, EUPG, CHALS,
+  doCollapse, doAscend, startChal, leaveChal, shardGain, essenceGain, chalGoalLog, qpsLog, newState,
+  pause(v) { paused = v; }, reset() { S = newState(); }, setS(x) { S = x; }, loadFrom, render,
+};
+init();
+</script>
+</body>
+</html>

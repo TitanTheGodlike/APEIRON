@@ -93,6 +93,7 @@ main{max-width:1140px;margin:0 auto;padding:18px 20px}
 @keyframes luckyUp{from{opacity:1;transform:translate(-50%,-40%) scale(.9)}20%{transform:translate(-50%,-90%) scale(1.15)}to{opacity:0;transform:translate(-50%,-230%) scale(1)}}
 @keyframes readyPop{40%{box-shadow:0 0 22px rgba(var(--qr),.55)}}
 .pulse{width:215px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;font-variant-numeric:tabular-nums}
+.pulse span{pointer-events:none}.pulse .pv{margin-left:.6em}
 .row{--hue:195;--c:hsla(var(--hue),90%,72%,.6);display:grid;grid-template-columns:minmax(160px,1.25fr) minmax(160px,1.3fr) minmax(130px,1fr) minmax(200px,1.1fr);gap:12px;align-items:center;padding:9px 14px;margin-bottom:6px;transition:border-color .2s}
 .row:hover{border-color:hsla(var(--hue),90%,70%,.35)}
 .row.locked{opacity:.36;filter:saturate(.4)}
@@ -331,7 +332,7 @@ body[data-theme=mono] .tier,body[data-theme=mono] .bar10 i{filter:saturate(0)}
   nav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:0 4px}nav::-webkit-scrollbar{display:none}
   nav button{padding:10px 9px 9px;font-size:10.5px;white-space:nowrap;flex:none}
   main{padding:10px 8px}
-  .toolbar .muted{display:none}.pulse{width:auto;flex:1 1 140px}.abil{width:auto;flex:1 1 140px}
+  .toolbar .muted{display:none}.pulse{width:auto;min-width:0;flex:1 1 140px}.abil{width:auto;flex:1 1 140px}
   .row{grid-template-columns:1fr 1fr;gap:6px 10px;padding:8px 10px}
   .cards{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
   .treeview{height:68vh}.treehint{display:none}
@@ -2059,7 +2060,12 @@ function h(tag, props, ...kids) {
   for (const kid of kids.flat()) if (kid != null) el.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
   return el;
 }
-function setT(el, s) { if (el._t !== s) { el.textContent = s; el._t = s; } }
+function setT(el, s) {
+  if (el._t === s) return;
+  const c = el.firstChild; // keep the same text node when there is one, so a click in progress is not lost
+  if (c && c === el.lastChild && c.nodeType === 3) c.nodeValue = s; else el.textContent = s;
+  el._t = s;
+}
 function setH(el, s) { if (el._h !== s) { el.innerHTML = s; el._h = s; } }
 function setC(el, c, on) { if (el.classList.contains(c) !== !!on) el.classList.toggle(c, !!on); }
 function show(el, on) { const v = on ? '' : 'none'; if (el.style.display !== v) el.style.display = v; }
@@ -2233,7 +2239,8 @@ function abilityButtons() {
 function buildGenTab() {
   const T = UI.tabs.gen;
   buildTutorial(T);
-  const pb = h('button', { class: 'pulse', onclick: act(pulse, 'pulse') }, 'Pulse');
+  const pv = h('span', { class: 'pv' }, '');
+  const pb = h('button', { class: 'pulse', onclick: act(pulse, 'pulse') }, h('span', { class: 'pl' }, 'Pulse'), pv);
   UI.el.pulse = pb;
   const modes = [['1', 'Buy 1'], ['10', 'Buy 10'], ['max', 'Max']].map(([m, l]) => {
     const b = h('button', { onclick: () => { S.settings.buyMode = m; } }, l);
@@ -2245,7 +2252,7 @@ function buildGenTab() {
   const heavy = h('div', { class: 'heavy-note' }); T.append(heavy);
   up(() => { const hl = heavyLog(); show(heavy, hl > 0.01); if (hl > 0.01) setH(heavy, `The first world is heavy: every tier makes the one below it <b>÷${fmt(D.fromLog(hl))}</b>. Each Collapse halves the weight.`); }, 'gen');
   up(() => {
-    setT(pb, 'Pulse  +' + fmt(pulseGain()));
+    setT(pv, '+' + fmt(pulseGain()));
     if (pb.classList.contains('cooling') && pulseReady()) { pb.classList.remove('cooling'); pb.classList.remove('ready-flash'); void pb.offsetWidth; pb.classList.add('ready-flash'); }
   }, 'gen');
 

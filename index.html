@@ -78,8 +78,13 @@ main{max-width:1140px;margin:0 auto;padding:18px 20px}
 .seg button{border:none;border-radius:0;background:transparent;border-right:1px solid var(--edge2);font-size:12.5px}
 .seg button:last-child{border-right:none}
 .seg button.on{background:rgba(var(--qr),.16);color:#fff;box-shadow:inset 0 -2px 0 var(--q)}
-.pulse{border-color:var(--q);color:var(--q);font-weight:700;padding:7px 20px;letter-spacing:.12em;text-transform:uppercase;font-size:12.5px;--cd:100%;background:linear-gradient(90deg,rgba(var(--qr),.22) var(--cd),rgba(var(--qr),.04) var(--cd)),rgba(14,24,48,.85)!important;box-shadow:0 0 14px rgba(var(--qr),.2)}
-.pulse.cooling{color:rgba(var(--qr),.6)}
+.pulse{position:relative;isolation:isolate;border-color:var(--q);color:var(--q);font-weight:700;padding:7px 20px;letter-spacing:.12em;text-transform:uppercase;font-size:12.5px;background:rgba(14,24,48,.85)!important;box-shadow:0 0 14px rgba(var(--qr),.2);transition:color .25s,box-shadow .25s}
+.pulse::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(var(--qr),.10),rgba(var(--qr),.26));transform-origin:left center;transform:scaleX(1);will-change:transform}
+.pulse.cooling{color:rgba(var(--qr),.62);box-shadow:0 0 6px rgba(var(--qr),.12)}
+.pulse.cooling::before{animation:charge var(--cdms,1500ms) linear forwards}
+.pulse.ready-flash{animation:readyPop .35s ease-out}
+@keyframes charge{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes readyPop{40%{box-shadow:0 0 22px rgba(var(--qr),.55)}}
 .pulse{width:215px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;font-variant-numeric:tabular-nums}
 .row{--hue:195;--c:hsla(var(--hue),90%,72%,.6);display:grid;grid-template-columns:minmax(160px,1.25fr) minmax(160px,1.3fr) minmax(130px,1fr) minmax(200px,1.1fr);gap:12px;align-items:center;padding:9px 14px;margin-bottom:6px;transition:border-color .2s}
 .row:hover{border-color:hsla(var(--hue),90%,70%,.35)}
@@ -197,7 +202,7 @@ kbd{background:rgba(30,40,90,.6);border:1px solid var(--edge2);border-radius:3px
 .treeview{--tint:rgba(var(--shr),.05);position:relative;height:660px;border:1px solid var(--edge);border-radius:3px;overflow:hidden;background:radial-gradient(circle at 42% 50%,var(--tint),transparent 70%),rgba(5,7,18,.6);cursor:grab;touch-action:none;transition:background .8s}
 .treeview.dragging{cursor:grabbing}
 .treesvg{width:100%;height:100%;display:block}
-.te{stroke:rgba(150,170,230,.16);stroke-width:2}
+.te{stroke:rgba(150,170,230,.16);stroke-width:2;fill:none}
 .te.on{stroke:var(--ec);stroke-width:3;stroke-dasharray:7 5;animation:flow 1.4s linear infinite}
 .te.fogged{stroke:rgba(150,170,230,.05)}
 @keyframes flow{to{stroke-dashoffset:-12}}
@@ -1002,7 +1007,7 @@ function shardMultLog() {
   if (hasS('s10')) L += 2 * L10(L10(S.collapses + 10));
   if (!isolated()) L += S.sRep.prism * L10(1.25);
   if (hasE('e4')) L += L10(1 + S.ascensions);
-  L += S.eRep.magnet * L10(3) + S.chal.comps[5] * L10(2) + procSum('shard') + aiMods().shard + anomN('prism') * L10(2) + (hasR('heavy') ? L10(4) : 0);
+  L += S.eRep.magnet * L10(3) + S.chal.comps[5] * L10(2) + procSum('shard') + aiMods().shard + anomN('prism') * L10(1.25) + (hasR('heavy') ? L10(4) : 0);
   if (hasS('s23')) L += L10(5);
   L += minorSum('shard');
   if (hasS('s29')) L += L10(3);
@@ -1077,6 +1082,8 @@ function pulseGain() {
 function pulse() {
   if (!pulseReady()) return false;
   lastPulse = performance.now();
+  const pb = UI.el && UI.el.pulse;
+  if (pb) { pb.classList.remove('cooling', 'ready-flash'); void pb.offsetWidth; pb.style.setProperty('--cdms', pulseCd() + 'ms'); pb.classList.add('cooling'); }
   let g = pulseGain();
   S.q = S.q.add(g); S.stats.pulses++; capQ();
   S.ai.pulses.push(S.stats.time); if (S.ai.pulses.length > 400) S.ai.pulses.splice(0, 200);
@@ -1314,7 +1321,7 @@ const RELICS = [
 const ANOMALIES = [
   { id: 'echo', name: 'Echo of the Architect', base: 6, step: 7, q: 15, desc: 'Each one multiplies Quanta production by 2.', eff: n => fmtMult(n * L10(2)) + ' Quanta production' },
   { id: 'hourglass', name: 'Hourglass', base: 10, step: 6, q: 15, desc: 'Each one adds +0.002 to the Clock Speed base.', eff: n => '+' + (0.002 * n).toFixed(3) + ' Clock Speed base' },
-  { id: 'prism', name: 'Prism Engine', base: 28, step: 9, q: 20, desc: 'Each one multiplies Shard gain by 2.', eff: n => fmtMult(n * L10(2)) + ' Shard gain' },
+  { id: 'prism', name: 'Prism Engine', base: 30, step: 12, q: 12, desc: 'Each one multiplies Shard gain by 1.25.', eff: n => fmtMult(n * L10(1.25)) + ' Shard gain' },
 ];
 const SECRETS = [
   { id: 'x1', name: 'Patience', hint: 'Sometimes the best move is none.', desc: 'Leave the game open without touching it for 10 minutes.', reward: ['anom', 'hourglass'] },
@@ -1767,9 +1774,7 @@ function buildGenTab() {
   T.append(h('div', { class: 'toolbar' }, pb, h('div', { class: 'seg', title: 'How much each Buy button buys.' }, modes), ma, ...abilityButtons(), h('span', { class: 'muted' }, 'Each tier makes the tier below it. Every 10 bought multiplies a generator by its Resonance.')));
   up(() => {
     setT(pb, 'Pulse  +' + fmt(pulseGain()));
-    const p = Math.min(1, (performance.now() - lastPulse) / pulseCd());
-    pb.style.setProperty('--cd', (p * 100).toFixed(1) + '%');
-    setC(pb, 'cooling', p < 1);
+    if (pb.classList.contains('cooling') && pulseReady()) { pb.classList.remove('cooling'); pb.classList.remove('ready-flash'); void pb.offsetWidth; pb.classList.add('ready-flash'); }
   }, 'gen');
 
   // Clock
@@ -1858,16 +1863,16 @@ const WEB_DEF = {
   q: { root: 'q1', cur: 'q', curName: 'Quanta', costLog: id => QBY[id].cost, owned: id => !!S.qUpg[id],
     ring: { kind: 'qmult', v: L10(1.1), text: 'Quanta production ×1.1' },
     branches: [
-      { name: 'Light', sub: 'production', angle: -150, nodes: ['q2', 'q5', 'q7', 'q13', 'q16'], minor: { kind: 'qmult', v: L10(1.15), text: 'Quanta production ×1.15' } },
-      { name: 'Harmony', sub: 'resonance and clock', angle: -30, nodes: ['q3', 'q4', 'q8', 'q9', 'q11'], minor: { kind: 'res', v: 0.01, text: 'Resonance +0.01' } },
-      { name: 'Cascade', sub: 'tiers and Shards', angle: 90, nodes: ['q6', 'q10', 'q12', 'q14', 'q15'], minor: { kind: 'shard', v: L10(1.03), text: 'Shard gain ×1.03' } },
+      { name: 'Light', sub: 'production', angle: -150, start: 'q2', links: [['q2', 'q5'], ['q2', 'q13'], ['q5', 'q7'], ['q13', 'q16']], minor: { kind: 'qmult', v: L10(1.15), text: 'Quanta production ×1.15' } },
+      { name: 'Harmony', sub: 'resonance and clock', angle: -30, start: 'q3', links: [['q3', 'q9'], ['q3', 'q4'], ['q4', 'q11'], ['q4', 'q8']], minor: { kind: 'res', v: 0.01, text: 'Resonance +0.01' } },
+      { name: 'Cascade', sub: 'tiers and Shards', angle: 90, start: 'q6', links: [['q6', 'q10'], ['q10', 'q12'], ['q10', 'q15'], ['q12', 'q14']], minor: { kind: 'shard', v: L10(1.03), text: 'Shard gain ×1.03' } },
     ] },
   s: { root: 's1', cur: 'shards', curName: 'Shards', costLog: id => L10(SBY[id].cost), owned: id => !!S.sUpg[id],
     ring: { kind: 'qmult', v: L10(1.15), text: 'Quanta production ×1.15' },
     branches: [
-      { name: 'Radiance', sub: 'raw power', angle: -150, nodes: TREE[0].nodes, minor: { kind: 'qmult', v: L10(1.25), text: 'Quanta production ×1.25' } },
-      { name: 'Clockwork', sub: 'speed and automation', angle: -30, nodes: TREE[1].nodes, minor: { kind: 'clock', v: 0.001, text: 'Clock Speed base +0.001' } },
-      { name: 'Echoes', sub: 'Shards and abilities', angle: 90, nodes: TREE[2].nodes, minor: { kind: 'shard', v: L10(1.05), text: 'Shard gain ×1.05' } },
+      { name: 'Radiance', sub: 'raw power', angle: -150, start: 's3', links: [['s3', 's7'], ['s3', 's12'], ['s3', 's13'], ['s7', ['s19', 's20']], [['s19', 's20'], 's17'], ['s12', 's14'], ['s14', 's16'], ['s16', 's28'], ['s13', 's18']], minor: { kind: 'qmult', v: L10(1.25), text: 'Quanta production ×1.25' } },
+      { name: 'Clockwork', sub: 'speed and automation', angle: -30, start: 's2', links: [['s2', 's4'], ['s2', 's8'], ['s4', 's11'], ['s4', 's6'], ['s6', 's9'], ['s8', ['s21', 's22']], [['s21', 's22'], 's27'], ['s27', 's15']], minor: { kind: 'clock', v: 0.001, text: 'Clock Speed base +0.001' } },
+      { name: 'Echoes', sub: 'Shards and abilities', angle: 90, start: 's5', links: [['s5', 's25'], ['s5', ['s23', 's24']], ['s25', 's26'], ['s26', 's31'], ['s26', 's30'], [['s23', 's24'], 's10'], ['s10', 's29']], minor: { kind: 'shard', v: L10(1.05), text: 'Shard gain ×1.05' } },
     ] },
 };
 const ARCH_BRANCH = {
@@ -1879,24 +1884,36 @@ function relax(nodes, edges, pos, iters) {
   const ids = Object.keys(nodes), n = ids.length, idx = {};
   ids.forEach((id, i) => { idx[id] = i; });
   const Pp = ids.map(id => pos[id]), kind = ids.map(id => nodes[id].type), anc = ids.map(id => nodes[id].anchor || null);
+  const E = edges.filter(e => !e[2]).map(([a, b]) => [idx[a], idx[b]]).filter(([i, j]) => i !== undefined && j !== undefined);
   if (n > 400) iters = Math.min(iters, 30);
   for (let it = 0; it < iters; it++) {
     const F = ids.map(() => [0, 0]);
     for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
       const dx = Pp[i][0] - Pp[j][0], dy = Pp[i][1] - Pp[j][1], d2 = dx * dx + dy * dy + 1;
       if (d2 > 90000) continue;
-      const d = Math.sqrt(d2), f = 2600 / d2;
+      const d = Math.sqrt(d2), f = 3400 / d2;
       F[i][0] += dx / d * f; F[i][1] += dy / d * f; F[j][0] -= dx / d * f; F[j][1] -= dy / d * f;
     }
-    for (const [a, b] of edges) {
-      const i = idx[a], j = idx[b]; if (i === undefined || j === undefined) continue;
+    for (const [i, j] of E) {
       const dx = Pp[j][0] - Pp[i][0], dy = Pp[j][1] - Pp[i][1], d = Math.sqrt(dx * dx + dy * dy) + 0.01;
-      const rest = kind[i] === 'minor' && kind[j] === 'minor' ? 62 : 90, f = (d - rest) * 0.07;
+      const rest = kind[i] === 'minor' && kind[j] === 'minor' ? 70 : 100, f = (d - rest) * 0.05;
       F[i][0] += dx / d * f; F[i][1] += dy / d * f; F[j][0] -= dx / d * f; F[j][1] -= dy / d * f;
+    }
+    // keep nodes from sitting on lines they are not part of
+    if (it % 2 === 0) for (const [i, j] of E) {
+      const ax = Pp[i][0], ay = Pp[i][1], bx = Pp[j][0], by = Pp[j][1], vx = bx - ax, vy = by - ay, L2 = vx * vx + vy * vy + 1e-6;
+      const x0 = Math.min(ax, bx) - 45, x1 = Math.max(ax, bx) + 45, y0 = Math.min(ay, by) - 45, y1 = Math.max(ay, by) + 45;
+      for (let c = 0; c < n; c++) {
+        if (c === i || c === j) continue;
+        const px = Pp[c][0], py = Pp[c][1];
+        if (px < x0 || px > x1 || py < y0 || py > y1) continue;
+        const u = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / L2)), qx = ax + vx * u, qy = ay + vy * u, ex = px - qx, ey = py - qy, d = Math.sqrt(ex * ex + ey * ey) + 0.01;
+        if (d < 42) { const f = (42 - d) * 0.25; F[c][0] += ex / d * f; F[c][1] += ey / d * f; }
+      }
     }
     for (let i = 0; i < n; i++) {
       if (kind[i] === 'root') { Pp[i][0] = 0; Pp[i][1] = 0; continue; }
-      if (anc[i]) { const s = kind[i] === 'notable' ? 0.3 : 0.04; F[i][0] += (anc[i][0] - Pp[i][0]) * s; F[i][1] += (anc[i][1] - Pp[i][1]) * s; }
+      if (anc[i]) { const s = kind[i] === 'notable' ? 0.3 : 0.12; F[i][0] += (anc[i][0] - Pp[i][0]) * s; F[i][1] += (anc[i][1] - Pp[i][1]) * s; }
       Pp[i][0] += Math.max(-14, Math.min(14, F[i][0])); Pp[i][1] += Math.max(-14, Math.min(14, F[i][1]));
     }
   }
@@ -1904,48 +1921,64 @@ function relax(nodes, edges, pos, iters) {
 const WEB_STATIC = {};
 function webStatic(layer) {
   if (WEB_STATIC[layer]) return WEB_STATIC[layer];
-  const W = WEB_DEF[layer], nodes = {}, edges = [], at = [];
+  const W = WEB_DEF[layer], nodes = {}, edges = [], placed = [];
   const add = n => (nodes[n.id] = n);
-  const link = (x, y) => edges.push([x, y]);
-  // Big nodes link straight to each other. Between each linked pair runs an optional side loop of
-  // bonus nodes (bulging to one side of the direct link) that you can pick up or skip.
-  const loop = (idp, A, B, count, effOf, side) => {
-    const pa = nodes[A[0]].anchor, pb = nodes[B[0]].anchor, cMax = Math.max(nodes[A[0]].costLog, nodes[B[0]].costLog);
-    const dx = pb[0] - pa[0], dy = pb[1] - pa[1], len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len;
-    let chain = A;
-    for (let k = 1; k <= count; k++) {
-      const f = k / (count + 1), bulge = Math.sin(f * Math.PI) * 75 * side, id = `${idp}:${k}`, e = effOf(k);
-      add({ id, type: 'minor', br: e.br, costLog: cMax - 0.3, eff: e.eff, anchor: [pa[0] + dx * f + nx * bulge, pa[1] + dy * f + ny * bulge] });
-      for (const p of chain) link(p, id);
-      chain = [id];
-    }
-    for (const c of B) link(chain[0], c);
+  const link = (x, y, arc) => edges.push(arc ? [x, y, 1] : [x, y]);
+  const polar = (ang, r) => [Math.cos(ang) * r, Math.sin(ang) * r];
+  const ids = g => Array.isArray(g) ? g : [g], key = g => ids(g).join('|');
+  // a side loop of optional bonus nodes from big node group A to group B through the given points
+  const loop = (idp, A, B, pts, effOf) => {
+    const cMax = Math.max(nodes[A[0]].costLog, nodes[B[0]].costLog);
+    let prev = A;
+    pts.forEach((p, i) => { const id = `${idp}:${i + 1}`, e = effOf(i + 1); add({ id, type: 'minor', br: e.br, costLog: cMax - 0.3, eff: e.eff, anchor: p }); for (const q of prev) link(q, id); prev = [id]; });
+    for (const c of B) link(prev[0], c);
   };
+  // the bonus loop alongside a direct link, bulging to one side
+  const sideLoop = (idp, A, B, side, eff) => {
+    const pa = nodes[A[0]].anchor, pb = nodes[B[0]].anchor, dx = pb[0] - pa[0], dy = pb[1] - pa[1], len = Math.hypot(dx, dy) || 1, nx = -dy / len * side, ny = dx / len * side;
+    const off = Math.min(85, len * 0.3);
+    loop(idp, A, B, [[pa[0] + dx * 0.33 + nx * off, pa[1] + dy * 0.33 + ny * off], [pa[0] + dx * 0.67 + nx * off, pa[1] + dy * 0.67 + ny * off]], () => eff);
+  };
+  const R = d => 260 + d * 240;
   add({ id: W.root, type: 'root', br: -1, upg: W.root, costLog: W.costLog(W.root), anchor: [0, 0] });
   W.branches.forEach((br, b) => {
-    const th0 = br.angle * Math.PI / 180;
-    const Pt = (r, off) => { const th = th0 + 0.12 * Math.sin(r / 150); const dx = Math.cos(th), dy = Math.sin(th); return [dx * r - dy * off, dy * r + dx * off]; };
-    let prev = [W.root];
-    at[b] = [];
-    br.nodes.forEach((entry, d) => {
-      const ids = Array.isArray(entry) ? entry : [entry], rT = 210 + d * 170;
-      ids.forEach((id, k) => {
-        add({ id, type: 'notable', br: b, upg: id, costLog: W.costLog(id), anchor: Pt(rT, ids.length > 1 ? (k ? 85 : -85) : 0) });
-        for (const p of prev) link(p, id);
+    const th0 = br.angle * Math.PI / 180, span = 100 * Math.PI / 180, kids = {};
+    for (const [p, c] of br.links) (kids[key(p)] = kids[key(p)] || []).push(c);
+    const leaves = g => { const k = kids[key(g)]; return k ? k.reduce((s, c) => s + leaves(c), 0) : 1; };
+    let li = 0;
+    const place = (g, depth, a0, a1, parent, pAng) => {
+      const ang = (a0 + a1) / 2, r = R(depth), gi = ids(g), dir = [Math.cos(ang), Math.sin(ang)], nrm = [-dir[1], dir[0]];
+      gi.forEach((id, k) => {
+        const off = gi.length > 1 ? (k ? 105 : -105) : 0;
+        add({ id, type: 'notable', br: b, upg: id, costLog: W.costLog(id), anchor: [dir[0] * r + nrm[0] * off, dir[1] * r + nrm[1] * off] });
+        for (const p of ids(parent)) link(p, id);
       });
-      at[b][d] = ids; prev = ids;
-    });
-    br.nodes.forEach((entry, d) => loop(`m:${layer}:${b}:${d}`, d === 0 ? [W.root] : at[b][d - 1], at[b][d], 2, () => ({ br: b, eff: br.minor }), d % 2 ? 1 : -1));
+      placed.push({ b, depth, ang, g: gi });
+      // bonus loop on the outer side of a split, alternating along a straight line
+      const side = Math.abs(ang - pAng) < 0.02 ? ((li++ % 2) ? 1 : -1) : (ang > pAng ? 1 : -1);
+      sideLoop(`m:${layer}:${b}:${key(g)}`, ids(parent), gi, side, { br: b, eff: br.minor });
+      const k = kids[key(g)] || [], total = k.reduce((s, c) => s + leaves(c), 0);
+      let cur = a0;
+      for (const c of k) { const w = (a1 - a0) * leaves(c) / total; place(c, depth + 1, cur, cur + w, g, ang); cur += w; }
+    };
+    place(br.start, 0, th0 - span / 2, th0 + span / 2, W.root, th0);
   });
+  // neighbouring branches link by arcs that bow outward around the centre; their bonus loops sit outside the arcs
   const nb = W.branches.length;
   for (let b = 0; b < nb; b++) {
-    const b2 = (b + 1) % nb, A0 = at[b][0], B0 = at[b2][0];
-    for (const x of A0) for (const y of B0) link(x, y);
-    loop(`r:${layer}:${b}`, A0, B0, 2, () => ({ br: -1, eff: W.ring }), 1);
-    const A = at[b][3], B = at[b2][3];
+    const b2 = (b + 1) % nb;
+    let a1 = W.branches[b].angle, a2 = W.branches[b2].angle; if (a2 < a1) a2 += 360;
+    const mid = (a1 + a2) / 2 * Math.PI / 180, A0 = ids(W.branches[b].start), B0 = ids(W.branches[b2].start);
+    for (const x of A0) for (const y of B0) link(x, y, true);
+    loop(`r:${layer}:${b}`, A0, B0, [polar(mid - 0.2, R(0) * 1.75), polar(mid + 0.2, R(0) * 1.75)], () => ({ br: -1, eff: W.ring }));
+    // a second arc further out, between the depth-2 nodes that face each other across the gap
+    const facing = (bb, dirSign) => { const c = placed.filter(x => x.b === bb && x.depth === 2); if (!c.length) return null; return c.reduce((m, x) => (dirSign > 0 ? x.ang > m.ang : x.ang < m.ang) ? x : m).g; };
+    const A = facing(b, 1), B = facing(b2, -1);
     if (A && B) {
-      for (const x of A) for (const y of B) link(x, y);
-      loop(`b:${layer}:${b}`, A, B, 3, k => k < 2 ? { br: b, eff: W.branches[b].minor } : k > 2 ? { br: b2, eff: W.branches[b2].minor } : { br: -1, eff: W.ring }, 1);
+      for (const x of A) for (const y of B) link(x, y, true);
+      const rr = R(2) * 1.55;
+      loop(`b:${layer}:${b}`, A, B, [polar(mid - 0.14, rr), polar(mid, rr * 1.05), polar(mid + 0.14, rr)],
+        k => k < 2 ? { br: b, eff: W.branches[b].minor } : k > 2 ? { br: b2, eff: W.branches[b2].minor } : { br: -1, eff: W.ring });
     }
   }
   const adj = {};
@@ -1953,7 +1986,7 @@ function webStatic(layer) {
   for (const [x, y] of edges) { adj[x].push(y); adj[y].push(x); }
   const pos = {};
   for (const id in nodes) pos[id] = nodes[id].anchor.slice();
-  relax(nodes, edges, pos, 220);
+  relax(nodes, edges, pos, 200);
   return (WEB_STATIC[layer] = { nodes, edges, adj, pos });
 }
 let MINOR_VER = 0;
@@ -2063,10 +2096,18 @@ function webGraph(layer) {
     nodes[id] = { id, type: 'arch', arch: i, br: u.branch, parent };
     edges.push([parent, id], [parent, cid], [cid, id]);
     if (!pos[id]) {
-      const pp = pos[parent] || [0, 0], rng = seeded(hashStr(layer + id));
-      const base = (pp[0] || pp[1]) ? Math.atan2(pp[1], pp[0]) : W.branches[u.branch].angle * Math.PI / 180, a = base + (rng() - 0.5) * 1.5;
-      pos[id] = [pp[0] + Math.cos(a) * 125, pp[1] + Math.sin(a) * 125];
-      pos[cid] = [pp[0] + Math.cos(a + 0.55) * 75, pp[1] + Math.sin(a + 0.55) * 75];
+      const pp = pos[parent] || [0, 0];
+      const base = (pp[0] || pp[1]) ? Math.atan2(pp[1], pp[0]) : W.branches[u.branch].angle * Math.PI / 180;
+      let best = null, bestA = base, score = -1;
+      for (const da of [0, 0.45, -0.45, 0.9, -0.9, 1.35, -1.35, 1.8, -1.8, 2.4, -2.4]) for (const dist of [140, 200, 260]) {
+        const a2 = base + da, c = [pp[0] + Math.cos(a2) * dist, pp[1] + Math.sin(a2) * dist];
+        let m = 1e12; for (const k in pos) { const q = pos[k], d2 = (q[0] - c[0]) ** 2 + (q[1] - c[1]) ** 2; if (d2 < m) m = d2; }
+        m -= dist * 40; // prefer staying close to the parent when there is room
+        if (m > score) { score = m; best = c; bestA = a2; }
+      }
+      pos[id] = best;
+      const mx = (pp[0] + best[0]) / 2, my = (pp[1] + best[1]) / 2;
+      pos[cid] = [mx + Math.cos(bestA + Math.PI / 2) * 45, my + Math.sin(bestA + Math.PI / 2) * 45];
       grew = true;
     }
   }
@@ -2116,7 +2157,7 @@ function buildWebView(T, layer, tabId) {
   const pType = h('div', { class: 'pb' }), pName = h('div', { class: 'pn' }), pDesc = h('div', { class: 'pd' }), pEff = h('div', { class: 'pe' }), pWhy = h('div', { class: 'pw' }), pCost = h('div', { class: 'pc' });
   const pBuy = h('button', {}, 'Buy');
   const panel = h('div', { class: 'nodepanel' }, pType, pName, pDesc, pEff, pWhy, pCost, pBuy);
-  const tools = h('div', { class: 'treetools' }, h('button', { onclick: () => zoomBy(1.25) }, '+'), h('button', { onclick: () => zoomBy(0.8) }, '−'), h('button', { onclick: () => fit(true) }, 'Fit'));
+  const tools = h('div', { class: 'treetools' }, h('button', { onclick: () => zoomBy(1.25) }, '+'), h('button', { onclick: () => zoomBy(0.8) }, '−'), h('button', { onclick: () => fit(true) }, 'Fit'), h('button', { onclick: () => tidy(), title: 'Re-sort the whole web' }, 'Tidy'));
   const hint = h('div', { class: 'treehint' }, 'Drag to move · scroll to zoom · click a node to inspect it · double-click to buy (the whole path if needed)');
   wrap.append(svg, tools, panel, hint);
   T.append(wrap);
@@ -2161,7 +2202,17 @@ function buildWebView(T, layer, tabId) {
   pBuy.addEventListener('click', () => { if (sel) sfx(buyPath(sel) ? 'upgrade' : 'fail'); });
   function placeAll() {
     for (const id in els) { const p = shown[id]; els[id].setAttribute('transform', `translate(${p[0].toFixed(1)},${p[1].toFixed(1)})`); }
-    for (const [ln, a, b] of edgeEls) { const p = shown[a], q = shown[b]; if (!p || !q) continue; ln.setAttribute('x1', p[0].toFixed(1)); ln.setAttribute('y1', p[1].toFixed(1)); ln.setAttribute('x2', q[0].toFixed(1)); ln.setAttribute('y2', q[1].toFixed(1)); }
+    for (const [ln, a, b, arc] of edgeEls) {
+      const p = shown[a], q = shown[b]; if (!p || !q) continue;
+      if (arc) { const cx = (p[0] + q[0]) * 2, cy = (p[1] + q[1]) * 2; ln.setAttribute('d', `M${p[0].toFixed(1)},${p[1].toFixed(1)} Q${cx.toFixed(1)},${cy.toFixed(1)} ${q[0].toFixed(1)},${q[1].toFixed(1)}`); }
+      else ln.setAttribute('d', `M${p[0].toFixed(1)},${p[1].toFixed(1)} L${q[0].toFixed(1)},${q[1].toFixed(1)}`);
+    }
+  }
+  // Tidy: forget every remembered position and lay the whole web out again (the nodes glide to their new spots)
+  function tidy() {
+    const P = WEB_POS[layer]; for (const k in P) delete P[k];
+    WEB_CACHE[layer] = null;
+    sfx('upgrade'); setTimeout(() => fit(true), 900);
   }
   function tween() {
     if (tweening) return; tweening = true;
@@ -2176,7 +2227,7 @@ function buildWebView(T, layer, tabId) {
   function rebuild(grown) {
     const G = webGraph(layer);
     gE.textContent = ''; gN.textContent = ''; els = {}; edgeEls = [];
-    for (const [a, b] of G.edges) { const ln = sv('line', { class: 'te' }); ln.style.setProperty('--ec', BR_HUE[Math.max(0, G.nodes[b].br)] ? `rgba(${BR_HUE[Math.max(0, G.nodes[b].br)][1]},.7)` : 'rgba(200,200,255,.6)'); gE.append(ln); edgeEls.push([ln, a, b]); }
+    for (const [a, b, arc] of G.edges) { const ln = sv('path', { class: 'te' + (arc ? ' arc' : '') }); ln.style.setProperty('--ec', BR_HUE[Math.max(0, G.nodes[b].br)] ? `rgba(${BR_HUE[Math.max(0, G.nodes[b].br)][1]},.7)` : 'rgba(200,200,255,.6)'); gE.append(ln); edgeEls.push([ln, a, b, arc]); }
     let i = 0;
     for (const id in G.nodes) {
       const n = G.nodes[id], g = sv('g', { class: 'tn ' + n.type });

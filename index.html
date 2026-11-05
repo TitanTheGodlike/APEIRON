@@ -1773,7 +1773,7 @@ const SECRETS = [
   { id: 'x9', name: 'Rebel', hint: 'Who needs instructions?', desc: 'Skip the intro or the tutorial.', reward: ['relic', 'selftaught'] },
   { id: 'x10', name: 'Restless', hint: 'Look everywhere at once.', desc: 'Switch tabs 30 times within a minute.', reward: ['anom', 'prism'] },
   { id: 'x11', name: 'Insomniac', hint: 'Stay a while.', desc: 'Keep one session open for 3 hours.', reward: ['relic', 'secondwind'] },
-  { id: 'x12', name: 'Cheat Code', hint: 'Up, up, down, down…', desc: 'Enter the old code: ↑ ↑ ↓ ↓ ← → ← → B A.', reward: ['relic', 'cheatcode'] },
+  { id: 'x12', name: 'Cheat Code', hint: 'Thirty lives, if you remember the steps.', desc: 'Enter the old code: ↑ ↑ ↓ ↓ ← → ← → B A.', reward: ['relic', 'cheatcode'] },
   { id: 'x13', name: 'Spectrum', hint: 'Try on every colour.', desc: 'Use all six colour themes.', reward: ['relic', 'spectrum'] },
   { id: 'x14', name: 'Full House', hint: 'One of each.', desc: 'Have a Common, a Rare, an Epic and a Legendary card working at the same time.', reward: ['relic', 'markeddeck'] },
   { id: 'x15', name: 'Tails Again', hint: 'Some days the coin hates you.', desc: 'Lose three coin flips in a row.', reward: ['relic', 'consolation'] },
@@ -3345,6 +3345,18 @@ function render(force) {
 }
 
 /* ---------------- Input ---------------- */
+// the old code: the Architect notices, and wants an explanation
+function cheatCodeEntered() {
+  if (S.ach.x12) { aiSay(rnd(['Again? I told you, there are no codes in my world.', 'I heard that. Ten keys, in order.', 'Still knocking on that door?'])); return; }
+  blip(1.2); setTimeout(() => blip(0.9), 140);
+  const after = () => { aiSay('There are no cheat codes in my world. But I like that you went looking for one. Keep this. Tell no one.'); grantSecret('x12'); };
+  modal('The Architect', h('div', {}, h('div', { class: 'orb talk', style: 'margin:0 auto 14px;width:44px;height:44px' }),
+    h('div', { html: 'Up, up, down, down, left, right, left, right. B. A.<br><br>I know that rhythm. It is older than I am.<br><br><b>Were you trying to cheat?</b>' })), [
+    ['No, of course not', () => { aiSay('Ten keys, in perfect order, by accident. Of course.'); after(); }],
+    ['It slipped', () => { aiSay('An accident with excellent rhythm.'); after(); }],
+    ['Yes', () => { aiSay('Honesty. I did not expect that from a cheater.'); after(); }],
+  ]);
+}
 const KONAMI = ['arrowup', 'arrowup', 'arrowdown', 'arrowdown', 'arrowleft', 'arrowright', 'arrowleft', 'arrowright', 'b', 'a'];
 let konamiAt = 0;
 document.addEventListener('keydown', e => {
@@ -3352,7 +3364,7 @@ document.addEventListener('keydown', e => {
   const tg = e.target.tagName; if (tg === 'INPUT' || tg === 'TEXTAREA' || tg === 'SELECT') return;
   if ($('modal').classList.contains('open')) { if (e.key === 'Escape') closeModal(); return; }
   const k = e.key.toLowerCase();
-  if (k === KONAMI[konamiAt]) { if (++konamiAt === KONAMI.length) { konamiAt = 0; grantSecret('x12'); return; } if (konamiAt > 8) return; }
+  if (k === KONAMI[konamiAt]) { if (++konamiAt === KONAMI.length) { konamiAt = 0; cheatCodeEntered(); return; } if (konamiAt > 8) return; }
   else konamiAt = k === KONAMI[0] ? 1 : 0;
   if (!e.repeat && ['m', 'p', 't', 'c', 'a', 's', 'f'].includes(k)) sfx('click');
   if (k === 'm') sfx(maxAll() ? 'buy' : 'fail');

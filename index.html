@@ -259,11 +259,12 @@ kbd{background:rgba(30,40,90,.6);border:1px solid var(--edge2);border-radius:3px
 .tn.forked{opacity:.25}.tn.forked .tl{text-decoration:line-through}
 .tfork{stroke:#ffd27a;stroke-width:2;stroke-dasharray:5 6;fill:none;opacity:.7;pointer-events:none}
 .tforkl{pointer-events:none}.tforkl rect{fill:rgba(9,11,30,.94);stroke:#ffd27a;stroke-width:1.5}
-.tforkl text{fill:#ffd27a;font-size:15px;font-weight:700;letter-spacing:.12em;text-anchor:middle;font-family:"Segoe UI",system-ui,sans-serif}
+.tforkl text{fill:#ffd27a;font-size:12px;font-weight:700;letter-spacing:.12em;text-anchor:middle;font-family:"Segoe UI",system-ui,sans-serif}
 .tforkl.open rect{animation:pulseNode 1.3s ease-in-out infinite}
 .tfork.done,.tforkl.done{opacity:.35}.tfork.fog,.tforkl.fog{opacity:.08}
 .nodepanel .pf{font-size:12px;color:#ffd27a}
-.tforkring{fill:none;stroke:#ffd27a;stroke-width:2.5;stroke-dasharray:5 4;opacity:.85}.tn.forked .tforkring{opacity:.35}
+.tforkring{fill:none;stroke:#ffd27a;stroke-width:2.5;stroke-dasharray:5 4;opacity:.85;display:none}.tn.fork-on .tforkring{display:inline}.tn.forked .tforkring{opacity:.35}
+.tfork.off,.tforkl.off{display:none}
 .tn.sel .tshape{stroke:#fff;stroke-width:3;opacity:1}
 .tn.root .tshape{stroke-width:3}
 .tn.fresh .tbody{animation:grow 1s cubic-bezier(.2,1.6,.4,1) both,bob 5s ease-in-out 1s infinite}
@@ -509,7 +510,7 @@ function quadMax(lm, c0, s, q, k) {
    ===================================================================== */
 const CFG = {
   cascadeLog: 0,      // log10 of how fast tier N makes tier N-1
-  heavy: 1.2,         // the first world is heavy: tiers make each other 10^1.2 slower until you Collapse (halves with every Collapse)
+  heavy: 0.8,         // the first world is heavy: tiers make each other 10^0.8 slower until you Collapse (halves with every Collapse)
   collapseReq: 25,    // log10 Quanta needed to Collapse
   shardDiv: 36,       // shards = 10^((logQ - req)/div) * mult (36 since the webs grew to ~430 upgrades)
   limit: 308,         // The Limit
@@ -1044,7 +1045,7 @@ function ensureOpen(layer) {
 }
 const cheapestOpen = layer => { const o = openIdeas(layer); return o.length ? o[0] : -1; };
 const openAffordable = layer => openIdeas(layer).some(i => S[PROC[layer].cur].log10() >= procCost(layer, i));
-const procCost = (layer, n) => Math.max(0, (layer === 'q' ? qPrice(PROC.q.costLog(n)) : PROC[layer].costLog(n)) - procAgg(layer).insight - cardSum('ideas'));
+const procCost = (layer, n) => Math.max(0, PROC[layer].costLog(n) - procAgg(layer).insight - cardSum('ideas'));
 let PROC_AGG = {}, UPG_VER = 0;
 const UPG_KEY = { q: 'qUpg', s: 'sUpg', e: 'eUpg' };
 // everything of one web that works like an idea: the Architect's owned ideas plus the owned grown upgrades
@@ -2411,10 +2412,23 @@ function growWebs() {
 }
 function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 growWebs();
-// The Upgrade web starts cheap and climbs gently: about 20 Quanta for the first upgrade, catching up with the
-// written prices at 1e18 (dearer ones are unchanged). The Architect's Quanta ideas follow the same curve.
-const qPrice = c => c >= 18 ? c : L10(roundSig(Math.pow(10, 1.3 + 16.7 * Math.pow(Math.max(0, c - 2) / 16, 2)), 2));
-for (const u of QUPG) u.cost = qPrice(u.cost);
+// Upgrades come one at a time, not in bursts: sorted by its written price, every upgrade costs at least
+// x5 (QGAP orders of magnitude) more than the one before it. The first costs 20 Quanta, then 100, 500, ...
+// until the written prices are steeper anyway. cost0 keeps the written price.
+const QGAP = 0.7;
+// the written prices squeezed at the cheap end (2 → 20 Quanta), rejoining them at 1e18
+const qPrice = c => c >= 18 ? c : 1.3 + 16.7 * Math.pow(Math.max(0, c - 2) / 16, 2);
+function priceUpgradeWeb(gap = QGAP) {
+  const depth = { [WEB_DEF.q.root]: 0 }, kids = {};
+  for (const br of WEB_DEF.q.branches) { depth[br.start] = 1; for (const [a, b] of br.links) for (const x of [].concat(a)) for (const y of [].concat(b)) (kids[x] = kids[x] || []).push(y); }
+  const q = Object.keys(depth); while (q.length) { const x = q.shift(); for (const y of kids[x] || []) if (depth[y] === undefined) { depth[y] = depth[x] + 1; q.push(y); } }
+  for (const u of QUPG) if (u.cost0 === undefined) u.cost0 = u.cost;
+  // ties keep parents before children, so every upgrade still costs at least as much as the one it grows from
+  const order = QUPG.slice().sort((a, b) => (a.cost0 - b.cost0) || ((depth[a.id] || 0) - (depth[b.id] || 0)));
+  let prev = -Infinity;
+  for (const u of order) { const c = prev === -Infinity ? L10(20) : Math.max(qPrice(u.cost0), prev + gap); u.cost = c < 300 ? L10(roundSig(Math.pow(10, c), 2)) : Math.round(c * 10) / 10; prev = c; }
+}
+priceUpgradeWeb();
 // Force layout: springs along edges, repulsion between nodes, anchors pull notables to their branch.
 function relax(nodes, edges, pos, iters) {
   const ids = Object.keys(nodes), n = ids.length, idx = {};
@@ -2464,9 +2478,9 @@ function webStatic(layer) {
   const ids = g => Array.isArray(g) ? g : [g], key = g => ids(g).join('|');
   // a side loop of optional bonus nodes from big node group A to group B through the given points
   const loop = (idp, A, B, pts, effOf) => {
-    const cMax = Math.max(nodes[A[0]].costLog, nodes[B[0]].costLog);
+    const cMax = Math.max(nodes[A[0]].costLog, nodes[B[0]].costLog), cMin = Math.min(nodes[A[0]].costLog, nodes[B[0]].costLog);
     let prev = A;
-    pts.forEach((p, i) => { const id = `${idp}:${i + 1}`, e = effOf(i + 1); add({ id, type: 'minor', br: e.br, costLog: cMax - 0.3, eff: e.eff, anchor: p }); for (const q of prev) link(q, id); prev = [id]; });
+    pts.forEach((p, i) => { const id = `${idp}:${i + 1}`, e = effOf(i + 1), c = layer === 'q' ? cMin + (cMax - cMin) * (i + 1) / (pts.length + 1) : cMax - 0.3; add({ id, type: 'minor', br: e.br, costLog: c, eff: e.eff, anchor: p }); for (const q of prev) link(q, id); prev = [id]; });
     for (const c of B) link(prev[0], c);
   };
   // the bonus loop alongside a direct link, bulging to one side
@@ -2493,7 +2507,7 @@ function webStatic(layer) {
       if (gi.length > 1) forks.push(gi); // a path choice: own one side and the other closes
       // bonus loop on the outer side of a split, alternating along a straight line
       const side = Math.abs(ang - pAng) < 0.02 ? ((li++ % 2) ? 1 : -1) : (ang > pAng ? 1 : -1);
-      if (!GROWN.has(gi[0])) sideLoop(`m:${layer}:${b}:${key(g)}`, ids(parent), gi, side, { br: b, eff: br.minor });
+      if (!GROWN.has(gi[0]) && gi.length === 1 && ids(parent).length === 1) sideLoop(`m:${layer}:${b}:${key(g)}`, ids(parent), gi, side, { br: b, eff: br.minor });
       const k = kids[key(g)] || [], total = k.reduce((s, c) => s + leaves(c), 0);
       let cur = a0;
       for (const c of k) { const w = (a1 - a0) * leaves(c) / total; place(c, depth + (GROWN.has(ids(c)[0]) ? 0.55 : 1), cur, cur + w, g, ang); cur += w; }
@@ -2635,7 +2649,7 @@ function webGraph(layer) {
     u.parent = bigParent(layer, nodes[u.parent] ? u.parent : W.root);
     const parent = nodes[u.parent] ? u.parent : W.root;
     nodes[cid] = connectorNode(layer, i); nodes[cid].parent = parent;
-    nodes[id] = { id, type: 'arch', arch: i, br: u.branch, parent };
+    nodes[id] = { id, type: 'arch', arch: i, br: u.branch, parent, anchor: null };
     edges.push([parent, id], [parent, cid], [cid, id]);
     if (!pos[id]) {
       const pp = pos[parent] || [0, 0];
@@ -2647,13 +2661,13 @@ function webGraph(layer) {
         m -= dist * 40; // prefer staying close to the parent when there is room
         if (m > score) { score = m; best = c; bestA = a2; }
       }
-      pos[id] = best;
+      pos[id] = best; nodes[id].anchor = best.slice();
       const mx = (pp[0] + best[0]) / 2, my = (pp[1] + best[1]) / 2;
       pos[cid] = [mx + Math.cos(bestA + Math.PI / 2) * 45, my + Math.sin(bestA + Math.PI / 2) * 45];
       grew = true;
     }
   }
-  if (grew) relax(nodes, edges, pos, 70);
+  if (grew) relax(nodes, edges, pos, 140);
   const adj = {};
   for (const id in nodes) adj[id] = [];
   for (const [a, b] of edges) { adj[a].push(b); adj[b].push(a); }
@@ -2766,7 +2780,7 @@ function buildWebView(T, layer, tabId) {
     for (const [ln, lb, a, b] of forkEls) {
       const p = shown[a], q = shown[b]; if (!p || !q) continue;
       ln.setAttribute('d', `M${p[0].toFixed(1)},${p[1].toFixed(1)} L${q[0].toFixed(1)},${q[1].toFixed(1)}`);
-      lb.setAttribute('transform', `translate(${((p[0] + q[0]) / 2).toFixed(1)},${((p[1] + q[1]) / 2).toFixed(1)})`);
+      lb.setAttribute('transform', `translate(${((p[0] + q[0]) / 2).toFixed(1)},${(Math.min(p[1], q[1]) - 42).toFixed(1)})`); // above the pair, clear of their names
     }
   }
   // Tidy: forget every remembered position and lay the whole web out again (the nodes glide to their new spots)
@@ -2792,7 +2806,7 @@ function buildWebView(T, layer, tabId) {
     // path choices: a dashed line between the two sides and a CHOOSE ONE tag between them
     for (const [a, b] of webStatic(layer).forks) {
       const ln = sv('path', { class: 'tfork' }), lb = sv('g', { class: 'tforkl' }), tx = sv('text', { y: 4 });
-      tx.textContent = 'CHOOSE ONE'; tx.setAttribute('y', 5); lb.append(sv('rect', { x: -80, y: -16, width: 160, height: 32, rx: 16 }), tx);
+      tx.textContent = 'CHOOSE ONE'; tx.setAttribute('y', 4); lb.append(sv('rect', { x: -60, y: -12, width: 120, height: 24, rx: 12 }), tx);
       gE.append(ln, lb); forkEls.push([ln, lb, a, b, tx]);
     }
     let i = 0;
@@ -2844,8 +2858,9 @@ function buildWebView(T, layer, tabId) {
     }
     for (const [ln, a, b] of edgeEls) { setC(ln, 'on', !!owned[a] && !!owned[b]); setC(ln, 'fogged', !owned[a] && !owned[b] && (dist[a] > 3 || dist[b] > 3)); }
     for (const [ln, lb, a, b, tx] of forkEls) {
-      const done = !!owned[a] || !!owned[b], open = !done && (webAvail(layer, G.nodes[a]) || webAvail(layer, G.nodes[b])), fog = !done && !open && (dist[a] > 3 && dist[b] > 3);
-      for (const el of [ln, lb]) { setC(el, 'done', done); setC(el, 'fog', fog); }
+      const done = !!owned[a] || !!owned[b], open = !done && (webAvail(layer, G.nodes[a]) || webAvail(layer, G.nodes[b]));
+      for (const el of [ln, lb]) { setC(el, 'done', done); setC(el, 'off', !done && !open); } // only once you can actually choose
+      for (const id of [a, b]) if (els[id]) setC(els[id], 'fork-on', done || open);
       setC(lb, 'open', open); setT(tx, done ? 'PATH CHOSEN' : 'CHOOSE ONE');
     }
     if (sel && els[sel] && els[sel].classList.contains('fog')) sel = null; // e.g. after a Reshape the node went back into the fog

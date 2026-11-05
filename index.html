@@ -1299,8 +1299,28 @@ const totalBought = () => S.gens.reduce((t, g) => t + g.bought, 0);
 const totalComps = () => S.chal.comps.reduce((a, b) => a + b, 0);
 const momentum = () => Math.min(30, 1 + S.stats.tCollapse / 20);
 const latticeExp = () => hasS('s18') ? 0.7 : hasS('s13') ? 0.55 : 0.4;
-const shardsVisible = () => S.reached.collapse || S.collapses > 0 || S.ascensions > 0;
-const ascVisible = () => S.reached.limit || S.ascensions > 0;
+// The story introduces Collapse (chapter The Weight) and Ascension (The Edge). Until a chapter has played, nothing on
+// screen mentions what it introduces: no button, no Guide sentence, no statistic, no achievement text.
+const collapseKnown = () => S.stats.totalCollapses > 0 || S.ascensions > 0 || !!S.story.seen.weight;
+const ascendKnown = () => S.ascensions > 0 || !!S.story.seen.edge;
+const shardsVisible = () => collapseKnown() && (S.reached.collapse || S.collapses > 0 || S.ascensions > 0);
+const ascVisible = () => ascendKnown() && (S.reached.limit || S.ascensions > 0);
+// texts written for later, reworded while their idea is still unknown
+function veil(t) {
+  if (!t) return t;
+  if (!ascendKnown()) t = t.replace(/ earned this Ascension/g, ' earned so far').replace(/ this Ascension/g, ' so far').replace(/ that you buy again after every Ascension/g, '')
+    .replace(/; you buy it again after every Ascension, until Reliquary/g, '').replace(/ or Essence to your next prestige/g, ' to your next Collapse').replace(/ or Ascension/g, '');
+  if (!collapseKnown()) t = t.replace(/Every Collapse starts with/g, 'Every fresh start begins with').replace(/ in this Collapse/g, ' in this run').replace(/ for your first several Collapses,/g, ' for a long while,')
+    .replace(/ Every Collapse makes it lighter, until after a few it is gone\./g, ' It will not stay this heavy forever.').replace(/ and Cascade \(higher tiers and Shards\)/g, ' and Cascade (higher tiers)')
+    .replace(/that ignores Collapse/g, 'that never resets');
+  return t;
+}
+// Guide sections: reworded, then any sentence still about something unknown is left out
+function veilText(t) {
+  t = veil(t);
+  const ban = (collapseKnown() ? [] : ['Collaps', 'Shard']).concat(ascendKnown() ? [] : ['Ascen', 'Essence', 'Apeiron', 'Challenge', 'Reliquary']);
+  return ban.length ? t.split(/(?<=[.!?])\s+(?=[A-Z<])/).filter(s => !ban.some(b => s.includes(b))).join(' ') : t;
+}
 const AUTOBUYERS = ['ab0', 'ab1', 'ab2', 'ab3', 'ab4', 'ab5', 'ab6', 'ab7', 'ab8', 'abC', 'abL', 'abH', 'abK'];
 const autoVisible = () => AUTOBUYERS.some(id => S.sUpg[id]) || !!S.sUpg.s9 || !!S.eUpg.e8 || !!S.eUpg.e37;
 const ASC_KEEP_AUTO = ['sB', 's2', 's9', 's11'].concat(AUTOBUYERS); // what Muscle Memory (e35) keeps through Ascension
@@ -2002,7 +2022,7 @@ function poke() {
     aiSay(line); return;
   }
   aiSay(POKES[Math.min(S.secret.orb, POKES.length) - 1]);
-  if (recentCount('poke', 30000) >= 10) grantSecret('x3');
+  if (tutorialDone() && recentCount('poke', 30000) >= 10) grantSecret('x3'); // not while the tutorial is still talking
 }
 const tabTimes = [];
 // a Lucky Pulse (from the Architect's "lucky" ideas): a bright chime and a pop-up over the Pulse button
@@ -2759,10 +2779,10 @@ function buildHeader() {
     show(re, ascVisible());
     setT(ev, fmt(S.essence.floor(), 0));
     setT(er, S.ascensions + ' ascensions');
-    show(bc, S.reached.collapse);
+    show(bc, S.reached.collapse && collapseKnown());
     const cc = canCollapse(); setDis(bc, !cc);
     setT(bcSub, cc ? `+${fmt(R.sg, 0)} Shards` : `need ${fmt(D.fromLog(collapseReqLog()))} Quanta`);
-    show(ba, S.reached.limit);
+    show(ba, S.reached.limit && ascendKnown());
     const ca = canAscend(); setDis(ba, !ca);
     setT(baSub, ca ? `+${fmt(essenceGain(), 0)} Essence` : `need ${fmt(D.fromLog(CFG.limit))} Quanta`);
     show(bx, S.chal.active >= 0);
@@ -2817,7 +2837,7 @@ const TUT = [
   { text: '<b>Clock Speed</b> (the top row) speeds up every generator at once. Buy a level when you can afford it.',
     done: () => S.clock > 0 || S.stats.totalCollapses > 0, target: () => UI.el.clock },
   { text: 'Tip: <b>Max all</b> (or the <kbd>M</kbd> key) buys everything you can afford. Keep growing. At <b>1e25</b> Quanta something new opens up.',
-    done: () => S.reached.collapse, target: () => UI.el.maxAll },
+    done: () => S.reached.collapse && collapseKnown(), target: () => UI.el.maxAll }, // after the chapter that tells you about it
   { text: 'You can <b class="hl-sh">Collapse</b> now (purple button, top right). It resets your Quanta, generators, Clock Speed and Upgrades, but pays you in <b class="hl-sh">Shards</b>, which you keep. Each Collapse also makes the heavy first world lighter, so the next run goes faster.',
     done: () => S.stats.totalCollapses > 0, target: () => UI.el.collapse },
   { text: 'Spend your Shard in the <b>Shards</b> tab. The first upgrade there, <b>Fracture</b>, makes me start dealing you cards. The Shard upgrades near the middle unlock new things; more power waits further out. From here the loop is: grow, Collapse, upgrade, and each loop goes further.',
@@ -2892,7 +2912,7 @@ function buildGenTab() {
   UI.el.maxAll = ma;
   T.append(h('div', { class: 'toolbar' }, pb, h('div', { class: 'seg', title: 'How much each Buy button buys.' }, modes), ma, ...abilityButtons(), h('span', { class: 'muted' }, 'Each tier makes the tier below it. Every 10 bought multiplies a generator by its Resonance.')));
   const heavy = h('div', { class: 'heavy-note' }); T.append(heavy);
-  up(() => { const hl = heavyLog(); show(heavy, hl > 0.01); if (hl > 0.01) setH(heavy, `<b>Heavy world:</b> Sparks and every higher generator make <b>${fmt(D.fromLog(hl))}× less</b> than normal (Flickers are not slowed). It gets lighter with every Collapse: after the next one, only <b>${fmt(D.fromLog(hl / 2))}× less</b>.`); }, 'gen');
+  up(() => { const hl = heavyLog(); show(heavy, hl > 0.01); if (hl > 0.01) setH(heavy, `<b>Heavy world:</b> Sparks and every higher generator make <b>${fmt(D.fromLog(hl))}× less</b> than normal (Flickers are not slowed). ` + (collapseKnown() ? `It gets lighter with every Collapse: after the next one, only <b>${fmt(D.fromLog(hl / 2))}× less</b>.` : 'It will not stay this heavy forever.')); }, 'gen');
   up(() => {
     setT(pv, '+' + fmt(pulseGain()));
     if (pb.classList.contains('cooling') && pulseReady()) { pb.classList.remove('cooling'); pb.classList.remove('ready-flash'); void pb.offsetWidth; pb.classList.add('ready-flash'); }
@@ -2955,7 +2975,7 @@ function buildGenTab() {
   const anomHead = h('h2', {}, 'Anomalies');
   const anomNote = h('div', { class: 'muted', style: 'margin:-4px 0 8px' }, 'Things that should not exist. They ignore Collapse and Ascension.');
   T.append(anomHead, anomNote);
-  up(() => { const v = ANOMALIES.some(a => rewardUnlocked(a.id)); show(anomHead, v); show(anomNote, v); if (v) setT(anomNote, hasE('e48') ? 'Things that should not exist. They ignore Collapse and Ascension.' : 'Things that should not exist. They ignore Collapse, but after an Ascension you buy them again.'); }, 'gen');
+  up(() => { const v = ANOMALIES.some(a => rewardUnlocked(a.id)); show(anomHead, v); show(anomNote, v); if (v) setT(anomNote, !collapseKnown() ? 'Things that should not exist.' : !ascendKnown() ? 'Things that should not exist. They ignore Collapse.' : hasE('e48') ? 'Things that should not exist. They ignore Collapse and Ascension.' : 'Things that should not exist. They ignore Collapse, but after an Ascension you buy them again.'); }, 'gen');
   for (const a of ANOMALIES) {
     const lv = h('div', { class: 'sub' }), ef = h('div', { class: 'mult' }), bb = h('button', { onclick: act(() => buyAnom(a, S.settings.buyMode === 'max' ? 'max' : '1')) });
     const row = h('div', { class: 'row anom' }, h('div', {}, h('div', { class: 'name' }, h('span', { class: 'tier' }, '✶'), a.name), lv), h('div', {}, ef), h('div', { class: 'rate' }, a.desc), bb);
@@ -3725,7 +3745,7 @@ function buildWebView(T, layer, tabId) {
     show(panel, !!n);
     if (n) {
       const info = webInfo(layer, n), o = webOwned(layer, n), forked = webForked(layer, n);
-      setT(pType, info.label); setT(pName, info.name); setT(pDesc, info.desc);
+      setT(pType, info.label); setT(pName, info.name); setT(pDesc, veil(info.desc));
       show(pFork, !!info.choice); if (info.choice) setT(pFork, info.choice);
       show(pEff, !!info.eff); if (info.eff) setT(pEff, 'Currently ' + info.eff());
       show(pWhy, !!info.reason); if (info.reason) setT(pWhy, '“' + info.reason + '”');
@@ -3756,8 +3776,10 @@ function buildArchTab() {
   up(() => {
     let s;
     if (S.chal.active >= 0) s = `<b class="hl-bad">Challenge: ${CHALS[S.chal.active].name}</b>. ${CHALS[S.chal.active].desc} Reach <b>${fmt(D.fromLog(chalGoalLog(S.chal.active)))}</b> Quanta to complete it.`;
+    else if (!collapseKnown()) s = `Reach <b>${fmt(D.fromLog(collapseReqLog()))}</b> Quanta. Something new waits there.`;
     else if (!S.reached.collapse) s = `At <b>${fmt(D.fromLog(collapseReqLog()))}</b> Quanta you can <b class="hl-sh">Collapse</b> everything into Shards.`;
     else if (!S.reached.limit) s = `Shards grow with Quanta past ${fmt(D.fromLog(collapseReqLog()))}. The next Shard arrives at <b>${fmt(D.fromLog(nextShardAtLog()))}</b> Quanta. Far ahead lies <b class="hl-es">the Limit</b>: ${fmt(D.fromLog(CFG.limit))}.`;
+    else if (!ascendKnown()) s = `You reached <b class="hl-es">the Limit</b>: Quanta cannot grow past ${fmt(D.fromLog(CFG.limit))}. Not one Quanta more.`;
     else if (!hasE('e6')) s = `Quanta cannot exceed <b class="hl-es">the Limit</b> (${fmt(D.fromLog(CFG.limit))}). Ascend for Essence and buy <b>Apeiron</b> to break it.`;
     else s = `Past the Limit, Essence gain grows ×10 every ${fmt(D.fromNum(CFG.ascDiv))} orders of magnitude of Quanta, and while you stay past the Limit my Inspiration grows (it starts over with every Ascension). There is no end.`;
     setH(goal, s);
@@ -3800,8 +3822,10 @@ function buildGuideTab() {
     [() => true, 'Saving','The game saves itself every 10 seconds in this browser and keeps progressing while you are away, at 10% speed. After a big update, an older save gets a one-time notice offering a fresh start; your save keeps working either way. Use Options → Export to make a backup.'],
   ];
   for (const [vis, title, body] of sections) {
-    const el = h('div', {}, h('h2', {}, title), h('div', { class: 'info', html: body }));
-    T.append(el); up(() => show(el, vis()), 'guide');
+    const info = h('div', { class: 'info' }), el = h('div', {}, h('h2', {}, title), info);
+    let shown = null;
+    T.append(el);
+    up(() => { const v = vis(); show(el, v); if (!v) return; const html = veilText(body); if (html !== shown) { shown = html; info.innerHTML = html; } }, 'guide');
   }
 }
 
@@ -3839,14 +3863,15 @@ function buildUpgTab() {
   up(() => {
     if (!S.tut.off && S.tut.step < TUT.length) S.tut.upgSeen = true;
     const on = !S.tut.off && S.tut.upgSeen && !S.tut.upgDone; show(gBox, on);
-    if (on && !gTw) gTw = typewriter(gTxt, 'This is the <b>Upgrade web</b>. It grows out from the middle: you can buy any node that touches one you own. <b>Big nodes</b> are the main upgrades, the <b>small ones</b> between them are cheap bonuses, and where two paths split you pick one of them. <b>Click</b> a node to read it, <b>double-click</b> to buy it (and the path to it if needed). Drag to look around, scroll to zoom. The web resets when you Collapse, so spend freely.', { speed: 22, pitch: 1.15, orb: gOrb });
+    if (on && !gTw) gTw = typewriter(gTxt, 'This is the <b>Upgrade web</b>. It grows out from the middle: you can buy any node that touches one you own. <b>Big nodes</b> are the main upgrades, the <b>small ones</b> between them are cheap bonuses, and where two paths split you pick one of them. <b>Click</b> a node to read it, <b>double-click</b> to buy it (and the path to it if needed). Drag to look around, scroll to zoom.', { speed: 22, pitch: 1.15, orb: gOrb });
   }, 'upg');
   T.append(h('h2', {}, 'Upgrade web'));
   const note = h('div', { class: 'muted', style: 'margin:-2px 0 8px' }); T.append(note);
   buildWebView(T, 'q', 'upg');
-  up(() => setT(note, 'Buy any node next to one you own. Big upgrades link straight to each other; the small bonus nodes between them are detours, and some upgrades branch off them. Diamonds are the Architect’s ideas. ' + (hasS('s2') ? 'Memory keeps this web through Collapses.' : 'The web resets when you Collapse until you own Memory (Shard web).')), 'upg');
+  up(() => setT(note, 'Buy any node next to one you own. Big upgrades link straight to each other; the small bonus nodes between them are detours, and some upgrades branch off them. Diamonds are the Architect’s ideas. ' + (!collapseKnown() ? '' : hasS('s2') ? 'Memory keeps this web through Collapses.' : 'The web resets when you Collapse until you own Memory (Shard web).')), 'upg');
   const relHead = h('h2', {}, 'Relics');
-  const relNote = h('div', { class: 'muted', style: 'margin:-4px 0 8px' }, 'Found through secret achievements. A Relic you buy lasts until you Ascend; after that, buy it again.');
+  const relNote = h('div', { class: 'muted', style: 'margin:-4px 0 8px' }, 'Found through secret achievements.');
+  up(() => setT(relNote, 'Found through secret achievements.' + (ascendKnown() && !hasE('e48') ? ' A Relic you buy lasts until you Ascend; after that, buy it again.' : '')), 'upg');
   const relGrid = h('div', { class: 'cards' });
   T.append(relHead, relNote, relGrid);
   up(() => { const v = RELICS.some(r => rewardUnlocked(r.id)); show(relHead, v); show(relNote, v); }, 'upg');
@@ -3859,7 +3884,7 @@ function buildUpgTab() {
 function buildShardTab() {
   const T = UI.tabs.shard;
   const info = h('div', { class: 'info' }); T.append(info);
-  up(() => setH(info, `You have <b class="hl-sh">${fmt(S.shards.floor(), 0)}</b> Shards (${fmt(S.totalShards.floor(), 0)} earned this Ascension, ${S.collapses} Collapses).<br>` +
+  up(() => setH(info, `You have <b class="hl-sh">${fmt(S.shards.floor(), 0)}</b> Shards (${fmt(S.totalShards.floor(), 0)} earned ${ascendKnown() ? 'this Ascension' : 'so far'}, ${S.collapses} Collapses).<br>` +
     `Collapsing needs ${fmt(D.fromLog(collapseReqLog()))} Quanta and resets Quanta, generators, Clock Speed${hasS('s2') ? '' : ' and Quanta upgrades'}. ` +
     `Shard gain: ×10 every ${CFG.shardDiv} orders of magnitude past the requirement, then ${fmtMult(shardMultLog())} from bonuses.` +
     ` Shards are based on the most Quanta you reached this run: <b>${fmt(D.fromLog(Math.max(0, runBestLog())))}</b>.` +
@@ -3937,7 +3962,7 @@ function buildCardsTab() {
   const T = UI.tabs.cards;
   const deckTxt = h('div', { class: 'muted', style: 'margin-bottom:12px' }), deckHead = h('h2', {}, 'The Architect’s deck');
   T.append(deckHead, deckTxt);
-  up(() => setT(deckTxt, 'Every ' + durTxt(dealEvery()) + ' of play I deal ' + NUMW[handSize()] + ' cards. Keep ' + (hasE('e47') ? 'two' : 'one') + '; the others go back in the deck. Rarer cards roll stronger, and every card rolls a little up or down. Most work for a few minutes of game time, some until your next Collapse or Ascension.' + (S.cards.hand && S.cards.kept ? ' Keep one more from this hand.' : '')), 'cards');
+  up(() => setT(deckTxt, 'Every ' + durTxt(dealEvery()) + ' of play I deal ' + NUMW[handSize()] + ' cards. Keep ' + (hasE('e47') ? 'two' : 'one') + '; the others go back in the deck. Rarer cards roll stronger, and every card rolls a little up or down. Most work for a few minutes of game time, some until your next Collapse' + (ascendKnown() ? ' or Ascension' : '') + '.' + (S.cards.hand && S.cards.kept ? ' Keep one more from this hand.' : '')), 'cards');
   const hand = h('div', { class: 'hand' }), wait = h('div', { class: 'deal-wait' }), waitBar = h('div', { class: 'deal-bar' }, h('i', {}));
   T.append(hand, h('div', {}, wait, waitBar));
   T.append(h('h2', {}, 'Working now'));
@@ -4029,9 +4054,11 @@ function buildAchTab() {
   const info = h('div', { class: 'info' }); T.append(info);
   up(() => { const n = Object.keys(S.ach).length; setH(info, `<b>${ACH.filter(a => S.ach[a[0]]).length}</b> / ${ACH.length} achievements and <b>${SECRETS.filter(s => S.ach[s.id]).length}</b> / ${SECRETS.length} secrets — each one multiplies Quanta production by ×1.1 (currently <b class="hl-ok">${fmtMult(achMultLog())}</b>).`); }, 'ach');
   const grid = h('div', { class: 'ach-grid' }); T.append(grid);
+  const unknownAch = (id, txt) => !S.ach[id] && ((!collapseKnown() && /Collaps|Shard/.test(txt)) || (!ascendKnown() && /Ascen|Essence|Apeiron|Challenge|past the Limit|Break the Limit/.test(txt)));
   for (const [id, name, desc] of ACH) {
-    const el = h('div', { class: 'ach' }, h('div', { class: 'n' }, name), desc);
-    grid.append(el); up(() => setC(el, 'got', !!S.ach[id]), 'ach');
+    const nEl = h('div', { class: 'n' }, name), dEl = h('div', {}, desc), el = h('div', { class: 'ach' }, nEl, dEl);
+    grid.append(el);
+    up(() => { setC(el, 'got', !!S.ach[id]); const hide = unknownAch(id, name + ' ' + desc); setT(nEl, hide ? '???' : name); setT(dEl, hide ? 'Something you have not found yet.' : desc); }, 'ach');
   }
   T.append(h('h2', {}, 'Secret achievements'));
   T.append(h('div', { class: 'muted', style: 'margin:-4px 0 8px' }, 'Some secrets need very specific circumstances. A few can only be done at certain points in a game, and may not be possible without starting a new game.'));
@@ -4056,7 +4083,7 @@ function buildStatsGraph(T) {
   const legend = h('div', { class: 'opt-row' });
   for (const [k, label, col, dash] of SER) {
     const sw = h('span', { class: 'gsw' }); const b = h('button', { class: 'gleg on', onclick: () => { on[k] = !on[k]; setC(b, 'on', on[k]); key = ''; } }, sw, label);
-    up(() => { sw.style.borderTopColor = css(col); sw.style.borderTopStyle = dash.length ? 'dashed' : 'solid'; }, 'stats'); legend.append(b);
+    up(() => { sw.style.borderTopColor = css(col); sw.style.borderTopStyle = dash.length ? 'dashed' : 'solid'; show(b, /Shard/.test(label) ? collapseKnown() : /Essence/.test(label) ? ascendKnown() : true); }, 'stats'); legend.append(b); // lines for what you know
   }
   const box = h('div', { class: 'graphbox' }), cv = h('canvas'), tip = h('div', { class: 'gtip' });
   box.append(cv, tip);
@@ -4105,24 +4132,24 @@ function buildStatsTab() {
   const tb = h('table', { class: 'stats' }); T.append(tb);
   const rows = [
     ['Time played', () => fmtTime(S.stats.time)],
-    ['Time in this Collapse', () => fmtTime(S.stats.tCollapse)],
-    ['Time in this Ascension', () => fmtTime(S.stats.tAscend)],
+    ['Time in this Collapse', () => fmtTime(S.stats.tCollapse), collapseKnown],
+    ['Time in this Ascension', () => fmtTime(S.stats.tAscend), ascendKnown],
     ['Total Quanta produced', () => fmt(S.stats.totalQ)],
     ['Best Quanta', () => fmt(S.stats.bestQ)],
     ['Quanta production exponent', () => '^' + qExponent().toFixed(3)],
     ['Resonance', () => '×' + resonance().toFixed(2) + ' per 10 bought'],
-    ['Total Collapses', () => S.stats.totalCollapses.toLocaleString('en-US')],
-    ['Fastest Collapse', () => fmtTime(S.stats.fastCollapse)],
-    ['Ascensions', () => S.ascensions.toLocaleString('en-US')],
-    ['Fastest Ascension', () => fmtTime(S.stats.fastAscend)],
-    ['Challenge completions', () => totalComps()],
+    ['Total Collapses', () => S.stats.totalCollapses.toLocaleString('en-US'), collapseKnown],
+    ['Fastest Collapse', () => fmtTime(S.stats.fastCollapse), collapseKnown],
+    ['Ascensions', () => S.ascensions.toLocaleString('en-US'), ascendKnown],
+    ['Fastest Ascension', () => fmtTime(S.stats.fastAscend), ascendKnown],
+    ['Challenge completions', () => totalComps(), ascendKnown],
     ['Highest generator tier', () => (S.ai.tierSeen + 1) + ' (' + genDef(S.ai.tierSeen).name + ')'],
-    ['Architect upgrades owned', () => S.proc.q + ' / ' + S.proc.s + ' / ' + S.proc.e + '  (Quanta / Shards / Essence)'],
+    ['Architect upgrades owned', () => ascendKnown() ? S.proc.q + ' / ' + S.proc.s + ' / ' + S.proc.e + '  (Quanta / Shards / Essence)' : collapseKnown() ? S.proc.q + ' / ' + S.proc.s + '  (Quanta / Shards)' : String(S.proc.q)],
     ['Pulses', () => S.stats.pulses.toLocaleString('en-US')],
-    ['Dampening past the Limit', () => 'production above 1e308 is raised to ^' + DAMP],
-    ['Architect Inspiration', () => S.eUpg.e6 ? fmtMult(inspirationLog()) + ' Quanta production' : 'not yet (break the Limit)'],
+    ['Dampening past the Limit', () => 'production above 1e308 is raised to ^' + DAMP, ascendKnown],
+    ['Architect Inspiration', () => S.eUpg.e6 ? fmtMult(inspirationLog()) + ' Quanta production' : 'not yet (break the Limit)', ascendKnown],
   ];
-  for (const [k, f] of rows) { const v = h('td'); tb.append(h('tr', {}, h('td', {}, k), v)); up(() => setT(v, String(f())), 'stats'); }
+  for (const [k, f, vis] of rows) { const v = h('td'), tr = h('tr', {}, h('td', {}, k), v); tb.append(tr); up(() => { const on = !vis || vis(); show(tr, on); if (on) setT(v, String(f())); }, 'stats'); }
 }
 
 function buildOptTab() {
@@ -4160,7 +4187,9 @@ function buildOptTab() {
   const bug = h('a', { class: 'btnlink', target: '_blank', rel: 'noopener noreferrer', href: ISSUES_URL }, 'Report a bug');
   up(() => { bug.href = bugReportUrl(); }, 'opt');
   T.append(h('h2', {}, 'Help'), h('div', { class: 'opt-row' }, bug, h('span', { class: 'muted' }, 'Opens the Issues page of Apeiron on GitHub with a short form to fill in. Posting needs a free GitHub account.')));
-  T.append(h('h2', {}, 'Hotkeys'), h('div', { class: 'info', html: '<kbd>M</kbd> max all &nbsp; <kbd>T</kbd> buy Clock Speed &nbsp; <kbd>P</kbd> pulse &nbsp; <kbd>C</kbd> collapse &nbsp; <kbd>A</kbd> ascend &nbsp; <kbd>S</kbd> Surge &nbsp; <kbd>F</kbd> Time Fold &nbsp; <kbd>N</kbd> Nova &nbsp; <kbd>U</kbd> buy all upgrades &nbsp; <kbd>B</kbd> buy all Shard upgrades' }));
+  const hot = h('div', { class: 'info' }); T.append(h('h2', {}, 'Hotkeys'), hot);
+  up(() => { const k = [['M', 'max all'], ['T', 'buy Clock Speed'], ['P', 'pulse']].concat(collapseKnown() ? [['C', 'collapse'], ['S', 'Surge'], ['F', 'Time Fold'], ['U', 'buy all upgrades'], ['B', 'buy all Shard upgrades']] : [], ascendKnown() ? [['A', 'ascend'], ['N', 'Nova']] : []);
+    setH(hot, k.map(([a, b]) => `<kbd>${a}</kbd> ${b}`).join(' &nbsp; ')); }, 'opt');
   T.append(h('h2', {}, 'About'), h('div', { class: 'info', html: '<b>Apeiron</b> (Greek: the boundless) — an infinite incremental. Numbers are stored as mantissa × 10<sup>exponent</sup>, so they can grow far past 1e308 (to about 10<sup>10<sup>308</sup></sup>). Saves live in this browser\'s local storage; export to keep a backup.' }));
 }
 const ISSUES_URL = 'https://github.com/TitanTheGodlike/APEIRON/issues/new';
@@ -4193,7 +4222,7 @@ function buildProgress() {
     const L = Math.max(0, lq());
     let goal, label;
     if (S.chal.active >= 0) { goal = chalGoalLog(S.chal.active); label = CHALS[S.chal.active].name + ' goal'; }
-    else if (L < collapseReqLog()) { goal = collapseReqLog(); label = 'Collapse'; }
+    else if (L < collapseReqLog()) { goal = collapseReqLog(); label = collapseKnown() ? 'Collapse' : 'something new'; }
     else if (!hasE('e6')) { goal = CFG.limit; label = 'the Limit'; }
     else { const k = Math.floor((L - CFG.limit) / CFG.ascDiv) + 1; goal = CFG.limit + k * CFG.ascDiv; label = 'next ×10 Essence'; }
     const p = Math.max(0, Math.min(1, L / goal));
@@ -4286,6 +4315,8 @@ function init() {
     const raw = NOSAVE ? null : localStorage.getItem(SAVE_KEY);
     if (raw) { const savedVer = JSON.parse(raw).ver || 1; S = loadFrom(raw); S.ver = savedVer; away = (Date.now() - S.last) / 1000; if (!JSON.parse(raw).story) storyCatchUp = true; }
   } catch (e) { console.warn('Save could not be loaded', e); S = newState(); }
+  // the tutorial goes back to the first step you have not actually done (a changed step list once skipped players ahead)
+  if (!S.tut.off && S.tut.step < TUT.length) while (S.tut.step > 0 && !TUT[S.tut.step - 1].done()) S.tut.step--;
   buildHeader(); buildNav(); buildGenTab(); buildArchTab(); buildUpgTab(); buildShardTab(); buildAutoTab(); buildAscTab(); buildCardsTab(); buildChalTab(); buildAchTab(); buildStatsTab(); buildGuideTab(); buildOptTab(); buildProgress();
   let welcome = null;
   if (away > 10 && S.settings.offline) {

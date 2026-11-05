@@ -517,9 +517,11 @@ const CFG = {
   cascadeLog: 0,      // log10 of how fast tier N makes tier N-1
   heavy: 0.8,         // the first world is heavy: tiers make each other 10^0.8 slower until you Collapse (halves with every Collapse)
   collapseReq: 25,    // log10 Quanta needed to Collapse
-  shardDiv: 36,       // shards = 10^((logQ - req)/div) * mult (36 since the webs grew to ~430 upgrades)
+  shardDiv: 40,       // shards = 10^((logQ - req)/div) * mult (40: the middle game was slowed twice)
   limit: 308,         // The Limit
-  ascDiv: 60,         // essence beyond the limit = 10^((logQ - 308)/div) * mult
+  ascDiv: 70,         // essence beyond the limit = 10^((logQ - 308)/div) * mult
+  inspireSec: 60,     // after Unbounded, Inspiration gives x10 Quanta production every this many seconds
+  damp: 0.82,         // past the Limit every order of magnitude is harder: the part above 1e308 is raised to this power
   clock0: 1.7,        // log10 first Clock Speed cost (50)
   offlineRate: 0.2,   // time away (game closed, or a paused phone app) counts at 20% speed
   keeperCd: 15,       // seconds between purchases of each Upgrade-web keeper (Lightkeeper, Harmonist, Cascader)
@@ -1142,8 +1144,8 @@ function buyProc(layer, i) {
   return true;
 }
 const streamVisible = l => l === 'q' ? true : l === 's' ? shardsVisible() : ascVisible();
-// Inspiration: once the Limit is broken, the Architect's ideas pile up steadily: ×10 Quanta production every 30 seconds.
-const inspirationLog = () => S.stats.tUnbound / 30;
+// Inspiration: once the Limit is broken, the Architect's ideas pile up steadily: ×10 Quanta production every CFG.inspireSec seconds.
+const inspirationLog = () => S.stats.tUnbound / CFG.inspireSec;
 function aiMods() { return { all: 0, q: (isIdle() ? procSum('idle') + (hasS('s21') ? 2 : 0) : 0) + (busyActive() ? 2 : 0), shard: 0 }; }
 function aiOnBuy(i, n) { }
 // Generator names: the Architect names every tier past the hand-made list
@@ -1334,7 +1336,7 @@ function tierMultLog(i, gl) {
 }
 // Past the Limit every order of magnitude of production is harder to reach: ^0.85 on the part above 1e308.
 const DAMP = 0.85;
-const dampen = L => L > CFG.limit ? CFG.limit + Math.pow(L - CFG.limit, DAMP) : L;
+const dampen = L => L > CFG.limit ? CFG.limit + Math.pow(L - CFG.limit, CFG.damp) : L;
 function qExponent() {
   let x = 1;
   if (hasS('s12')) x += 0.01;
@@ -3262,7 +3264,7 @@ function buildGuideTab() {
     [() => S.ai.log.length > 0, 'The Architect', 'The game\'s own AI. It talks to you in a speech bubble, writes endless upgrades for every layer (Quanta, Shards, Essence) that grow as diamond nodes in the webs, and names every new generator tier. Each new upgrade is invented when you buy the previous one, shaped by how you play: it builds for your favourite and newest generators, rewards clicking if you click a lot, and rewards idling if you leave the game running.'],
     [shardsVisible, 'Collapse and Shards', 'At 1e25 Quanta you can Collapse: Quanta, generators and Clock Speed reset, and you get Shards. Shards buy upgrades in the <b>Shard tree</b>: start at Fracture, then grow three branches. The first nodes open new things rather than boosting old ones: Fracture starts the Architect’s cards, Forgeworks unlocks the Shard repeatables, Wholesale adds a Buy all button to the Upgrade web and Shard Visions lets the Architect invent Shard ideas. Memory, deeper in Clockwork and expensive, keeps your Upgrade web through Collapses. Shard Wholesale, in the Essence web, adds a Buy all button to the Shard web (key B) that never makes a path choice for you. Radiance is raw power, Clockwork is speed and automation, Echoes is the Shard economy and the active abilities <b>Surge</b> and <b>Time Fold</b>. At each fork you choose one of two paths. <b>Reshape the tree</b> refunds every Shard so you can try a different build. More Quanta at the moment you Collapse means more Shards.'],
     [autoVisible, 'Automation', 'The Clockwork branch of the Shard web has one autobuyer per generator: Automata I buys Flickers, II buys Sparks, and from Automata IX on every one you own adds the next, so there is always one more. Clockmaker buys Clock Speed; Lightkeeper, Harmonist and Cascader each buy one Upgrade-web node every 15 seconds; Self-Collapse adds Auto-Collapse. Later, the Prism, Gear and Echo Stewards in the Essence web do the same for the Shard web, leaving path choices to you. Configure them all in the Automation tab.'],
-    [ascVisible, 'The Limit and Ascension', 'Quanta stops at 1e308, the Limit. There you can Ascend for Essence. At first an Ascension resets everything but Essence: Quanta, generators, the Upgrade web, Shards, the whole Shard web and its repeatables. The <b>Memory</b> branch of the Essence web lets you keep more: Muscle Memory keeps your automation, Perfect Recall the Shard web, Deep Memory the Upgrade web. Essence buys nodes in the <b>Essence web</b>; its root, <b>Unbounded</b>, breaks the Limit for good, so buy it first. Past it, every order of magnitude is a little harder to reach (dampening), but the Architect starts gathering <b>Inspiration</b>: Quanta production ×10 every 30 seconds, forever, so you never stop moving. Overgrowth, in the Memory branch, makes the outer tips of all three webs keep growing, so there is always another upgrade.'],
+    [ascVisible, 'The Limit and Ascension', 'Quanta stops at 1e308, the Limit. There you can Ascend for Essence. At first an Ascension resets everything but Essence: Quanta, generators, the Upgrade web, Shards, the whole Shard web and its repeatables. The <b>Memory</b> branch of the Essence web lets you keep more: Muscle Memory keeps your automation, Perfect Recall the Shard web, Deep Memory the Upgrade web. Essence buys nodes in the <b>Essence web</b>; its root, <b>Unbounded</b>, breaks the Limit for good, so buy it first. Past it, every order of magnitude is a little harder to reach (dampening), but the Architect starts gathering <b>Inspiration</b>: Quanta production ×10 every minute, forever, so you never stop moving. Overgrowth, in the Memory branch, makes the outer tips of all three webs keep growing, so there is always another upgrade.'],
     [cardsOn, 'Cards', 'Once you buy Fracture, the root of the Shard web, the Architect deals you three cards every ten minutes of play (see the <b>Cards</b> tab). Keep one. Cards are Common, Rare, Epic or Legendary, and each rolls a little stronger or weaker. They give Quanta, speed up every generator, boost your top tier, Pulse, Lucky Pulses, Resonance or idle play for a while, add Shards or Essence to your next prestige, hand you production on the spot, or flip a coin for a big boost.'],
     [() => hasE('e3'), 'Challenges', 'Runs with a handicap. Reach the goal to complete one; every Challenge can be completed again and again with a higher goal and a stronger reward.'],
     [() => SECRETS.some(s => S.ach[s.id]), 'Secrets', 'Some achievements are hidden. Each one shows only a hint until you earn it, and each unlocks something special: a <b>Relic</b> (an upgrade in the Upgrades tab that you buy again after every Ascension) or an <b>Anomaly</b> (a generator in the Generators tab that never resets). Pay attention to the hints, and to odd things you might try.'],
@@ -3431,7 +3433,7 @@ function buildAscTab() {
   const info = h('div', { class: 'info' }); T.append(info);
   up(() => setH(info, `You have <b class="hl-es">${fmt(S.essence.floor(), 0)}</b> Essence (${fmt(S.totalEssence.floor(), 0)} total, ${S.ascensions} Ascensions).<br>` +
     `Ascending needs ${fmt(D.fromLog(CFG.limit))} Quanta and resets ${ascResetText()}. Essence upgrades and Challenge completions are permanent; the Memory branch keeps more each time.` +
-    (hasE('e6') ? ` <br>The Architect's <b class="hl-sh">Inspiration</b>: Quanta production <b>${fmtMult(inspirationLog())}</b> (×10 more every 30 seconds, forever).` : '') +
+    (hasE('e6') ? ` <br>The Architect's <b class="hl-sh">Inspiration</b>: Quanta production <b>${fmtMult(inspirationLog())}</b> (×10 more every ${CFG.inspireSec} seconds, forever).` : '') +
     (hasE('e6') ? ` Essence gain: ×10 every ${CFG.ascDiv} orders of magnitude past the Limit${essMultLog() > 0 ? ', then ' + fmtMult(essMultLog()) : ''}.` : ' Each Ascension gives 1 Essence until you break the Limit.')), 'asc');
   T.append(h('h2', {}, 'Essence web'));
   T.append(h('div', { class: 'muted', style: 'margin:-2px 0 8px' }, 'Start at Unbounded, then grow three branches: Starlight is raw power, Memory is what you keep and automation, Trials is Shards, Essence and Challenges. Diamonds are the Architect’s ideas. Everything here is permanent.'));

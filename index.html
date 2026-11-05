@@ -644,7 +644,7 @@ const SUPG = [
   { id: 's28', name: 'Starfire', cost: 5e18, desc: 'Quanta production ×10,000.' },
   // Clockwork: speed and automation
   { id: 'sB', name: 'Wholesale', cost: 2, auto: true, desc: 'Adds a Buy all button to the Upgrade web (key U): one press buys every upgrade you can afford there, cheapest first.' },
-  { id: 's2', name: 'Memory', cost: 1000, auto: true, desc: 'Keep the Upgrade web (Quanta upgrades) when you Collapse.' },
+  { id: 's2', name: 'Memory', cost: 1e4, auto: true, desc: 'Keep the Upgrade web (Quanta upgrades) when you Collapse.' },
   { id: 's8', name: 'Gear Down', cost: 500, desc: 'Clock Speed cost grows ×6 per level instead of ×10.' },
   { id: 's21', name: 'Patient Hands', cost: 2.5e4, desc: 'While you have not touched the game for a minute, Quanta production ×100.' },
   { id: 's22', name: 'Busy Hands', cost: 2.5e4, desc: 'Pulse recharges twice as fast, and for 3 seconds after each Pulse, Quanta production ×100.' },
@@ -720,11 +720,12 @@ const EUPG = [
   { id: 'e2', name: 'Starlight', cost: 2, desc: 'Quanta production ×1,000 × (1 + total Essence)^1.5.', eff: () => fmtMult(3 + 1.5 * S.totalEssence.add(1).log10()) },
   { id: 'e3', name: 'Trials', cost: 3, desc: 'Unlock Challenges.' },
   { id: 'e4', name: 'Bloom', cost: 5, desc: 'Shard gain ×(1 + Ascensions).', eff: () => '×' + fmt(1 + S.ascensions) },
-  { id: 'e5', name: 'Perfect Recall', cost: 8, desc: 'Keep the whole Shard web when you Ascend: its upgrades, bonus nodes and the Architect’s Shard ideas.' },
+  { id: 'e5', name: 'Perfect Recall', cost: 1e4, desc: 'Keep the whole Shard web when you Ascend: its upgrades, bonus nodes and the Architect’s Shard ideas.' },
   { id: 'e37', name: 'Prism Steward', cost: 1e7, desc: 'Automatically buys the cheapest node in the Radiance branch of the Shard web, one every 15 seconds. Path choices are left to you.' },
   { id: 'e38', name: 'Gear Steward', cost: 1e10, desc: 'Automatically buys the cheapest node in the Clockwork branch of the Shard web, one every 15 seconds. Path choices are left to you.' },
   { id: 'e39', name: 'Echo Steward', cost: 1e13, desc: 'Automatically buys the cheapest node in the Echoes branch of the Shard web, one every 15 seconds. Path choices are left to you.' },
   { id: 'e36', name: 'Overgrowth', cost: 40, desc: 'The webs never end: the outer tips of the Upgrade, Shard and Essence webs keep growing. Every node you buy at a tip sprouts the next one.' },
+  { id: 'e40', name: 'Shard Wholesale', cost: 4, desc: 'Adds a Buy all button to the Shard web (key B): one press buys every Shard upgrade you can afford, cheapest first. It never makes a path choice for you.' },
   { id: 'e35', name: 'Muscle Memory', cost: 2, desc: 'Keep Wholesale, Memory, the Automata, Clockmaker, the three branch keepers, Starseed and Self-Collapse when you Ascend.' },
   { id: 'e7', name: 'Shard Stream', cost: 15, desc: 'Passively gain 10% of your pending Collapse Shards every second.' },
   { id: 'e8', name: 'Self-Ascend', cost: 30, desc: 'Unlock Auto-Ascend.' },
@@ -1557,6 +1558,7 @@ function doAscend(quiet = false) {
   else { S.qUpg = {}; S.proc.q = 0; for (const u of S.forge.q) u.own = false; S.minor.q = {}; }
   MINOR_VER++;
   S.stats.tAscend = 0; S.secret.ideasAsc = 0;
+  S.relics = {}; // relics are bought again after every Ascension (the secrets keep them unlocked)
   S.cards.active = S.cards.active.filter(c => c.until >= 0); // Ascension uses up every until-the-next card
   aiEvent('ascend', gain);
   if (!quiet) { flash('rgba(255,210,122,.55)'); sfx('ascend'); if (S.ascensions === 1) toast('You Ascended. Spend Essence in the Ascension tab.', 'es'); }
@@ -2492,12 +2494,12 @@ const WEB_DEF = {
       { name: 'Clockwork', sub: 'speed and automation', angle: -30, start: 'sB', links: [['sB', 'ab0'], ['sB', 's8'], ['ab0', 'ab1'], ['ab1', 'abC'], ['ab1', 'ab2'], ['ab2', 'ab3'], ['ab3', 's11'], ['ab3', 'ab4'], ['ab4', 'abL'], ['abL', 'abH'], ['abH', 'abK'], ['ab4', 'ab5'], ['ab5', 'ab6'], ['ab6', 'ab7'], ['ab7', 'ab8'], ['ab7', 's9'], ['s9', 's45'], ['abK', 's46'], ['s11', 's44'], ['s8', 's40'], ['s40', ['s21', 's22']], [['s21', 's22'], 's41'], ['s41', 's27'], ['s41', 's42'], ['s27', 's15'], ['s15', 's43'], ['ab0', 's2']], minor: { kind: 'clock', v: 0.0007, text: 'Clock Speed base +0.0007' } },
       { name: 'Echoes', sub: 'Shards and abilities', angle: 90, start: 's5', links: [['s5', 's47'], ['s47', 's25'], ['s5', ['s23', 's24']], ['s25', 's26'], ['s26', 's31'], ['s26', 's30'], ['s26', 's50'], ['s31', 's52'], ['s30', 's53'], [['s23', 's24'], 's48'], ['s48', 's10'], ['s10', 's49'], ['s49', 's29'], ['s29', 's51'], ['s51', 's54']], minor: { kind: 'shard', v: L10(1.016), text: 'Shard gain ×1.016' } },
     ] },
-  e: { root: 'e6', cur: 'essence', curName: 'Essence', costLog: id => L10(EBY[id].cost), owned: id => !!S.eUpg[id],
+  e: { root: 'e6', cur: 'essence', curName: 'Essence', costLog: id => L10(EBY[id].cost), owned: id => !!S.eUpg[id], loopNodes: 1,
     ring: { kind: 'qmult', v: L10(2), text: 'Quanta production ×2' },
     branches: [
-      { name: 'Starlight', sub: 'raw power', angle: -150, start: 'e2', links: [['e2', 'e19'], ['e19', 'e9'], ['e2', 'e10'], ['e9', 'e16'], ['e16', 'e20'], ['e10', 'e11'], ['e10', 'e22'], ['e11', 'e18'], ['e18', 'e23'], ['e16', 'e17'], ['e17', 'e21'], ['e21', 'e24']], minor: { kind: 'qmult', v: L10(1.4), text: 'Quanta production ×1.4' } },
-      { name: 'Memory', sub: 'what you keep, and automation', angle: -30, start: 'e1', links: [['e1', 'e25'], ['e1', 'e35'], ['e25', 'e5'], ['e5', 'e7'], ['e5', 'e8'], ['e5', 'e36'], ['e8', 'e37'], ['e37', 'e38'], ['e38', 'e39'], ['e7', 'e29'], ['e7', 'e15'], ['e8', 'e26'], ['e15', 'e27'], ['e27', 'e28']], minor: { kind: 'shard', v: L10(1.045), text: 'Shard gain ×1.045' } },
-      { name: 'Trials', sub: 'Shards, Essence and Challenges', angle: 90, start: 'e3', links: [['e3', 'e4'], ['e3', 'e14'], ['e3', 'e30'], ['e4', 'e13'], ['e13', 'e12'], ['e13', 'e33'], ['e14', 'e31'], ['e12', 'e32'], ['e32', 'e34']], minor: { kind: 'ess', v: L10(1.013), text: 'Essence gain ×1.013' } },
+      { name: 'Starlight', sub: 'raw power', angle: -150, start: 'e2', links: [['e2', 'e19'], ['e19', 'e9'], ['e2', 'e10'], ['e9', 'e16'], ['e9', 'e20'], ['e10', 'e11'], ['e19', 'e22'], ['e11', 'e18'], ['e10', 'e23'], ['e16', 'e17'], ['e20', 'e21'], ['e17', 'e24']], minor: { kind: 'qmult', v: L10(1.96), text: 'Quanta production ×1.96' } },
+      { name: 'Memory', sub: 'what you keep, and automation', angle: -30, span: 128, start: 'e1', links: [['e1', 'e25'], ['e1', 'e35'], ['e25', 'e5'], ['e25', 'e7'], ['e25', 'e8'], ['e25', 'e36'], ['e8', 'e37'], ['e37', 'e38'], ['e38', 'e39'], ['e7', 'e29'], ['e7', 'e15'], ['e8', 'e26'], ['e15', 'e27'], ['e27', 'e28'], ['e35', 'e40']], minor: { kind: 'shard', v: L10(1.092), text: 'Shard gain ×1.092' } },
+      { name: 'Trials', sub: 'Shards, Essence and Challenges', angle: 90, start: 'e3', links: [['e3', 'e4'], ['e3', 'e14'], ['e3', 'e30'], ['e4', 'e13'], ['e13', 'e12'], ['e13', 'e33'], ['e14', 'e31'], ['e12', 'e32'], ['e32', 'e34']], minor: { kind: 'ess', v: L10(1.026), text: 'Essence gain ×1.026' } },
     ] },
 };
 // the branch an idea belongs on, by what it does (t = its generator tier; -1 is Clock Speed)
@@ -2576,7 +2578,8 @@ function growWebs() {
     let k = k0;
     W.branches.forEach((br, b) => {
       const ids = []; for (const l of br.links) for (const id of [].concat(l[0], l[1])) if (!ids.includes(id)) ids.push(id);
-      if (!pickAnchors && layer === 's' && b === 1) { ids.splice(ids.indexOf('sB'), 1); ids.splice(ids.indexOf('s2'), 1); ids.unshift('s2'); } // Wholesale came later: same anchors as before
+      if (!pickAnchors) for (const late of GROW_LATE) if (ids.includes(late)) ids.splice(ids.indexOf(late), 1);
+      if (!pickAnchors && layer === 's' && b === 1) { ids.splice(ids.indexOf('s2'), 1); ids.unshift('s2'); } // Wholesale came later: same anchors as before
       const anchors = (pickAnchors ? pickAnchors(ids, br) : ids).slice(), wts = cfg.kinds[b], made = [];
       if (!anchors.length) return;
       for (let i = anchors.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [anchors[i], anchors[j]] = [anchors[j], anchors[i]]; }
@@ -2631,6 +2634,7 @@ function growWebs() {
   });
 }
 const GROW_MORE_S = 18; // extra Shard upgrades per branch
+const GROW_LATE = ['sB', 'e40']; // written upgrades added after the first growth pass: never its anchors
 function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 growWebs();
 /* Endless growth: past the written webs, the outer tips keep growing. Owning the newest node of a tip sprouts
@@ -2792,12 +2796,12 @@ function webStatic(layer) {
   const sideLoop = (idp, A, B, side, eff) => {
     const pa = nodes[A[0]].anchor, pb = nodes[B[0]].anchor, dx = pb[0] - pa[0], dy = pb[1] - pa[1], len = Math.hypot(dx, dy) || 1, nx = -dy / len * side, ny = dx / len * side;
     const off = Math.min(85, len * 0.3);
-    loop(idp, A, B, [[pa[0] + dx * 0.33 + nx * off, pa[1] + dy * 0.33 + ny * off], [pa[0] + dx * 0.67 + nx * off, pa[1] + dy * 0.67 + ny * off]], () => eff);
+    loop(idp, A, B, W.loopNodes === 1 ? [[pa[0] + dx * 0.5 + nx * off, pa[1] + dy * 0.5 + ny * off]] : [[pa[0] + dx * 0.33 + nx * off, pa[1] + dy * 0.33 + ny * off], [pa[0] + dx * 0.67 + nx * off, pa[1] + dy * 0.67 + ny * off]], () => eff);
   };
   const R = d => 260 + d * 240;
   add({ id: W.root, type: 'root', br: -1, upg: W.root, costLog: W.costLog(W.root), anchor: [0, 0] });
   W.branches.forEach((br, b) => {
-    const th0 = br.angle * Math.PI / 180, span = 100 * Math.PI / 180, kids = {};
+    const th0 = br.angle * Math.PI / 180, span = (br.span || 100) * Math.PI / 180, kids = {};
     for (const [p, c] of br.links) (kids[key(p)] = kids[key(p)] || []).push(c);
     const leaves = g => { const k = kids[key(g)]; return k ? k.reduce((s, c) => s + leaves(c), 0) : (GROWN.has(ids(g)[0]) ? 0.4 : 1); };
     let li = 0;
@@ -2824,7 +2828,7 @@ function webStatic(layer) {
   for (let i = 0; i < edges.length; i++) {
     const [x, y] = edges[i], nx = nodes[x], ny = nodes[y];
     if (!nx || !ny || !ny.gen || nx.gen || nx.type !== 'notable' || hashStr('bonusroot:' + y) % 2) continue;
-    const mid = `m:${layer}:${nx.br}:${x}:2`, m = nodes[mid];
+    const mid = `m:${layer}:${nx.br}:${x}:${W.loopNodes || 2}`, m = nodes[mid];
     if (m && m.costLog <= ny.costLog) { edges[i] = [mid, y]; ny.fromBonus = true; }
   }
   const adj = {};
@@ -2903,6 +2907,9 @@ function webFrontier(layer) {
 const wholesaleOn = () => !!S.sUpg.sB;
 // Wholesale: buy every affordable Upgrade-web node, cheapest first
 const buyAllUpgrades = () => wholesaleOn() ? webAutoBuy('q', 2000) : 0;
+// Shard Wholesale (Essence web): the same for the Shard web, leaving path choices to you
+const shardWholesaleOn = () => !!S.eUpg.e40;
+const buyAllShards = () => shardWholesaleOn() ? webAutoBuy('s', 2000, undefined, true) : 0;
 function webAutoBuy(layer, max = 40, branch, keepChoices) {
   const cur = WEB_DEF[layer].cur;
   let bought = 0;
@@ -3042,9 +3049,9 @@ function buildWebView(T, layer, tabId) {
   const pType = h('div', { class: 'pb' }), pName = h('div', { class: 'pn' }), pDesc = h('div', { class: 'pd' }), pEff = h('div', { class: 'pe' }), pWhy = h('div', { class: 'pw' }), pCost = h('div', { class: 'pc' }), pFork = h('div', { class: 'pf' });
   const pBuy = h('button', {}, 'Buy');
   const panel = h('div', { class: 'nodepanel' }, pType, pName, pDesc, pFork, pEff, pWhy, pCost, pBuy);
-  const buyAll = h('button', { class: 'buyall', onclick: () => sfx(buyAllUpgrades() ? 'upgrade' : 'fail'), title: 'Buy every upgrade you can afford, cheapest first (key U)' }, 'Buy all');
-  const tools = h('div', { class: 'treetools' }, h('button', { onclick: () => zoomBy(1.25) }, '+'), h('button', { onclick: () => zoomBy(0.8) }, '−'), h('button', { onclick: () => fit(true) }, 'Fit'), h('button', { onclick: () => tidy(), title: 'Re-sort the whole web' }, 'Tidy'), layer === 'q' ? buyAll : '');
-  if (layer === 'q') up(() => show(buyAll, wholesaleOn()), tabId);
+  const isQ = layer === 'q', buyAll = h('button', { class: 'buyall', onclick: () => sfx((isQ ? buyAllUpgrades() : buyAllShards()) ? 'upgrade' : 'fail'), title: isQ ? 'Buy every upgrade you can afford, cheapest first (key U)' : 'Buy every Shard upgrade you can afford, cheapest first; path choices are left to you (key B)' }, 'Buy all');
+  const tools = h('div', { class: 'treetools' }, h('button', { onclick: () => zoomBy(1.25) }, '+'), h('button', { onclick: () => zoomBy(0.8) }, '−'), h('button', { onclick: () => fit(true) }, 'Fit'), h('button', { onclick: () => tidy(), title: 'Re-sort the whole web' }, 'Tidy'), layer !== 'e' ? buyAll : '');
+  if (layer !== 'e') up(() => show(buyAll, isQ ? wholesaleOn() : shardWholesaleOn()), tabId);
   const hint = h('div', { class: 'treehint' }, 'Drag to move · scroll to zoom · click a node to inspect it · double-click to buy (the whole path if needed)');
   wrap.append(svg, tools, panel, hint);
   T.append(wrap);
@@ -3253,12 +3260,12 @@ function buildGuideTab() {
     [() => true, 'Clock Speed', 'Multiplies every generator at once. Each level costs more than the last, but it is always worth buying. It starts once you own a Flicker.'],
     [() => true, 'Upgrades', 'The <b>Upgrade web</b> holds hundreds of upgrades paid in Quanta, in three branches: Light (production), Harmony (resonance and clock) and Cascade (higher tiers and Shards). Buy any node next to one you own; big upgrades link straight to each other, and the small bonus nodes between them are detours that some upgrades branch off. Nodes still in the fog cannot be bought yet, and every upgrade costs a bit more than the one before. Until you own Memory (Shard web) the Upgrade web resets when you Collapse; Wholesale (Shard web) adds a <b>Buy all</b> button (key U). A dot on a tab means something there is affordable. <b>Max all</b> (key M) buys as many generators and Clock Speed levels as you can afford.'],
     [() => S.ai.log.length > 0, 'The Architect', 'The game\'s own AI. It talks to you in a speech bubble, writes endless upgrades for every layer (Quanta, Shards, Essence) that grow as diamond nodes in the webs, and names every new generator tier. Each new upgrade is invented when you buy the previous one, shaped by how you play: it builds for your favourite and newest generators, rewards clicking if you click a lot, and rewards idling if you leave the game running.'],
-    [shardsVisible, 'Collapse and Shards', 'At 1e25 Quanta you can Collapse: Quanta, generators and Clock Speed reset, and you get Shards. Shards buy upgrades in the <b>Shard tree</b>: start at Fracture, then grow three branches. The first nodes open new things rather than boosting old ones: Fracture starts the Architect’s cards, Forgeworks unlocks the Shard repeatables, Wholesale adds a Buy all button to the Upgrade web and Shard Visions lets the Architect invent Shard ideas. Memory, a little deeper in Clockwork, keeps your Upgrade web through Collapses. Radiance is raw power, Clockwork is speed and automation, Echoes is the Shard economy and the active abilities <b>Surge</b> and <b>Time Fold</b>. At each fork you choose one of two paths. <b>Reshape the tree</b> refunds every Shard so you can try a different build. More Quanta at the moment you Collapse means more Shards.'],
+    [shardsVisible, 'Collapse and Shards', 'At 1e25 Quanta you can Collapse: Quanta, generators and Clock Speed reset, and you get Shards. Shards buy upgrades in the <b>Shard tree</b>: start at Fracture, then grow three branches. The first nodes open new things rather than boosting old ones: Fracture starts the Architect’s cards, Forgeworks unlocks the Shard repeatables, Wholesale adds a Buy all button to the Upgrade web and Shard Visions lets the Architect invent Shard ideas. Memory, deeper in Clockwork and expensive, keeps your Upgrade web through Collapses. Shard Wholesale, in the Essence web, adds a Buy all button to the Shard web (key B) that never makes a path choice for you. Radiance is raw power, Clockwork is speed and automation, Echoes is the Shard economy and the active abilities <b>Surge</b> and <b>Time Fold</b>. At each fork you choose one of two paths. <b>Reshape the tree</b> refunds every Shard so you can try a different build. More Quanta at the moment you Collapse means more Shards.'],
     [autoVisible, 'Automation', 'The Clockwork branch of the Shard web has one autobuyer per generator: Automata I buys Flickers, II buys Sparks, and from Automata IX on every one you own adds the next, so there is always one more. Clockmaker buys Clock Speed; Lightkeeper, Harmonist and Cascader each buy one Upgrade-web node every 15 seconds; Self-Collapse adds Auto-Collapse. Later, the Prism, Gear and Echo Stewards in the Essence web do the same for the Shard web, leaving path choices to you. Configure them all in the Automation tab.'],
     [ascVisible, 'The Limit and Ascension', 'Quanta stops at 1e308, the Limit. There you can Ascend for Essence. At first an Ascension resets everything but Essence: Quanta, generators, the Upgrade web, Shards, the whole Shard web and its repeatables. The <b>Memory</b> branch of the Essence web lets you keep more: Muscle Memory keeps your automation, Perfect Recall the Shard web, Deep Memory the Upgrade web. Essence buys nodes in the <b>Essence web</b>; its root, <b>Unbounded</b>, breaks the Limit for good, so buy it first. Past it, every order of magnitude is a little harder to reach (dampening), but the Architect starts gathering <b>Inspiration</b>: Quanta production ×10 every 30 seconds, forever, so you never stop moving. Overgrowth, in the Memory branch, makes the outer tips of all three webs keep growing, so there is always another upgrade.'],
     [cardsOn, 'Cards', 'Once you buy Fracture, the root of the Shard web, the Architect deals you three cards every ten minutes of play (see the <b>Cards</b> tab). Keep one. Cards are Common, Rare, Epic or Legendary, and each rolls a little stronger or weaker. They give Quanta, speed up every generator, boost your top tier, Pulse, Lucky Pulses, Resonance or idle play for a while, add Shards or Essence to your next prestige, hand you production on the spot, or flip a coin for a big boost.'],
     [() => hasE('e3'), 'Challenges', 'Runs with a handicap. Reach the goal to complete one; every Challenge can be completed again and again with a higher goal and a stronger reward.'],
-    [() => SECRETS.some(s => S.ach[s.id]), 'Secrets', 'Some achievements are hidden. Each one shows only a hint until you earn it, and each unlocks something special: a <b>Relic</b> (a permanent upgrade in the Upgrades tab) or an <b>Anomaly</b> (a generator in the Generators tab that never resets). Pay attention to the hints, and to odd things you might try.'],
+    [() => SECRETS.some(s => S.ach[s.id]), 'Secrets', 'Some achievements are hidden. Each one shows only a hint until you earn it, and each unlocks something special: a <b>Relic</b> (an upgrade in the Upgrades tab that you buy again after every Ascension) or an <b>Anomaly</b> (a generator in the Generators tab that never resets). Pay attention to the hints, and to odd things you might try.'],
     [() => true, 'Appearance', 'Options → Appearance lets you change the color theme, the UI size, and turn the starfield, animations, rainbow generator colors and pop-up notifications on or off.'],
     [() => true, 'Saving','The game saves itself every 10 seconds in this browser and keeps progressing while you are away, at 20% speed. After a big update, an older save gets a one-time notice offering a fresh start; your save keeps working either way. Use Options → Export to make a backup.'],
   ];
@@ -3298,7 +3305,7 @@ function buildUpgTab() {
   buildWebView(T, 'q', 'upg');
   up(() => setT(note, 'Buy any node next to one you own. Big upgrades link straight to each other; the small bonus nodes between them are detours, and some upgrades branch off them. Diamonds are the Architect’s ideas. ' + (hasS('s2') ? 'Memory keeps this web through Collapses.' : 'The web resets when you Collapse until you own Memory (Shard web).')), 'upg');
   const relHead = h('h2', {}, 'Relics');
-  const relNote = h('div', { class: 'muted', style: 'margin:-4px 0 8px' }, 'Found through secret achievements. Once bought, a Relic is yours forever.');
+  const relNote = h('div', { class: 'muted', style: 'margin:-4px 0 8px' }, 'Found through secret achievements. A Relic you buy lasts until you Ascend; after that, buy it again.');
   const relGrid = h('div', { class: 'cards' });
   T.append(relHead, relNote, relGrid);
   up(() => { const v = RELICS.some(r => rewardUnlocked(r.id)); show(relHead, v); show(relNote, v); }, 'upg');
@@ -3413,7 +3420,7 @@ function buildCardsTab() {
 const act2 = fn => e => { e.stopPropagation(); fn(); };
 // what an Ascension wipes right now, given the Memory-branch upgrades you own
 function ascResetText() {
-  const r = ['Quanta', 'generators', 'Shards'];
+  const r = ['Quanta', 'generators', 'Shards', 'Relics'];
   if (!hasE('e15')) r.push('the Upgrade web');
   if (!hasE('e5')) r.push(hasE('e35') ? 'the Shard web except its automation' : 'the whole Shard web');
   if (!hasE('e1')) r.push('Shard repeatables');
@@ -3654,7 +3661,7 @@ document.addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
   if (k === KONAMI[konamiAt]) { if (++konamiAt === KONAMI.length) { konamiAt = 0; cheatCodeEntered(); return; } if (konamiAt > 8) return; }
   else konamiAt = k === KONAMI[0] ? 1 : 0;
-  if (!e.repeat && ['m', 'p', 't', 'c', 'a', 's', 'f', 'u'].includes(k)) sfx('click');
+  if (!e.repeat && ['m', 'p', 't', 'c', 'a', 's', 'f', 'u', 'b'].includes(k)) sfx('click');
   if (k === 'm') sfx(maxAll() ? 'buy' : 'fail');
   else if (k === 'p') sfx(pulse() ? 'pulse' : 'fail');
   else if (k === 't') sfx(buyClock(S.settings.buyMode === 'max' ? 'max' : '1') ? 'buy' : 'fail');
@@ -3663,6 +3670,7 @@ document.addEventListener('keydown', e => {
   else if (k === 's') sfx(useAbility('surge') ? 'upgrade' : 'fail');
   else if (k === 'f') sfx(useAbility('fold') ? 'buy' : 'fail');
   else if (k === 'u') sfx(buyAllUpgrades() ? 'upgrade' : 'fail');
+  else if (k === 'b') sfx(buyAllShards() ? 'upgrade' : 'fail');
   else return;
   render(true);
 });

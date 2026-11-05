@@ -48,6 +48,9 @@ body.daysky main .muted{background:rgba(10,13,30,.72);border-radius:3px;box-shad
 body.daysky h2{color:#eef0ff;text-shadow:0 1px 2px rgba(0,0,8,.95),0 0 12px rgba(0,0,12,.8),0 0 2px rgba(0,0,8,.9)}
 body.daysky .treeview{background:radial-gradient(circle at 42% 50%,var(--tint),transparent 70%),rgba(5,7,18,.9)}
 body.daysky .info .muted,body.daysky .card .muted,body.daysky .row .muted,body.daysky .hud .muted,body.daysky .chal .muted,body.daysky .ach .muted,body.daysky .auto-box .muted,body.daysky .tut .muted,body.daysky .feed .muted{background:none;box-shadow:none}
+#blackout{position:fixed;inset:0;background:#000;z-index:58;pointer-events:none;opacity:0}
+#blackout.go{animation:blackout 2.6s ease-out}
+@keyframes blackout{0%,22%{opacity:1}100%{opacity:0}}
 #wind{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;display:none}
 #wind.on{display:block;animation:gust 13s ease-in-out infinite}
 #wind i{position:absolute;left:0;height:1px;border-radius:1px;background:linear-gradient(90deg,transparent,rgba(225,238,255,.6),transparent);animation:blow linear infinite;will-change:transform}
@@ -389,7 +392,7 @@ body[data-theme=mono] .tier,body[data-theme=mono] .bar10 i{filter:saturate(0)}
 </style>
 </head>
 <body>
-<canvas id="stars"></canvas><div id="sky"></div><div id="wind"></div>
+<canvas id="stars"></canvas><div id="sky"></div><div id="wind"></div><div id="blackout"></div>
 <div id="topbar"><header id="hdr"></header>
 <nav id="nav"></nav></div>
 <main id="main"></main>
@@ -1630,7 +1633,7 @@ function doAscend(quiet = false) {
   S.boon.active = []; S.boon.hand = null; S.boon.left = 0; if (boonOn()) dealBoons();
   S.cards.active = S.cards.active.filter(c => c.until >= 0); // Ascension uses up every until-the-next card
   aiEvent('ascend', gain);
-  if (!quiet) { flash('rgba(255,210,122,.55)'); sfx('ascend'); if (S.ascensions === 1) toast('You Ascended. Spend Essence in the Ascension tab.', 'es'); }
+  if (!quiet) { skyDawn(); sfx('ascend'); if (S.ascensions === 1) toast('You Ascended. Spend Essence in the Ascension tab.', 'es'); }
   return true;
 }
 function startChal(i) {
@@ -2501,6 +2504,12 @@ function skyRidge(seed, base, amp, rough) {
   const wt = rough ? [0.42, 0.26, 0.17, 0.1, 0.05] : [0.6, 0.28, 0.12, 0, 0];
   return x => { let s = 0; for (let k = 0; k < 5; k++) s += wt[k] * Math.sin(x * fr[k] * 6.283 / 4 + ph[k]); if (rough) s += 0.12 * Math.abs(Math.sin(x * 61 + ph[0])); return base - amp * (0.5 + 0.5 * s); };
 }
+// Ascension: the screen goes black for a moment, then the sky starts again from night and climbs back over 9 seconds
+let SKY_DAWN = 0;
+function skyDawn() {
+  const b = $('blackout'); b.classList.remove('go'); void b.offsetWidth; b.classList.add('go');
+  SKY_DAWN = performance.now();
+}
 let SKY_LAYERS = null; // made on first use (the seeding helpers are defined further down)
 const skyLayers = () => SKY_LAYERS || (SKY_LAYERS = [ // far to near: when it appears (tier), its ridge, and how much haze softens it
   { at: 18, y: skyRidge('sky:m1', 0.74, 0.22, true), haze: 0.62, col: 5 },
@@ -2599,7 +2608,9 @@ function startSky() {
   let last = null, size = innerWidth + 'x' + innerHeight;
   addEventListener('resize', () => { clearTimeout(startSky.rt); startSky.rt = setTimeout(() => { size = innerWidth + 'x' + innerHeight; }, 200); });
   up(() => {
-    const on = !(S.settings.ui && S.settings.ui.sky === false), t = on ? skyDay() : 0, tier = S.ai.tierSeen;
+    const on = !(S.settings.ui && S.settings.ui.sky === false), tier = S.ai.tierSeen;
+    let t = on ? skyDay() : 0;
+    if (SKY_DAWN) { const p = (performance.now() - SKY_DAWN - 700) / 9000; if (p >= 1) SKY_DAWN = 0; else t *= p <= 0 ? 0 : p * p * (3 - 2 * p); } // a new dawn after Ascension
     const key = [on, t.toFixed(3), tier, hasE('e52'), size].join('|');
     if (key === last) return; last = key;
     cv.style.display = t > 0 || tier >= 6 ? '' : 'none'; // nothing to paint before Bonfire or the first light

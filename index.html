@@ -1199,7 +1199,7 @@ const ACHBY = Object.fromEntries(ACH.map(a => [a[0], a]));
 function newState() {
   return {
     v: 1, ver: SAVE_VER,
-    q: D.fromNum(10),
+    q: D.Z, // a new world starts empty: the first Quanta come from Pulse
     gens: [newGen()],
     clock: 0,
     qUpg: {}, sUpg: {}, eUpg: {},
@@ -2483,8 +2483,8 @@ function buildNav() {
 
 /* ---------------- Tutorial (narrated by the Architect) ---------------- */
 const TUT = [
-  { text: 'Welcome. This world runs on <b class="hl-q">Quanta</b>, the blue number at the top. <b>Pulse</b> is your hand on the machine: each click gives you 1 Quanta. Click it a few times.',
-    done: () => S.stats.pulses >= 3 || tierBought(0) > 0, target: () => UI.el.pulse },
+  { text: 'Welcome. This world runs on <b class="hl-q">Quanta</b>, the blue number at the top, and right now you have none. <b>Pulse</b> is your hand on the machine: each click gives you 1 Quanta. Click it until you have <b>10</b>, enough for your first generator.',
+    done: () => S.q.log10() >= genCostLog(0) || tierBought(0) > 0, target: () => UI.el.pulse },
   { text: 'Now buy a <b>Flicker</b>. Flickers make Quanta every second, on their own, forever. That is what this game is about: things that make things.',
     done: () => tierBought(0) > 0, target: () => UI.genRows[0] && UI.genRows[0].btn },
   { text: 'More Flickers means more Quanta, and every <b>10</b> of the same generator multiplies it again (the thin bar under each multiplier). Keep buying until you can afford a <b>Spark</b>.',

@@ -246,7 +246,7 @@ kbd{background:rgba(30,40,90,.6);border:1px solid var(--edge2);border-radius:3px
 .tl{fill:#aab2de;font-size:11px;text-anchor:middle;font-family:"Segoe UI",system-ui,sans-serif;pointer-events:none;paint-order:stroke;stroke:rgba(4,5,14,.9);stroke-width:3px}
 .tn.minor .tshape{stroke-width:1.5}
 .tn.far .tshape{opacity:.3;stroke-dasharray:3 3}.tn.far .tl{fill:#59618c}
-.tn.fog{opacity:.12}.tn.fog .tl{display:none}
+.tn.fog{opacity:.12;pointer-events:none}.tn.fog .tl{display:none}
 .tn.avail .tshape{opacity:.9}
 .tn.can .tshape{opacity:1;stroke-width:3;filter:drop-shadow(0 0 5px var(--bc));animation:pulseNode 1.3s ease-in-out infinite}
 .tn.minor.can .tshape{stroke-width:2.5}
@@ -2800,9 +2800,11 @@ function buildWebView(T, layer, tabId) {
       if (n.type !== 'minor') { body.append(sv('circle', { class: 'tcore', r: n.type === 'root' ? 9 : n.gen ? 3.5 : 5 })); const lbl = sv('text', { class: 'tl', y: r + 16 }); lbl.textContent = webInfo(layer, n).name; body.append(lbl); }
       g.append(body);
       if (grown >= 0 && ((n.type === 'arch' && n.arch >= grown) || (n.connector !== undefined && n.connector >= grown))) g.classList.add('fresh');
-      g.addEventListener('click', e => { e.stopPropagation(); sel = id; });
-      g.addEventListener('dblclick', e => { e.stopPropagation(); sel = id; sfx(buyPath(id) ? 'upgrade' : 'fail'); });
-      g.addEventListener('pointerenter', () => { hover = id; });
+      // nodes still in the fog cannot be inspected or bought: you have to get close first
+      const hidden = () => g.classList.contains('fog');
+      g.addEventListener('click', e => { e.stopPropagation(); if (!hidden()) sel = id; });
+      g.addEventListener('dblclick', e => { e.stopPropagation(); if (hidden()) return; sel = id; sfx(buyPath(id) ? 'upgrade' : 'fail'); });
+      g.addEventListener('pointerenter', () => { if (!hidden()) hover = id; });
       g.addEventListener('pointerleave', () => { if (hover === id) hover = null; });
       gN.append(g); els[id] = g;
       if (!shown[id]) { const par = (n.type === 'arch' || n.connector !== undefined) ? shown[n.parent] : null; shown[id] = (par || G.pos[id]).slice(); }
@@ -2839,6 +2841,8 @@ function buildWebView(T, layer, tabId) {
       for (const el of [ln, lb]) { setC(el, 'done', done); setC(el, 'fog', fog); }
       setC(lb, 'open', open); setT(tx, done ? 'PATH CHOSEN' : 'CHOOSE ONE');
     }
+    if (sel && els[sel] && els[sel].classList.contains('fog')) sel = null; // e.g. after a Reshape the node went back into the fog
+    if (hover && els[hover] && els[hover].classList.contains('fog')) hover = null;
     const f = sel || hover, n = f && G.nodes[f];
     show(panel, !!n);
     if (n) {

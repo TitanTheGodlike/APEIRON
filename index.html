@@ -1258,7 +1258,7 @@ function newState() {
     qUpg: {}, sUpg: {}, eUpg: {},
     proc: { q: 0, s: 0, e: 0 },
     forge: { q: [], s: [], e: [] },
-    tut: { step: 0, off: false },
+    tut: { step: 0, off: false, upgSeen: false, upgDone: false }, // upgSeen/upgDone: the Upgrades-tab guide
     ai: { log: [], total: 0, seen: 0, lastInput: 0, pulses: [], tierSeen: 0, said: {}, announced: { q: 0, s: 0, e: 0 } },
     story: { seen: {}, ans: {} }, // chapters of the story already told, and what you answered
     shards: D.Z, totalShards: D.Z, collapses: 0,
@@ -2816,8 +2816,6 @@ const TUT = [
     done: () => tierBought(2) > 0, target: () => UI.genRows[2] && UI.genRows[2].btn },
   { text: '<b>Clock Speed</b> (the top row) speeds up every generator at once. Buy a level when you can afford it.',
     done: () => S.clock > 0 || S.stats.totalCollapses > 0, target: () => UI.el.clock },
-  { text: 'Open the <b>Upgrades</b> tab. Upgrades are one-time boosts paid in Quanta. A dot appears on the tab whenever one is affordable.',
-    done: () => Object.keys(S.qUpg).length > 0 || S.stats.totalCollapses > 0, target: () => UI.navBtns.upg },
   { text: 'Tip: <b>Max all</b> (or the <kbd>M</kbd> key) buys everything you can afford. Keep growing. At <b>1e25</b> Quanta something new opens up.',
     done: () => S.reached.collapse, target: () => UI.el.maxAll },
   { text: 'You can <b class="hl-sh">Collapse</b> now (purple button, top right). It resets your Quanta, generators, Clock Speed and Upgrades, but pays you in <b class="hl-sh">Shards</b>, which you keep. Each Collapse also makes the heavy first world lighter, so the next run goes faster.',
@@ -2828,6 +2826,9 @@ const TUT = [
     done: () => false, ack: true },
 ];
 const tutorialDone = () => S.tut.off || S.tut.step >= TUT.length;
+// an aside in the middle of the tutorial: the moment you have 20 Quanta (your first upgrade), point at the Upgrades tab
+const TUT_UPG = { text: 'You have <b>20 Quanta</b>: enough for your first <b>upgrade</b>. Open the <b>Upgrades</b> tab (it has a dot now) and buy one. I will show you around in there.', target: () => UI.navBtns.upg };
+const tutUpgAside = () => !S.tut.upgSeen && S.stats.totalCollapses === 0 && tierBought(0) > 0 && S.q.log10() >= L10(20) - 1e-9;
 function tutorialFinished() {
   if (S.ai.said.tutDone) return;
   S.ai.said.tutDone = true;
@@ -2843,7 +2844,7 @@ function buildTutorial(T) {
   let lastTarget = null, lastStep = -1, tw = null;
   up(() => {
     while (!S.tut.off && S.tut.step < TUT.length && TUT[S.tut.step].done()) S.tut.step++;
-    const active = !S.tut.off && S.tut.step < TUT.length, st = active && TUT[S.tut.step];
+    const active = !S.tut.off && S.tut.step < TUT.length, aside = active && tutUpgAside(), st = aside ? TUT_UPG : active && TUT[S.tut.step];
     show(box, active);
     // the Architect only speaks (and points) while you are looking at the Generators tab
     const onGen = S.settings.tab === 'gen' && !stageUp();
@@ -2851,7 +2852,8 @@ function buildTutorial(T) {
     if (tg !== lastTarget) { if (lastTarget) lastTarget.classList.remove('tut-hl'); if (tg) tg.classList.add('tut-hl'); lastTarget = tg; }
     if (!active) { lastStep = -1; return; }
     if (!onGen) { if (tw && !tw.isDone()) tw.finish(); return; } // finish the line silently if you leave mid-sentence
-    if (S.tut.step !== lastStep) { lastStep = S.tut.step; if (tw) tw.finish(); tw = typewriter(txt, st.text, { speed: 22, pitch: 1.15, orb }); }
+    const stepKey = aside ? 'upg' : S.tut.step;
+    if (stepKey !== lastStep) { lastStep = stepKey; if (tw) tw.finish(); tw = typewriter(txt, st.text, { speed: 22, pitch: 1.15, orb }); }
     show(ok, !!st.ack);
   });
 }
@@ -3828,6 +3830,17 @@ function repCard(kind, def, store, cur, curName) {
 
 function buildUpgTab() {
   const T = UI.tabs.upg;
+  // the tutorial's walk through the web: shown the first time you open this tab during the tutorial
+  const gTxt = h('div', { class: 'tut-txt' }), gOrb = h('div', { class: 'orb poke', onclick: poke, title: 'The Architect' }); attachViz(gOrb, 12);
+  const gBox = h('div', { class: 'tut' }, gOrb, h('div', { style: 'flex:1' }, h('div', { class: 'tut-who' }, 'THE ARCHITECT · GUIDE'), gTxt,
+    h('div', { class: 'tut-btns' }, h('button', { onclick: () => { S.tut.upgDone = true; } }, 'Got it'))));
+  T.append(gBox);
+  let gTw = null;
+  up(() => {
+    if (!S.tut.off && S.tut.step < TUT.length) S.tut.upgSeen = true;
+    const on = !S.tut.off && S.tut.upgSeen && !S.tut.upgDone; show(gBox, on);
+    if (on && !gTw) gTw = typewriter(gTxt, 'This is the <b>Upgrade web</b>. It grows out from the middle: you can buy any node that touches one you own. <b>Big nodes</b> are the main upgrades, the <b>small ones</b> between them are cheap bonuses, and where two paths split you pick one of them. <b>Click</b> a node to read it, <b>double-click</b> to buy it (and the path to it if needed). Drag to look around, scroll to zoom. The web resets when you Collapse, so spend freely.', { speed: 22, pitch: 1.15, orb: gOrb });
+  }, 'upg');
   T.append(h('h2', {}, 'Upgrade web'));
   const note = h('div', { class: 'muted', style: 'margin:-2px 0 8px' }); T.append(note);
   buildWebView(T, 'q', 'upg');

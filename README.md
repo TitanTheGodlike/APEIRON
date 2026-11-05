@@ -1,6 +1,6 @@
 # APEIRON
 
-*Build things that build things, forever. The Architect will never run out of ideas.*
+The Architect will never run out of ideas.*
 
 Apeiron is an idle/incremental browser game about an unfinished world and the AI left behind to complete it. Gather light, build generators that build generators, and push past the Limit with no end in sight. New upgrades and generator tiers are invented as you play, so there's always one more.
 

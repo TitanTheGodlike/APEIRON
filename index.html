@@ -28,6 +28,7 @@ body{background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI Variable Tex
 #sky{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
 body.nosky #sky{display:none}
 #sky canvas{position:absolute;inset:0}
+#stars{transition:opacity 2.6s ease-in-out}
 #sky>div{position:absolute;opacity:0;transition:opacity 5s ease}
 .sky-shoot{left:62%;top:27%;width:16vmin;height:1px;transform:rotate(-28deg)}
 .sky-shoot i{display:block;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.9));animation:sk-shoot 11s ease-out infinite}
@@ -1286,7 +1287,7 @@ function newState() {
     },
     reached: { collapse: false, limit: false },
     run: { clockBought: false, abil: 0, best: 1, pulsed: false },
-    stats: { time: 0, tCollapse: 0, tAscend: 0, totalQ: D.Z, bestQ: D.fromNum(10), totalCollapses: 0, fastCollapse: null, fastAscend: null, pulses: 0, tUnbound: 0, tInspire: 0 },
+    stats: { time: 0, tCollapse: 0, tAscend: 0, totalQ: D.Z, bestQ: D.fromNum(10), totalCollapses: 0, fastCollapse: null, fastAscend: null, pulses: 0, tUnbound: 0, tInspire: 0, topTier: -1 }, // topTier: the highest generator you ever bought
     ach: {},
     settings: { notation: 'sci', buyMode: 'max', autosave: true, offline: true, tab: 'gen', sound: true, volume: 0.6, sfx: true, sfxVol: 0.5,
       ui: { theme: 'nebula', stars: true, sky: true, motion: true, compact: false, tint: true, toasts: true, scale: 1 } },
@@ -1517,6 +1518,7 @@ function buyGen(i, mode) {
   if (n <= 0) return 0;
   S.q = S.q.sub(D.fromLog(genCostLog(i, n))).max0();
   g.bought += n; g.amt = g.amt.add(n);
+  if (i > S.stats.topTier) S.stats.topTier = i;
   if (i === S.gens.length - 1) S.gens.push(newGen()); // the next tier reveals itself
   aiOnBuy(i, n);
   return n;
@@ -2535,7 +2537,7 @@ const skySmooth = (a, b, x) => { const f = Math.max(0, Math.min(1, (x - a) / (b 
 function skyDay() {
   if (hasE('e53')) return 1;
   let own = 0, all = 0; for (const u of EUPG) if (!u.dyn && u.id !== 'e53') { all++; if (S.eUpg[u.id]) own++; }
-  return Math.max(S.ai.tierSeen >= 9 ? 0.03 : 0, 0.9 * own / Math.max(1, all)); // Sun: the first light on the horizon
+  return Math.max(S.stats.topTier >= 9 ? 0.03 : 0, 0.9 * own / Math.max(1, all)); // Sun: the first light on the horizon
 }
 // one ridge line, seeded so it never changes: y(x) in screen fractions (0 = top), smooth hills or rough mountains
 function skyRidge(seed, base, amp, rough) {
@@ -2624,7 +2626,10 @@ function paintSky(c, t, tier) {
   return mixRgb(skyCol(t, 4), [2, 3, 8], 0.35); // the colour of the nearest ground, for the grass
 }
 function startSky() {
-  const sky = $('sky'), cv = document.createElement('canvas'); sky.appendChild(cv);
+  // two canvases: a change is painted on the hidden one, then the two cross-fade, so new things fade in
+  const sky = $('sky'), cvs = [document.createElement('canvas'), document.createElement('canvas')];
+  for (const c of cvs) { c.style.opacity = 0; sky.appendChild(c); }
+  let front = 0, fadeUntil = 0;
   const el = {};
   for (const k of ['shoot', 'fire', 'embers', 'grass']) { const d = document.createElement('div'); d.className = 'sky-' + k; sky.appendChild(d); el[k] = d; }
   el.shoot.appendChild(document.createElement('i'));
@@ -2644,25 +2649,45 @@ function startSky() {
     g.style.animationDuration = (1.6 + Math.random() * 1.6).toFixed(2) + 's'; g.style.animationDelay = (-Math.random() * 3).toFixed(2) + 's';
     el.grass.appendChild(g);
   }
-  let last = null, size = innerWidth + 'x' + innerHeight;
+  // show or hide an element with a fade; once it has faded out it is taken away (its animations stop)
+  const fadeTo = (e, o) => {
+    clearTimeout(e._ft);
+    if (o > 0) { if (e.style.display === 'none') { e.style.opacity = 0; e.style.display = ''; void e.offsetWidth; } e.style.opacity = o; }
+    else if (e.style.display !== 'none') { e.style.opacity = 0; e._ft = setTimeout(() => { e.style.display = 'none'; }, 5200); }
+  };
+  for (const k in el) el[k].style.display = 'none';
+  let last = null, painted = null, size = innerWidth + 'x' + innerHeight;
   addEventListener('resize', () => { clearTimeout(startSky.rt); startSky.rt = setTimeout(() => { size = innerWidth + 'x' + innerHeight; }, 200); });
   up(() => {
-    const on = !(S.settings.ui && S.settings.ui.sky === false), tier = S.ai.tierSeen;
+    const on = !(S.settings.ui && S.settings.ui.sky === false), tier = S.stats.topTier;
     let t = on ? skyDay() : 0;
     if (SKY_DAWN) { const p = (performance.now() - SKY_DAWN - 700) / 9000; if (p >= 1) SKY_DAWN = 0; else t *= p <= 0 ? 0 : p * p * (3 - 2 * p); } // a new dawn after Ascension
     const key = [on, t.toFixed(3), tier, hasE('e52'), size].join('|');
-    if (key === last) return; last = key;
-    cv.style.display = t > 0 || tier >= 6 ? '' : 'none'; // nothing to paint before Bonfire or the first light
-    const ground = paintSky(cv, t, tier);
+    if (key === last) return;
+    const now = performance.now(), direct = !painted || !!SKY_DAWN || painted !== size; // the first picture, the dawn replay and a new window size come at once
+    if (!direct && now < fadeUntil) return; // a cross-fade is still running: the next change waits for it
+    last = key; painted = size;
+    const show = t > 0 || tier >= 6 ? 1 : 0; // nothing to paint before Bonfire or the first light
+    let ground;
+    if (direct) {
+      ground = paintSky(cvs[front], t, tier);
+      for (const c of cvs) c.style.transition = 'none';
+      cvs[front].style.opacity = show; cvs[1 - front].style.opacity = 0;
+    } else {
+      const b = 1 - front; ground = paintSky(cvs[b], t, tier);
+      for (const c of cvs) c.style.transition = 'opacity 2.6s ease-in-out';
+      void cvs[b].offsetWidth; cvs[b].style.opacity = show; cvs[front].style.opacity = 0;
+      front = b; fadeUntil = now + 2700;
+    }
     sky.style.setProperty('--hill', rgbaOf(ground));
     const night = 1 - skySmooth(0.35, 0.7, t), fireOn = tier >= 2 ? 1 - skySmooth(0.4, 0.75, t) : 0;
-    el.fire.style.bottom = fireY().toFixed(2) + 'vh'; el.fire.style.opacity = tier >= 6 ? fireOn : 0; el.fire.style.display = tier >= 6 && fireOn > 0 ? '' : 'none';
-    el.embers.style.opacity = fireOn; el.embers.style.display = fireOn > 0 ? '' : 'none';
+    el.fire.style.bottom = fireY().toFixed(2) + 'vh'; fadeTo(el.fire, tier >= 6 ? fireOn : 0);
+    fadeTo(el.embers, fireOn);
     for (const e of embers) e.style.bottom = (tier >= 6 ? fireY() : -2).toFixed(2) + 'vh';
     const n = tier < 2 ? 0 : tier < 3 ? 5 : tier < 5 ? 8 : tier < 7 ? 11 : tier < 8 ? 14 : 18; // more embers with every fire
     embers.forEach((e, i) => { e.style.display = i < n ? '' : 'none'; });
-    el.shoot.style.opacity = tier >= 13 ? night : 0; el.shoot.style.display = tier >= 13 && night > 0 ? '' : 'none';
-    el.grass.style.opacity = hasE('e52') ? 1 : 0; el.grass.style.display = hasE('e52') ? '' : 'none'; // Wind in Your Face: grass in the wind
+    fadeTo(el.shoot, tier >= 13 ? night : 0);
+    fadeTo(el.grass, hasE('e52') ? 1 : 0); // Wind in Your Face: grass in the wind
     $('stars').style.opacity = (1 - skySmooth(0.3, 0.8, t)).toFixed(3);
     // daylight: more solid panels and shadowed loose text
     const dayL = skySmooth(0.3, 1, t);
@@ -4391,6 +4416,8 @@ function init() {
     const raw = NOSAVE ? null : localStorage.getItem(SAVE_KEY);
     if (raw) { const savedVer = JSON.parse(raw).ver || 1; S = loadFrom(raw); S.ver = savedVer; away = (Date.now() - S.last) / 1000; if (!JSON.parse(raw).story) storyCatchUp = true; }
   } catch (e) { console.warn('Save could not be loaded', e); S = newState(); }
+  // older saves: the highest tier bought is at least the one below the highest seen
+  if (S.stats.topTier < 0) S.stats.topTier = Math.max(-1, S.ai.tierSeen - 1, ...S.gens.map((g, i) => g.bought > 0 ? i : -1));
   // the tutorial goes back to the first step you have not actually done (a changed step list once skipped players ahead)
   if (!S.tut.off && S.tut.step < TUT.length) while (S.tut.step > 0 && !TUT[S.tut.step - 1].done()) S.tut.step--;
   buildHeader(); buildNav(); buildGenTab(); buildArchTab(); buildUpgTab(); buildShardTab(); buildAutoTab(); buildAscTab(); buildCardsTab(); buildChalTab(); buildAchTab(); buildStatsTab(); buildGuideTab(); buildOptTab(); buildProgress();

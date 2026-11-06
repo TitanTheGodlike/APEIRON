@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.WebChromeClient;
+import android.webkit.ValueCallback;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -67,7 +68,13 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (web.canGoBack()) web.goBack();
-        else super.onBackPressed();
+        // the game decides first: Back closes an open window or story chapter, then returns to Generators;
+        // only when there is nothing left to close does the app go to the background
+        web.evaluateJavascript("(window.apeironBack && window.apeironBack()) ? 'yes' : 'no'", new ValueCallback<String>() {
+            @Override
+            public void onReceiveValue(String handled) {
+                if (!"\"yes\"".equals(handled)) moveTaskToBack(true);
+            }
+        });
     }
 }

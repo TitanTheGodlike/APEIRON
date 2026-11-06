@@ -390,6 +390,18 @@ body[data-theme=mono] .tier,body[data-theme=mono] .bar10 i{filter:saturate(0)}
   button{min-height:34px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
+/* phones (the Android app, or a small touch screen): no text selection or double-tap zoom while tapping, bigger
+   buttons, at most two pop-ups (tap one to dismiss it), a smaller speech bubble */
+body.phone{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+body.phone input,body.phone textarea{-webkit-user-select:text;user-select:text}
+body.phone button,body.phone nav,body.phone .row,body.phone .card,body.phone .pcard{touch-action:manipulation}
+body.phone button{min-height:40px}
+body.phone nav button{min-height:0}
+body.phone #toasts{pointer-events:auto}
+body.phone #toasts .toast:nth-last-child(n+3){display:none}
+body.phone .toast{font-size:12px;padding:7px 11px}
+body.phone .say-t{font-size:13px}
+body.phone #say .orb{width:28px;height:28px}
 </style>
 </head>
 <body>
@@ -690,7 +702,7 @@ const SUPG = [
   { id: 's28', name: 'Starfire', cost: 5e18, desc: 'Quanta production ×10,000.' },
   // Clockwork: speed and automation
   { id: 'sB', name: 'Wholesale', cost: 2, auto: true, desc: 'Adds a Buy all button to the Upgrade web (key U): one press buys every upgrade you can afford there, cheapest first.' },
-  { id: 's2', name: 'Memory', cost: 1e4, auto: true, desc: 'Keep the Upgrade web (Quanta upgrades) when you Collapse.' },
+  { id: 's2', name: 'Memory', cost: 1e10, auto: true, desc: 'Keep the Upgrade web (Quanta upgrades) when you Collapse.' },
   { id: 's8', name: 'Gear Down', cost: 500, desc: 'Clock Speed cost grows ×6 per level instead of ×10.' },
   { id: 's21', name: 'Patient Hands', cost: 2.5e4, desc: 'While you have not touched the game for a minute, Quanta production ×100.' },
   { id: 's22', name: 'Busy Hands', cost: 2.5e4, desc: 'Pulse recharges twice as fast, and for 3 seconds after each Pulse, Quanta production ×100.' },
@@ -1314,6 +1326,8 @@ function veil(t) {
   if (!collapseKnown()) t = t.replace(/Every Collapse starts with/g, 'Every fresh start begins with').replace(/ in this Collapse/g, ' in this run').replace(/ for your first several Collapses,/g, ' for a long while,')
     .replace(/ Every Collapse makes it lighter, until after a few it is gone\./g, ' It will not stay this heavy forever.').replace(/ and Cascade \(higher tiers and Shards\)/g, ' and Cascade (higher tiers)')
     .replace(/that ignores Collapse/g, 'that never resets');
+  if (IS_PHONE) t = t.replace(/ \(or the <kbd>[A-Z]<\/kbd> key\)/g, '').replace(/ \(key [A-Z]\)/g, '') // no keyboard on a phone
+    .replace(/double-click/g, 'double-tap').replace(/Double-click/g, 'Double-tap').replace(/\bclick(s|ed|ing)?\b/g, 'tap$1').replace(/\bClick(s)?\b/g, 'Tap$1').replace(/scroll to zoom/g, 'pinch to zoom');
   return t;
 }
 // Guide sections: reworded, then any sentence still about something unknown is left out
@@ -2276,7 +2290,7 @@ function playIntro() {
   const dlg = h('div', { class: 'dlg' }, h('div', { class: 'who' }, 'THE ARCHITECT'), txt, next);
   const skip = h('button', { class: 'skip linkish', onclick: e => { e.stopPropagation(); end(); } }, 'Skip intro ›');
   const start = h('button', { class: 'start', onclick: e => { e.stopPropagation(); audio(); begin(); } }, '▶  Answer the signal');
-  const hint = h('div', { class: 'hint' }, 'sound on · click, Space or Enter to continue');
+  const hint = h('div', { class: 'hint' }, IS_PHONE ? 'sound on · tap to continue' : 'sound on · click, Space or Enter to continue');
   box.append(skip, orb, start, hint);
   stageOpen();
   let line = -1, tw = null, started = false;
@@ -2289,7 +2303,7 @@ function playIntro() {
     if (line >= LORE.length) return end();
     show();
   };
-  function begin() { if (started) return; started = true; start.remove(); hint.textContent = 'click, Space or Enter to continue'; box.insertBefore(dlg, hint); line = 0; show(); }
+  function begin() { if (started) return; started = true; start.remove(); hint.textContent = IS_PHONE ? 'tap to continue' : 'click, Space or Enter to continue'; box.insertBefore(dlg, hint); line = 0; show(); }
   function end() {
     if (tw) tw.finish();
     stageClose(); document.removeEventListener('keydown', key, true); box.onclick = null;
@@ -2442,7 +2456,7 @@ function playScene(sc, replay = false) {
   const txt = h('div', { class: 'txt' }), next = h('div', { class: 'next' }, '▼'), opts = h('div', { class: 'opts' });
   const dlg = h('div', { class: 'dlg' }, h('div', { class: 'who' }, 'THE ARCHITECT'), txt, next);
   const skip = h('button', { class: 'skip linkish', onclick: e => { e.stopPropagation(); end(); } }, replay ? 'Close ›' : 'Skip ›');
-  const hint = h('div', { class: 'hint' }, 'click, Space or Enter to continue');
+  const hint = h('div', { class: 'hint' }, IS_PHONE ? 'tap to continue' : 'click, Space or Enter to continue');
   next.style.visibility = 'hidden';
   box.append(skip, chap, orb, dlg, opts, hint);
   stageOpen();
@@ -2459,7 +2473,7 @@ function playScene(sc, replay = false) {
   };
   const answer = i => {
     if (!asking) return;
-    const reply = asking[i][1]; asking = null; opts.innerHTML = ''; hint.textContent = 'click, Space or Enter to continue';
+    const reply = asking[i][1]; asking = null; opts.innerHTML = ''; hint.textContent = IS_PHONE ? 'tap to continue' : 'click, Space or Enter to continue';
     if (!replay) S.story.ans[sc.id] = i;
     seq.splice(line + 1, 0, reply); line++; show();
   };
@@ -2726,7 +2740,7 @@ function toast(msg, kind = '', always = false) {
   if (!always && S && S.settings.ui && !S.settings.ui.toasts) return;
   const box = $('toasts');
   while (box.children.length >= 5) box.firstChild.remove();
-  const t = h('div', { class: 'toast ' + kind }, msg);
+  const t = h('div', { class: 'toast ' + kind, onclick: () => t.remove() }, msg); // a tap dismisses it
   box.append(t);
   setTimeout(() => t.remove(), 4500);
 }
@@ -2813,6 +2827,7 @@ function setTab(id) {
   S.settings.tab = id;
   for (const [k, el] of Object.entries(UI.tabs)) setC(el, 'active', k === id);
   for (const [k, b] of Object.entries(UI.navBtns)) setC(b, 'active', k === id);
+  if (IS_PHONE && UI.navBtns[id] && UI.navBtns[id].scrollIntoView) UI.navBtns[id].scrollIntoView({ inline: 'center', block: 'nearest' }); // the tab bar scrolls sideways on a phone
   render(true);
 }
 function buildNav() {
@@ -2875,7 +2890,7 @@ function buildTutorial(T) {
     if (!active) { lastStep = -1; return; }
     if (!onGen) { if (tw && !tw.isDone()) tw.finish(); return; } // finish the line silently if you leave mid-sentence
     const stepKey = aside ? 'upg' : S.tut.step;
-    if (stepKey !== lastStep) { lastStep = stepKey; if (tw) tw.finish(); tw = typewriter(txt, st.text, { speed: 22, pitch: 1.15, orb }); }
+    if (stepKey !== lastStep) { lastStep = stepKey; if (tw) tw.finish(); tw = typewriter(txt, veil(st.text), { speed: 22, pitch: 1.15, orb }); }
     show(ok, !!st.ack);
   });
 }
@@ -2910,7 +2925,7 @@ function buildGenTab() {
     const b = h('button', { onclick: () => { S.settings.buyMode = m; } }, l);
     up(() => setC(b, 'on', S.settings.buyMode === m), 'gen'); return b;
   });
-  const ma = h('button', { onclick: act(maxAll), title: 'Buy as much of everything as you can afford (key M).' }, 'Max all  (M)');
+  const ma = h('button', { onclick: act(maxAll), title: IS_PHONE ? 'Buy as much of everything as you can afford.' : 'Buy as much of everything as you can afford (key M).' }, IS_PHONE ? 'Max all' : 'Max all  (M)');
   UI.el.maxAll = ma;
   T.append(h('div', { class: 'toolbar' }, pb, h('div', { class: 'seg', title: 'How much each Buy button buys.' }, modes), ma, ...abilityButtons(), h('span', { class: 'muted' }, 'Each tier makes the tier below it. Every 10 bought multiplies a generator by its Resonance.')));
   const heavy = h('div', { class: 'heavy-note' }); T.append(heavy);
@@ -3015,7 +3030,7 @@ const WEB_DEF = {
     ring: { kind: 'qmult', v: L10(1.15), text: 'Quanta production ×1.15' },
     branches: [
       { name: 'Radiance', sub: 'raw power', angle: -150, start: 'sF', links: [['sF', 's3'], ['s3', 's32'], ['s32', 's7'], ['s3', 's12'], ['s3', 's13'], ['s7', ['s19', 's20']], [['s19', 's20'], 's33'], ['s33', 's17'], ['s17', 's38'], ['s12', 's34'], ['s34', 's14'], ['s14', 's35'], ['s35', 's16'], ['s16', 's28'], ['s28', 's37'], ['s13', 's36'], ['s36', 's18'], ['s18', 's39']], minor: { kind: 'qmult', v: L10(1.12), text: 'Quanta production ×1.12' } },
-      { name: 'Clockwork', sub: 'speed and automation', angle: -30, start: 'sB', links: [['sB', 'ab0'], ['sB', 's8'], ['ab0', 'ab1'], ['ab1', 'abC'], ['ab1', 'ab2'], ['ab2', 'ab3'], ['ab3', 's11'], ['ab3', 'ab4'], ['ab4', 'abL'], ['abL', 'abH'], ['abH', 'abK'], ['ab4', 'ab5'], ['ab5', 'ab6'], ['ab6', 'ab7'], ['ab7', 'ab8'], ['ab7', 's9'], ['s9', 's45'], ['abK', 's46'], ['s11', 's44'], ['s8', 's40'], ['s40', ['s21', 's22']], [['s21', 's22'], 's41'], ['s41', 's27'], ['s41', 's42'], ['s27', 's15'], ['s15', 's43'], ['ab0', 's2']], minor: { kind: 'clock', v: 0.0007, text: 'Clock Speed base +0.0007' } },
+      { name: 'Clockwork', sub: 'speed and automation', angle: -30, start: 'sB', links: [['sB', 'ab0'], ['sB', 's8'], ['ab0', 'ab1'], ['ab1', 'abC'], ['ab1', 'ab2'], ['ab2', 'ab3'], ['ab3', 's11'], ['ab3', 'ab4'], ['ab4', 'abL'], ['abL', 'abH'], ['abH', 'abK'], ['ab4', 'ab5'], ['ab5', 'ab6'], ['ab6', 'ab7'], ['ab7', 'ab8'], ['ab7', 's9'], ['s9', 's45'], ['abK', 's46'], ['s11', 's44'], ['s8', 's40'], ['s40', ['s21', 's22']], [['s21', 's22'], 's41'], ['s41', 's27'], ['s41', 's42'], ['s27', 's15'], ['s15', 's43'], ['abK', 's2']], minor: { kind: 'clock', v: 0.0007, text: 'Clock Speed base +0.0007' } },
       { name: 'Echoes', sub: 'Shards and abilities', angle: 90, start: 's5', links: [['s5', 's47'], ['s47', 's25'], ['s5', ['s23', 's24']], ['s25', 's26'], ['s26', 's31'], ['s25', 's30'], ['s26', 's50'], ['s31', 's52'], ['s30', 's53'], ['s25', 's48'], [['s23', 's24'], 's10'], [['s23', 's24'], 's49'], ['s10', 's29'], ['s49', 's51'], ['s29', 's54']], minor: { kind: 'shard', v: L10(1.016), text: 'Shard gain ×1.016' } },
     ] },
   e: { root: 'e6', cur: 'essence', curName: 'Essence', costLog: id => L10(EBY[id].cost), owned: id => !!S.eUpg[id], loopNodes: 1,
@@ -3154,6 +3169,7 @@ function growWebs() {
   // a second, later pass fills out the thin Shard web: short twigs on the written upgrades with the fewest
   // branches. It has its own seed and numbering, so every upgrade from the first pass stays exactly the same.
   pass('s', GROW_MORE_S, 'grow2:', GROW.s.n * 3, (ids, br) => {
+    if (br.name === 'Clockwork') return ['s8', 'abC', 'ab2', 's11', 'abL', 'abH', 'abK', 'ab5', 'ab6', 'ab8', 's9', 's45', 's46', 's44', 's40', 's21', 's22', 's27', 's42', 's15', 's43', 's2']; // Memory moved later
     if (br.name === 'Echoes') return ['s47', 's25', 's23', 's24', 's31', 's30', 's50', 's52', 's53', 's48', 's10', 's49', 's29', 's51', 's54']; // re-linked later
     const kids = {};
     for (const [a, b] of br.links) if (!GROWN.has([].concat(b)[0])) for (const x of [].concat(a)) kids[x] = (kids[x] || 0) + 1;
@@ -3621,7 +3637,7 @@ function buildWebView(T, layer, tabId) {
   const pType = h('div', { class: 'pb' }), pName = h('div', { class: 'pn' }), pDesc = h('div', { class: 'pd' }), pEff = h('div', { class: 'pe' }), pWhy = h('div', { class: 'pw' }), pCost = h('div', { class: 'pc' }), pFork = h('div', { class: 'pf' });
   const pBuy = h('button', {}, 'Buy');
   const panel = h('div', { class: 'nodepanel' }, pType, pName, pDesc, pFork, pEff, pWhy, pCost, pBuy);
-  const isQ = layer === 'q', buyAll = h('button', { class: 'buyall', onclick: () => sfx((isQ ? buyAllUpgrades() : buyAllShards()) ? 'upgrade' : 'fail'), title: isQ ? 'Buy every upgrade you can afford, cheapest first (key U)' : 'Buy every Shard upgrade you can afford, cheapest first; path choices are left to you (key B)' }, 'Buy all');
+  const isQ = layer === 'q', buyAll = h('button', { class: 'buyall', onclick: () => sfx((isQ ? buyAllUpgrades() : buyAllShards()) ? 'upgrade' : 'fail'), title: veil(isQ ? 'Buy every upgrade you can afford, cheapest first (key U)' : 'Buy every Shard upgrade you can afford, cheapest first; path choices are left to you (key B)') }, 'Buy all');
   const tools = h('div', { class: 'treetools' }, h('button', { onclick: () => zoomBy(1.25) }, '+'), h('button', { onclick: () => zoomBy(0.8) }, '−'), h('button', { onclick: () => fit(true) }, 'Fit'), h('button', { onclick: () => tidy(), title: 'Re-sort the whole web' }, 'Tidy'), layer !== 'e' ? buyAll : '');
   if (layer !== 'e') up(() => show(buyAll, isQ ? wholesaleOn() : shardWholesaleOn()), tabId);
   const hint = h('div', { class: 'treehint' }, 'Drag to move · scroll to zoom · click a node to inspect it · double-click to buy (the whole path if needed)');
@@ -3900,7 +3916,7 @@ function buildUpgTab() {
   up(() => {
     if (!S.tut.off && S.tut.step < TUT.length) S.tut.upgSeen = true;
     const on = !S.tut.off && S.tut.upgSeen && !S.tut.upgDone; show(gBox, on);
-    if (on && !gTw) gTw = typewriter(gTxt, 'This is the <b>Upgrade web</b>. It grows out from the middle: you can buy any node that touches one you own. <b>Big nodes</b> are the main upgrades, the <b>small ones</b> between them are cheap bonuses, and where two paths split you pick one of them. <b>Click</b> a node to read it, <b>double-click</b> to buy it (and the path to it if needed). Drag to look around, scroll to zoom.', { speed: 22, pitch: 1.15, orb: gOrb });
+    if (on && !gTw) gTw = typewriter(gTxt, 'This is the <b>Upgrade web</b>. It grows out from the middle: you can buy any node that touches one you own. <b>Big nodes</b> are the main upgrades, the <b>small ones</b> between them are cheap bonuses, and where two paths split you pick one of them. ' + (IS_PHONE ? '<b>Tap</b> a node to read it and buy it from there (or <b>double-tap</b> it). Drag to look around, pinch to zoom.' : '<b>Click</b> a node to read it, <b>double-click</b> to buy it (and the path to it if needed). Drag to look around, scroll to zoom.'), { speed: 22, pitch: 1.15, orb: gOrb });
   }, 'upg');
   T.append(h('h2', {}, 'Upgrade web'));
   const note = h('div', { class: 'muted webnote', style: 'margin:-2px 0 8px' }); T.append(note);
@@ -4224,7 +4240,8 @@ function buildOptTab() {
   const bug = h('a', { class: 'btnlink', target: '_blank', rel: 'noopener noreferrer', href: ISSUES_URL }, 'Report a bug');
   up(() => { bug.href = bugReportUrl(); }, 'opt');
   T.append(h('h2', {}, 'Help'), h('div', { class: 'opt-row' }, bug, h('span', { class: 'muted' }, 'Opens the Issues page of Apeiron on GitHub with a short form to fill in. Posting needs a free GitHub account.')));
-  const hot = h('div', { class: 'info' }); T.append(h('h2', {}, 'Hotkeys'), hot);
+  const hot = h('div', { class: 'info' }), hotH = h('h2', {}, 'Hotkeys'); T.append(hotH, hot);
+  if (IS_PHONE) { show(hotH, false); show(hot, false); } // no keyboard on a phone
   up(() => { const k = [['M', 'max all'], ['T', 'buy Clock Speed'], ['P', 'pulse']].concat(collapseKnown() ? [['C', 'collapse'], ['S', 'Surge'], ['F', 'Time Fold'], ['U', 'buy all upgrades'], ['B', 'buy all Shard upgrades']] : [], ascendKnown() ? [['A', 'ascend'], ['N', 'Nova']] : []);
     setH(hot, k.map(([a, b]) => `<kbd>${a}</kbd> ${b}`).join(' &nbsp; ')); }, 'opt');
   T.append(h('h2', {}, 'About'), h('div', { class: 'info', html: '<b>Apeiron</b> (Greek: the boundless) — an infinite incremental. Numbers are stored as mantissa × 10<sup>exponent</sup>, so they can grow far past 1e308 (to about 10<sup>10<sup>308</sup></sup>). Saves live in this browser\'s local storage; export to keep a backup.' }));
@@ -4293,6 +4310,14 @@ function cheatCodeEntered() {
 }
 // a phone: the Android app (a file page in a WebView), or a touch screen no bigger than a phone
 const IS_PHONE = location.protocol === 'file:' || (window.matchMedia && matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) <= 900);
+if (location.protocol === 'file:') { const m = document.querySelector('meta[name=viewport]'); if (m) m.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'; }
+// the phone's Back button (Android app): close a window, a story chapter, then go back to Generators; only then leave
+window.apeironBack = () => {
+  if ($('modal').classList.contains('open')) { closeModal(); return true; }
+  if (stageUp()) { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true; }
+  if (S.settings.tab !== 'gen') { setTab('gen'); return true; }
+  return false;
+};
 const KONAMI = ['arrowup', 'arrowup', 'arrowdown', 'arrowdown', 'arrowleft', 'arrowright', 'arrowleft', 'arrowright', 'b', 'a'];
 let konamiAt = 0;
 function konamiStep(k) {

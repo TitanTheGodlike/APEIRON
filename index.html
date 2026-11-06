@@ -1995,7 +1995,7 @@ function grantSecret(id) {
   if (S.ach[id]) return;
   S.ach[id] = true;
   const s = SECBY[id], r = s.reward;
-  const what = r[0] === 'relic' ? 'the Relic “' + RELBY[r[1]].name + '” (Upgrades tab)' : 'the Anomaly “' + ANBY[r[1]].name + '” (Generators tab)';
+  const what = r[0] === 'relic' ? 'the Relic “' + RELBY[r[1]].name + '” (Relics tab)' : 'the Anomaly “' + ANBY[r[1]].name + '” (Relics tab)';
   toast('Secret achievement: ' + s.name + '. Unlocked ' + what + '.', 'es', true);
   if (!SIMULATING) { blip(1.4); setTimeout(() => blip(1.8), 90); setTimeout(() => blip(2.3), 180); flash('rgba(var(--esr),.35)'); }
 }
@@ -2838,6 +2838,7 @@ const TABS = [
   ['shard', 'Shards', shardsVisible, () => SUPG.some(u => !S.sUpg[u.id] && S.shards.gte(u.cost)) || (shardsVisible() && openAffordable('s'))],
   ['asc', 'Ascension', ascVisible, () => EUPG.some(u => !S.eUpg[u.id] && S.essence.gte(u.cost)) || (streamVisible('e') && openAffordable('e'))],
   ['cards', 'Fortune', () => cardsOn() || boonOn(), () => !!S.cards.hand || !!S.boon.hand],
+  ['relic', 'Relics', () => RELICS.some(r => rewardUnlocked(r.id)) || ANOMALIES.some(a => rewardUnlocked(a.id)), () => RELICS.some(r => rewardUnlocked(r.id) && !hasR(r.id) && lq() >= r.cost)],
   ['auto', 'Automation', autoVisible, () => false],
   ['chal', 'Challenges', () => hasE('e3'), () => false],
   ['arch', 'Architect', () => tutorialDone(), () => false], // its lines show in the speech bubble; no dot on the tab
@@ -2846,7 +2847,7 @@ const TABS = [
   ['guide', 'Guide', () => true, () => false],
   ['opt', 'Options', () => true, () => false],
 ];
-const TAB_ICONS = { gen: '◈', arch: '✦', upg: '▲', shard: '◆', auto: '⟳', asc: '✧', cards: '♢', chal: '⚔', ach: '★', stats: '≣', guide: '?', opt: '⚙' };
+const TAB_ICONS = { relic: '✶', gen: '◈', arch: '✦', upg: '▲', shard: '◆', auto: '⟳', asc: '✧', cards: '♢', chal: '⚔', ach: '★', stats: '≣', guide: '?', opt: '⚙' };
 function setTab(id) {
   if (S.settings.tab !== id) { const now = performance.now(); tabTimes.push(now); while (tabTimes.length && now - tabTimes[0] > 60000) tabTimes.shift(); if (tabTimes.length >= 30) grantSecret('x10'); }
   S.settings.tab = id;
@@ -3013,24 +3014,6 @@ function buildGenTab() {
   };
   up(() => { while (UI.genRows.length < S.gens.length) makeRow(UI.genRows.length); });
 
-  // Anomalies: secret generators unlocked by hidden achievements; they ignore Collapse, not Ascension (unless Reliquary)
-  const anomHead = h('h2', {}, 'Anomalies');
-  const anomNote = h('div', { class: 'muted', style: 'margin:-4px 0 8px' }, 'Things that should not exist. They ignore Collapse and Ascension.');
-  T.append(anomHead, anomNote);
-  up(() => { const v = ANOMALIES.some(a => rewardUnlocked(a.id)); show(anomHead, v); show(anomNote, v); if (v) setT(anomNote, !collapseKnown() ? 'Things that should not exist.' : !ascendKnown() ? 'Things that should not exist. They ignore Collapse.' : hasE('e48') ? 'Things that should not exist. They ignore Collapse and Ascension.' : 'Things that should not exist. They ignore Collapse, but after an Ascension you buy them again.'); }, 'gen');
-  for (const a of ANOMALIES) {
-    const lv = h('div', { class: 'sub' }), ef = h('div', { class: 'mult' }), bb = h('button', { onclick: act(() => buyAnom(a, S.settings.buyMode === 'max' ? 'max' : '1')) });
-    const row = h('div', { class: 'row anom' }, h('div', {}, h('div', { class: 'name' }, h('span', { class: 'tier' }, '✶'), a.name), lv), h('div', {}, ef), h('div', { class: 'rate' }, a.desc), bb);
-    T.append(row);
-    up(() => {
-      const unl = rewardUnlocked(a.id); show(row, unl); if (!unl) return;
-      const n = anomN(a.id); setT(lv, 'owned ' + n); setT(ef, a.eff(n));
-      const c0 = anomCostLog(a), lm = lq();
-      const k = S.settings.buyMode === 'max' ? Math.max(1, quadMax(lm, a.base, a.step, a.q, n)) : 1;
-      setT(bb, (k > 1 ? 'Buy ' + k + ' · ' : 'Buy · ') + fmt(D.fromLog(anomCostLog(a, k))));
-      setDis(bb, lm < c0); setC(bb, 'can', lm >= c0);
-    }, 'gen');
-  }
 
 }
 const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
@@ -3796,9 +3779,9 @@ function buildWebView(T, layer, tabId) {
       const tot = count.reduce((a, b) => a + b, 0), top = count.indexOf(Math.max(...count));
       wrap.style.setProperty('--tint', tot ? `rgba(${BR_HUE[top][1]},${(0.05 + Math.min(0.12, tot / 300)).toFixed(3)})` : 'rgba(var(--shr),.05)');
     }
-    if (IS_PHONE) {
+    {
       const topY = wrap.getBoundingClientRect().top + scrollY, bar = ($('topbar') || document.body).getBoundingClientRect().bottom;
-      const want = Math.max(300, Math.round(layer === 'q' ? innerHeight - topY - 76 : innerHeight - bar - 60));
+      const want = Math.max(IS_PHONE ? 300 : 420, Math.round(layer === 'q' ? innerHeight - topY - (IS_PHONE ? 76 : 84) : innerHeight - bar - 60));
       if (Math.abs(want - wrap.clientHeight) > 4) { wrap.style.height = want + 'px'; fitted = false; }
     }
     if (!fitted && wrap.clientWidth) { fit(false); fitted = true; }
@@ -3895,7 +3878,7 @@ function buildGuideTab() {
     [cardsOn, 'Cards', 'Once you buy Fracture, the root of the Shard web, the Architect deals you three cards every ten minutes of play (see the <b>Fortune</b> tab, which also holds your Boons once you have the Observatory). Keep one. Cards are Common, Rare, Epic or Legendary, and each rolls a little stronger or weaker. They give Quanta, speed up every generator, boost your top tier, Pulse, Lucky Pulses, Resonance or idle play for a while, add Shards or Essence to your next prestige, hand you production on the spot, or flip a coin for a big boost.'],
     [() => hasE('e3'), 'Challenges', 'Runs with a handicap. Reach the goal to complete one; every Challenge can be completed again and again with a higher goal and a stronger reward.'],
     [ascVisible, 'Wonders', 'The fourth branch of the Essence web unlocks new things to do. <b>Observatory</b>: with every Ascension you choose a <b>Boon</b> that lasts until the next one (Twin Stars lets you keep two, Wide Sky adds a choice and makes them stronger). <b>Nova</b> is a third ability (key N): Quanta production to the power 1.04 for 20 seconds. <b>Reflex</b> fires your abilities as soon as they are ready, <b>Heartbeat</b> presses Pulse every 3 seconds, <b>Full House</b> and <b>Second Hand</b> improve your cards, <b>Afterglow</b> starts every Collapse with your first ten generators, <b>Reliquary</b> keeps Relics and Anomalies through Ascension, at the far end, very dear, <b>Wind in Your Face</b> sets a wind blowing through the whole game (Quanta production exponent +0.03, abilities recharge twice as fast), and the very last upgrade, <b>Bright Blue Sky</b>, ends the long night. Watch the sky behind the game: the night fills in as you climb the generator ladder, and the further you get into the Essence web, the closer the day comes.'],
-    [() => SECRETS.some(s => S.ach[s.id]), 'Secrets', 'Some achievements are hidden. Each one shows only a hint until you earn it, and each unlocks something special: a <b>Relic</b> (an upgrade in the Upgrades tab that you buy again after every Ascension) or an <b>Anomaly</b> (a generator in the Generators tab that ignores Collapse; you buy it again after every Ascension, until Reliquary). Pay attention to the hints, and to odd things you might try.'],
+    [() => SECRETS.some(s => S.ach[s.id]), 'Secrets', 'Some achievements are hidden. Each one shows only a hint until you earn it, and each unlocks something special: a <b>Relic</b> (an upgrade in the Relics tab that you buy again after every Ascension) or an <b>Anomaly</b> (a generator in the Relics tab that ignores Collapse; you buy it again after every Ascension, until Reliquary). Pay attention to the hints, and to odd things you might try.'],
     [() => true, 'Appearance', 'Options → Appearance lets you change the color theme, the UI size, and turn the starfield, animations, rainbow generator colors and pop-up notifications on or off.'],
     [() => true, 'Saving','The game saves itself every 10 seconds in this browser and keeps progressing while you are away, at 10% speed. After a big update, an older save gets a one-time notice offering a fresh start; your save keeps working either way. Use Options → Export to make a backup.'],
   ];
@@ -3947,15 +3930,38 @@ function buildUpgTab() {
   const note = h('div', { class: 'muted webnote', style: 'margin:-2px 0 8px' }); T.append(note);
   buildWebView(T, 'q', 'upg');
   up(() => setT(note, 'Buy any node next to one you own. Big upgrades link straight to each other; the small bonus nodes between them are detours, and some upgrades branch off them. Diamonds are the Architect’s ideas. ' + (!collapseKnown() ? '' : hasS('s2') ? 'Memory keeps this web through Collapses.' : 'The web resets when you Collapse until you own Memory (Shard web).')), 'upg');
+}
+
+// Relics and Anomalies: the rewards of secret achievements, in a tab of their own (the webs get their tabs to themselves)
+function buildRelicTab() {
+  const T = UI.tabs.relic;
   const relHead = h('h2', {}, 'Relics');
   const relNote = h('div', { class: 'muted', style: 'margin:-4px 0 8px' }, 'Found through secret achievements.');
-  up(() => setT(relNote, 'Found through secret achievements.' + (ascendKnown() && !hasE('e48') ? ' A Relic you buy lasts until you Ascend; after that, buy it again.' : '')), 'upg');
+  up(() => setT(relNote, 'Found through secret achievements.' + (ascendKnown() && !hasE('e48') ? ' A Relic you buy lasts until you Ascend; after that, buy it again.' : '')), 'relic');
   const relGrid = h('div', { class: 'cards' });
   T.append(relHead, relNote, relGrid);
-  up(() => { const v = RELICS.some(r => rewardUnlocked(r.id)); show(relHead, v); show(relNote, v); }, 'upg');
+  up(() => { const v = RELICS.some(r => rewardUnlocked(r.id)); show(relHead, v); show(relNote, v); }, 'relic');
   for (const r of RELICS) {
     const [el, fn] = upgCard('es', r, buyRelic, () => hasR(r.id), () => lq() >= r.cost, () => 'Cost: ' + fmt(D.fromLog(r.cost)) + ' Quanta', () => rewardUnlocked(r.id));
-    relGrid.append(el); up(fn, 'upg');
+    relGrid.append(el); up(fn, 'relic');
+  }
+  // Anomalies: secret generators unlocked by hidden achievements; they ignore Collapse, not Ascension (unless Reliquary)
+  const anomHead = h('h2', {}, 'Anomalies');
+  const anomNote = h('div', { class: 'muted', style: 'margin:-4px 0 8px' }, 'Things that should not exist. They ignore Collapse and Ascension.');
+  T.append(anomHead, anomNote);
+  up(() => { const v = ANOMALIES.some(a => rewardUnlocked(a.id)); show(anomHead, v); show(anomNote, v); if (v) setT(anomNote, !collapseKnown() ? 'Things that should not exist.' : !ascendKnown() ? 'Things that should not exist. They ignore Collapse.' : hasE('e48') ? 'Things that should not exist. They ignore Collapse and Ascension.' : 'Things that should not exist. They ignore Collapse, but after an Ascension you buy them again.'); }, 'relic');
+  for (const a of ANOMALIES) {
+    const lv = h('div', { class: 'sub' }), ef = h('div', { class: 'mult' }), bb = h('button', { onclick: act(() => buyAnom(a, S.settings.buyMode === 'max' ? 'max' : '1')) });
+    const row = h('div', { class: 'row anom' }, h('div', {}, h('div', { class: 'name' }, h('span', { class: 'tier' }, '✶'), a.name), lv), h('div', {}, ef), h('div', { class: 'rate' }, a.desc), bb);
+    T.append(row);
+    up(() => {
+      const unl = rewardUnlocked(a.id); show(row, unl); if (!unl) return;
+      const n = anomN(a.id); setT(lv, 'owned ' + n); setT(ef, a.eff(n));
+      const c0 = anomCostLog(a), lm = lq();
+      const k = S.settings.buyMode === 'max' ? Math.max(1, quadMax(lm, a.base, a.step, a.q, n)) : 1;
+      setT(bb, (k > 1 ? 'Buy ' + k + ' · ' : 'Buy · ') + fmt(D.fromLog(anomCostLog(a, k))));
+      setDis(bb, lm < c0); setC(bb, 'can', lm >= c0);
+    }, 'relic');
   }
 }
 
@@ -4420,7 +4426,7 @@ function init() {
   if (S.stats.topTier < 0) S.stats.topTier = Math.max(-1, S.ai.tierSeen - 1, ...S.gens.map((g, i) => g.bought > 0 ? i : -1));
   // the tutorial goes back to the first step you have not actually done (a changed step list once skipped players ahead)
   if (!S.tut.off && S.tut.step < TUT.length) while (S.tut.step > 0 && !TUT[S.tut.step - 1].done()) S.tut.step--;
-  buildHeader(); buildNav(); buildGenTab(); buildArchTab(); buildUpgTab(); buildShardTab(); buildAutoTab(); buildAscTab(); buildCardsTab(); buildChalTab(); buildAchTab(); buildStatsTab(); buildGuideTab(); buildOptTab(); buildProgress();
+  buildHeader(); buildNav(); buildGenTab(); buildArchTab(); buildUpgTab(); buildShardTab(); buildAutoTab(); buildAscTab(); buildCardsTab(); buildRelicTab(); buildChalTab(); buildAchTab(); buildStatsTab(); buildGuideTab(); buildOptTab(); buildProgress();
   let welcome = null;
   if (away > 10 && S.settings.offline) {
     const q0 = S.q, s0 = S.shards, e0 = S.essence, c0 = S.stats.totalCollapses, a0 = S.ascensions;

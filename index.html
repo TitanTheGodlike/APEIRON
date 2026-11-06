@@ -278,6 +278,7 @@ kbd{background:rgba(30,40,90,.6);border:1px solid var(--edge2);border-radius:3px
 .memories{display:flex;flex-wrap:wrap;gap:8px}
 .memories button{font-size:12.5px}
 /* ---- Skill webs ---- */
+body.phone .webnote{display:none}
 .treeview{--tint:rgba(var(--shr),.05);position:relative;height:660px;border:1px solid var(--edge);border-radius:3px;overflow:hidden;background:radial-gradient(circle at 42% 50%,var(--tint),transparent 70%),rgba(5,7,18,.6);cursor:grab;touch-action:none;transition:background .8s}
 .treeview.dragging{cursor:grabbing}
 .treesvg{width:100%;height:100%;display:block}
@@ -1942,7 +1943,7 @@ const SECRETS = [
   { id: 'x9', name: 'Rebel', hint: 'Who needs help?', desc: 'Reach 1e10 Quanta without owning a single upgrade.', reward: ['relic', 'selftaught'] },
   { id: 'x10', name: 'Restless', hint: 'A restless eye, in every room at once.', desc: 'Switch tabs 30 times within a minute.', reward: ['anom', 'prism'] },
   { id: 'x11', name: 'Insomniac', hint: 'Stay a while.', desc: 'Play for six hours straight, never idle for more than five minutes.', reward: ['relic', 'secondwind'] },
-  { id: 'x12', name: 'Cheat Code', hint: 'Thirty lives, if you remember the steps.', desc: 'Enter the old code after your first Collapse (↑ ↑ ↓ ↓ ← → ← → B A), and admit it.', reward: ['relic', 'cheatcode'] },
+  { id: 'x12', name: 'Cheat Code', hint: 'Thirty lives, if you remember the steps.', desc: 'Enter the old code after your first Collapse (↑ ↑ ↓ ↓ ← → ← → B A; on a phone, swipe those directions and tap twice), and admit it.', reward: ['relic', 'cheatcode'] },
   { id: 'x13', name: 'Spectrum', hint: 'Wear every coat in the wardrobe.', desc: 'Try all six colour themes within ten seconds.', reward: ['relic', 'spectrum'] },
   { id: 'x14', name: 'Full House', hint: 'A hand that holds every kind of fortune.', desc: 'Have five cards working at once, with Common, Rare, Epic and Legendary among them.', reward: ['relic', 'markeddeck'] },
   { id: 'x15', name: 'Tails Again', hint: 'Fortune turns its back, five times over.', desc: 'Lose five coin flips in a row.', reward: ['relic', 'consolation'] },
@@ -2041,6 +2042,7 @@ function luckyPop() {
 function applyUI() {
   const u = S.settings.ui, b = document.body;
   b.dataset.theme = u.theme;
+  b.classList.toggle('phone', IS_PHONE);
   b.classList.toggle('nostars', !u.stars);
   b.classList.toggle('nosky', u.sky === false);
   b.classList.toggle('nomotion', !u.motion);
@@ -3277,6 +3279,40 @@ function priceUpgradeWeb(gap = QGAP) {
 }
 priceUpgradeWeb();
 // Force layout: springs along edges, repulsion between nodes, anchors pull notables to their branch.
+// where a new endless node goes: a step out from the node it grows from, forks turning off to their side
+function dynPlace(layer, nodes, pos, dn) {
+  const pp = pos[dn.parent] || [0, 0], gp = nodes[dn.parent] && nodes[dn.parent].dyn ? pos[nodes[dn.parent].parent] : null;
+  let dx = pp[0] - (gp ? gp[0] : 0), dy = pp[1] - (gp ? gp[1] : 0); const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
+  const turn = dn.twig === 'L' ? -0.85 : dn.twig === 'R' ? 0.85 : (dn.depth % 2 ? 0.15 : -0.15);
+  const vx = dx - dy * turn, vy = dy + dx * turn, vl = Math.hypot(vx, vy) || 1;
+  return [pp[0] + vx / vl * 125, pp[1] + vy / vl * 125];
+}
+function webGrowOnly(layer, c, D) {
+  const nodes = c.nodes, edges = c.edges, pos = WEB_POS[layer], adj = c.adj, added = [];
+  for (let i = c.nDyn; i < D.list.length; i++) {
+    const dn = D.list[i], n = dynNode(layer, dn.id);
+    nodes[dn.id] = n; edges.push([dn.parent, dn.id]);
+    adj[dn.id] = [dn.parent]; (adj[dn.parent] = adj[dn.parent] || []).push(dn.id);
+    pos[dn.id] = dynPlace(layer, nodes, pos, dn); n.anchor = pos[dn.id].slice(); added.push(dn.id);
+  }
+  relaxNew(added, nodes, pos);
+  return (WEB_CACHE[layer] = { nodes, edges, adj, pos, nArch: c.nArch, nDyn: D.list.length, S });
+}
+// settle only the new nodes: pushed away from everything near them, pulled toward the node they grow from
+function relaxNew(ids, nodes, pos, iters = 25) {
+  const all = Object.keys(nodes);
+  for (let it = 0; it < iters; it++) for (const id of ids) {
+    const p = pos[id]; let fx = 0, fy = 0;
+    for (const k of all) {
+      if (k === id) continue; const q = pos[k]; if (!q) continue;
+      const dx = p[0] - q[0], dy = p[1] - q[1], d2 = dx * dx + dy * dy + 1; if (d2 > 90000) continue;
+      const d = Math.sqrt(d2), f = 3400 / d2; fx += dx / d * f; fy += dy / d * f;
+    }
+    const o = pos[nodes[id].parent]; if (o) { const dx = o[0] - p[0], dy = o[1] - p[1], d = Math.hypot(dx, dy) + 0.01, f = (d - 100) * 0.05; fx += dx / d * f; fy += dy / d * f; }
+    const m = Math.hypot(fx, fy); if (m > 30) { fx *= 30 / m; fy *= 30 / m; }
+    p[0] += fx; p[1] += fy;
+  }
+}
 function relax(nodes, edges, pos, iters) {
   const ids = Object.keys(nodes), n = ids.length, idx = {};
   ids.forEach((id, i) => { idx[id] = i; });
@@ -3500,6 +3536,7 @@ function webGraph(layer) {
   const D = growDynamic(layer), nDyn = D.list.length;
   const nArch = S.forge[layer].length, c = WEB_CACHE[layer];
   if (c && c.nArch === nArch && c.nDyn === nDyn && c.S === S) return c;
+  if (c && c.nArch === nArch && c.S === S && nDyn > c.nDyn) return webGrowOnly(layer, c, D);
   const pos = WEB_POS[layer];
   for (const k in pos) delete pos[k]; // auto-tidy: a new node means a fresh layout of the whole web
   const nodes = Object.assign({}, st.nodes), edges = st.edges.slice();
@@ -3533,12 +3570,7 @@ function webGraph(layer) {
   // endless growth: each new node steps outward from the one it grows from (new branches turn off to the side)
   for (const dn of D.list) {
     const n = dynNode(layer, dn.id); nodes[dn.id] = n; edges.push([dn.parent, dn.id]);
-    const pp = pos[dn.parent] || [0, 0], gp = nodes[dn.parent] && nodes[dn.parent].dyn ? pos[nodes[dn.parent].parent] : null;
-    let dx = pp[0] - (gp ? gp[0] : 0), dy = pp[1] - (gp ? gp[1] : 0); const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
-    // a fork turns off to its side, a line itself only wiggles a little as it grows
-    const turn = dn.twig === 'L' ? -0.85 : dn.twig === 'R' ? 0.85 : (dn.depth % 2 ? 0.15 : -0.15);
-    const vx = dx - dy * turn, vy = dy + dx * turn, vl = Math.hypot(vx, vy) || 1;
-    const at = [pp[0] + vx / vl * 125, pp[1] + vy / vl * 125];
+    const at = dynPlace(layer, nodes, pos, dn);
     pos[dn.id] = at; n.anchor = at.slice(); grew = true;
   }
   if (grew) relax(nodes, edges, pos, 140);
@@ -3723,6 +3755,11 @@ function buildWebView(T, layer, tabId) {
       const tot = count.reduce((a, b) => a + b, 0), top = count.indexOf(Math.max(...count));
       wrap.style.setProperty('--tint', tot ? `rgba(${BR_HUE[top][1]},${(0.05 + Math.min(0.12, tot / 300)).toFixed(3)})` : 'rgba(var(--shr),.05)');
     }
+    if (IS_PHONE) {
+      const topY = wrap.getBoundingClientRect().top + scrollY, bar = ($('topbar') || document.body).getBoundingClientRect().bottom;
+      const want = Math.max(300, Math.round(layer === 'q' ? innerHeight - topY - 76 : innerHeight - bar - 60));
+      if (Math.abs(want - wrap.clientHeight) > 4) { wrap.style.height = want + 'px'; fitted = false; }
+    }
     if (!fitted && wrap.clientWidth) { fit(false); fitted = true; }
     const curLog = S[W.cur].log10(), owned = {};
     for (const id in els) {
@@ -3866,7 +3903,7 @@ function buildUpgTab() {
     if (on && !gTw) gTw = typewriter(gTxt, 'This is the <b>Upgrade web</b>. It grows out from the middle: you can buy any node that touches one you own. <b>Big nodes</b> are the main upgrades, the <b>small ones</b> between them are cheap bonuses, and where two paths split you pick one of them. <b>Click</b> a node to read it, <b>double-click</b> to buy it (and the path to it if needed). Drag to look around, scroll to zoom.', { speed: 22, pitch: 1.15, orb: gOrb });
   }, 'upg');
   T.append(h('h2', {}, 'Upgrade web'));
-  const note = h('div', { class: 'muted', style: 'margin:-2px 0 8px' }); T.append(note);
+  const note = h('div', { class: 'muted webnote', style: 'margin:-2px 0 8px' }); T.append(note);
   buildWebView(T, 'q', 'upg');
   up(() => setT(note, 'Buy any node next to one you own. Big upgrades link straight to each other; the small bonus nodes between them are detours, and some upgrades branch off them. Diamonds are the Architect’s ideas. ' + (!collapseKnown() ? '' : hasS('s2') ? 'Memory keeps this web through Collapses.' : 'The web resets when you Collapse until you own Memory (Shard web).')), 'upg');
   const relHead = h('h2', {}, 'Relics');
@@ -4254,15 +4291,29 @@ function cheatCodeEntered() {
     ['Yes', () => { aiSay('Honesty. I did not expect that from a cheater.'); after(); }],
   ]);
 }
+// a phone: the Android app (a file page in a WebView), or a touch screen no bigger than a phone
+const IS_PHONE = location.protocol === 'file:' || (window.matchMedia && matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) <= 900);
 const KONAMI = ['arrowup', 'arrowup', 'arrowdown', 'arrowdown', 'arrowleft', 'arrowright', 'arrowleft', 'arrowright', 'b', 'a'];
 let konamiAt = 0;
+function konamiStep(k) {
+  if (k === KONAMI[konamiAt]) { if (++konamiAt === KONAMI.length) { konamiAt = 0; cheatCodeEntered(); return 'done'; } return konamiAt > 8 ? 'hold' : 'step'; }
+  konamiAt = k === KONAMI[0] ? 1 : 0; return null;
+}
+// by touch: a quick swipe is an arrow (up, up, down, down, left, right, left, right); then a tap is B and the next tap A
+let touchAt = null;
+document.addEventListener('touchstart', e => { const t = e.touches[0]; touchAt = e.touches.length === 1 ? { x: t.clientX, y: t.clientY, t: performance.now() } : null; }, { passive: true });
+document.addEventListener('touchend', e => {
+  if (!touchAt || !e.changedTouches.length) return;
+  const t = e.changedTouches[0], dx = t.clientX - touchAt.x, dy = t.clientY - touchAt.y, dt = performance.now() - touchAt.t, far = Math.hypot(dx, dy); touchAt = null;
+  if (far < 12 && dt < 400) { if (konamiAt >= 8) konamiStep(KONAMI[konamiAt]); return; } // taps only count once the swipes are done
+  if (dt < 700 && Math.max(Math.abs(dx), Math.abs(dy)) > 40) konamiStep(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'arrowright' : 'arrowleft') : (dy > 0 ? 'arrowdown' : 'arrowup'));
+}, { passive: true });
 document.addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   const tg = e.target.tagName; if (tg === 'INPUT' || tg === 'TEXTAREA' || tg === 'SELECT') return;
   if ($('modal').classList.contains('open')) { if (e.key === 'Escape') closeModal(); return; }
   const k = e.key.toLowerCase();
-  if (k === KONAMI[konamiAt]) { if (++konamiAt === KONAMI.length) { konamiAt = 0; cheatCodeEntered(); return; } if (konamiAt > 8) return; }
-  else konamiAt = k === KONAMI[0] ? 1 : 0;
+  const kr = konamiStep(k); if (kr === 'done' || kr === 'hold') return;
   if (!e.repeat && ['m', 'p', 't', 'c', 'a', 's', 'f', 'n', 'u', 'b'].includes(k)) sfx('click');
   if (k === 'm') sfx(maxAll() ? 'buy' : 'fail');
   else if (k === 'p') sfx(pulse() ? 'pulse' : 'fail');

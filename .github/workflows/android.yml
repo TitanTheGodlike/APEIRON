@@ -1,11 +1,11 @@
 name: Android APK
 
-# Builds the Android app from the current index.html and publishes it as
+# Builds the Android app from the current game (index.html, css/, js/) and publishes it as
 # Apeiron.apk on the "latest" release, every time the game changes on main.
 on:
   push:
     branches: [main]
-    paths: ['index.html', 'icon-192.png', 'android/**', '.github/workflows/android.yml']
+    paths: ['index.html', 'css/**', 'js/**', 'icon-192.png', 'android/**', '.github/workflows/android.yml']
   workflow_dispatch:
 
 permissions:
@@ -30,6 +30,7 @@ jobs:
         run: |
           mkdir -p android/app/src/main/assets android/app/src/main/res/mipmap-xxxhdpi
           cp index.html android/app/src/main/assets/index.html
+          cp -r css js android/app/src/main/assets/
           cp icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
       - name: Build the APK

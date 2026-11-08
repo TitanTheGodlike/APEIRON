@@ -64,6 +64,10 @@ The story unfolds in full-screen talks with the Architect at the big moments of 
 
 Found a bug? Use **Options → Report a bug** in the game, or open an issue on the [Issues page](https://github.com/TitanTheGodlike/APEIRON/issues).
 
+## Code
+
+Plain HTML, CSS and JavaScript with no build step and no dependencies. `index.html` loads `css/style.css` and the scripts in `js/` in order (`core.js` first, `main.js` last); they are classic scripts that share one global scope. Serve the folder with any static file server, or open it from GitHub Pages.
+
 ## Saves
 
 Progress is saved automatically in your browser's local storage every 10 seconds. Use **Options → Export** to back up your save or move it to another browser.

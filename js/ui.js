@@ -57,6 +57,8 @@ const TAB_ICONS = { relic: '✶', gen: '◈', arch: '✦', upg: '▲', shard: '�
 function setTab(id) {
   if (S.settings.tab !== id) { const now = performance.now(); tabTimes.push(now); while (tabTimes.length && now - tabTimes[0] > 60000) tabTimes.shift(); if (tabTimes.length >= 30) grantSecret('x10'); }
   S.settings.tab = id;
+  // the web tabs are the web and nothing else: the page does not scroll there (dragging moves the web instead)
+  const web = id === 'upg' || id === 'shard' || id === 'asc'; setC(document.body, 'webtab', web); if (web) scrollTo(0, 0);
   for (const [k, el] of Object.entries(UI.tabs)) setC(el, 'active', k === id);
   for (const [k, b] of Object.entries(UI.navBtns)) setC(b, 'active', k === id);
   if (IS_PHONE && UI.navBtns[id] && UI.navBtns[id].scrollIntoView) UI.navBtns[id].scrollIntoView({ inline: 'center', block: 'nearest' }); // the tab bar scrolls sideways on a phone

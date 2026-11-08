@@ -84,13 +84,14 @@ function grantSecret(id) {
   toast('Secret achievement: ' + s.name + '. Unlocked ' + what + '.', 'es', true);
   if (!SIMULATING) { blip(1.4); setTimeout(() => blip(1.8), 90); setTimeout(() => blip(2.3), 180); flash('rgba(var(--esr),.35)'); }
 }
+const isEmpty = o => { for (const k in o) return false; return true; };
 function checkSecrets() {
   if (tierBought(0) === 77 && tierBought(1) === 7) grantSecret('x7');
   if (S.cards.active.length >= 5 && new Set(S.cards.active.map(c => c.r)).size === 4) grantSecret('x14');
   if (canAscend() && !S.secret.ideasAsc) grantSecret('x19');
   if (SIMULATING) return;
   if (S.stats.tCollapse >= 300 && totalBought() === 0 && !S.run.pulsed) grantSecret('x1');
-  if (lq() >= 10 && !Object.keys(S.qUpg).length) grantSecret('x9');
+  if (lq() >= 10 && isEmpty(S.qUpg)) grantSecret('x9');
   if (performance.now() - SESSION.start >= 6 * 3600e3 && performance.now() - SESSION.last < 300000) grantSecret('x11');
 }
 const POKES = ['Yes?', 'I am listening.', 'That tickles. I think. Nobody has ever touched me before.', 'You keep doing that.', 'Is this how your kind says hello?', 'I am counting, you know.', 'Hello to you too.', 'Careful. I bruise in ideas.', 'Persistent. I like that.', 'Fine. You win. Have something I was saving.'];

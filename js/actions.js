@@ -66,12 +66,12 @@ function pulse() {
 function buyQ(id) {
   const u = QBY[id];
   if (S.qUpg[id] || lq() < u.cost) return false;
-  S.q = S.q.sub(D.fromLog(u.cost)).max0(); S.qUpg[id] = true; UPG_VER++; return true;
+  S.q = S.q.sub(D.fromLog(u.cost)).max0(); S.qUpg[id] = true; webChanged('q'); return true;
 }
 function buyS(id) {
   const u = SBY[id];
   if (S.sUpg[id] || sForkTaken(id) || S.shards.lt(u.cost)) return false;
-  S.shards = S.shards.sub(u.cost).max0(); S.sUpg[id] = true; UPG_VER++; return true;
+  S.shards = S.shards.sub(u.cost).max0(); S.sUpg[id] = true; webChanged('s'); return true;
 }
 // Reshape: refund every Shard spent on the tree and restart the current run
 function reshapeTree() {
@@ -81,7 +81,7 @@ function reshapeTree() {
   for (const id in S.minor.s) if (st.nodes[id]) refund = refund.add(D.fromLog(st.nodes[id].costLog));
   if (refund.m === 0) return false;
   for (const id in S.minor.s) if (st.nodes[id]) delete S.minor.s[id];
-  S.sUpg = {}; MINOR_VER++; S.shards = S.shards.add(refund);
+  S.sUpg = {}; MINOR_VER++; webChanged(); S.shards = S.shards.add(refund);
   { const R = S.secret.reshapes; R.push(S.stats.time); while (R.length > 3) R.shift(); if (R.length === 3 && R[2] - R[0] <= 600) grantSecret('x18'); }
   resetQLayer();
   flash('rgba(196,155,255,.5)');
@@ -101,7 +101,7 @@ function useAbility(k) {
 function buyE(id) {
   const u = EBY[id];
   if (S.eUpg[id] || S.essence.lt(u.cost)) return false;
-  S.essence = S.essence.sub(u.cost).max0(); S.eUpg[id] = true; UPG_VER++;
+  S.essence = S.essence.sub(u.cost).max0(); S.eUpg[id] = true; webChanged('e');
   if (id === 'e6') { toast('Apeiron: the Limit is broken. Quanta can grow forever.', 'es'); aiEvent('unbound'); }
   if (id === 'e41') dealBoons(); // the first hand of Boons comes right away
   if (id === 'e52') aiSay('Do you feel that? Wind. I did not know I could make wind. Lean into it.');
@@ -124,7 +124,7 @@ function resetQLayer() {
   S.gens = hasE('e49') && S.chal.active < 0 ? Array.from({ length: 10 }, () => ({ amt: D.fromNum(1), bought: 0 })) : [newGen()];
   S.clock = 0;
   if (!hasS('s2')) { S.qUpg = {}; S.proc.q = 0; for (const u of S.forge.q) u.own = false; S.minor.q = {}; MINOR_VER++; }
-  S.stats.tCollapse = 0;
+  S.stats.tCollapse = 0; webChanged(); // ownership changed: cached sums and frontiers count again
   S.run = { clockBought: false, abil: 0, best: S.q.log10(), pulsed: false };
 }
 function doCollapse(quiet = false) {
@@ -164,7 +164,7 @@ function doAscend(quiet = false) {
   resetQLayer();
   if (keepQ) { S.qUpg = qKeep.u; S.minor.q = qKeep.m; S.forge.q.forEach((u, i) => { u.own = qKeep.own[i]; }); S.proc.q = qKeep.n; }
   else { S.qUpg = {}; S.proc.q = 0; for (const u of S.forge.q) u.own = false; S.minor.q = {}; }
-  MINOR_VER++;
+  MINOR_VER++; webChanged();
   S.stats.tAscend = 0; S.stats.tInspire = 0; S.secret.ideasAsc = 0; // Inspiration starts over
   // Relics and Anomalies are bought again after every Ascension (the secrets keep them unlocked), unless Reliquary
   if (!hasE('e48')) { S.relics = {}; for (const k in S.anom) S.anom[k] = 0; }

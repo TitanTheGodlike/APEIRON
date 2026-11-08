@@ -134,7 +134,7 @@ function sayNext() {
     if (i < text.length) SAY.timer = setTimeout(step, /[.!?]/.test(text[i - 1]) ? 220 : /[,:;]/.test(text[i - 1]) ? 120 : 34); else hold();
   };
   if (S.settings.ui && S.settings.ui.motion === false) { txt.textContent = text; document.body.style.setProperty('--sayh', (box.offsetHeight + 8) + 'px'); hold(); return; }
-  SAY.typing = true; box.classList.add('typing'); orb.classList.add('talk');
+  SAY.typing = true; box.classList.add('typing'); orb.classList.add('talk'); vizWake();
   step();
 }
 document.addEventListener('click', e => {
@@ -247,6 +247,9 @@ const cheapestOpen = layer => { const o = openIdeas(layer); return o.length ? o[
 const openAffordable = layer => openIdeas(layer).some(i => S[PROC[layer].cur].log10() >= procCost(layer, i));
 const procCost = (layer, n) => Math.max(0, PROC[layer].costLog(n) - procAgg(layer).insight - cardSum('ideas') - (hasR('ascetic') ? 3 : 0));
 let PROC_AGG = {}, UPG_VER = 0;
+// what you own changed: UPG_VER for anything (sums, counts), LAYER_VER for one web (its frontier and growth); no layer = all
+const LAYER_VER = { q: 0, s: 0, e: 0 };
+function webChanged(layer) { UPG_VER++; if (layer) LAYER_VER[layer]++; else { LAYER_VER.q++; LAYER_VER.s++; LAYER_VER.e++; } }
 const UPG_KEY = { q: 'qUpg', s: 'sUpg', e: 'eUpg' };
 // everything of one web that works like an idea: the Architect's owned ideas plus the owned grown upgrades
 function procAgg(layer) {
@@ -266,6 +269,7 @@ function procAgg(layer) {
       default: if (u.kind in a) a[u.kind] += u.v;
     }
   }
+  a.synBy = {}; for (const u of a.syn) (a.synBy[u.tier] = a.synBy[u.tier] || []).push(u); // by the generator they help
   PROC_AGG[layer] = { cnt, a, S, uv: UPG_VER, iso, up };
   return a;
 }
@@ -276,7 +280,7 @@ const thriftMult = i => Math.max(0.4, Math.pow(10, procMap('thrift', i))); // i 
 const resStep = i => Math.max(RES_MIN, 10 - procMap('reson', i));          // bought per resonance
 function procSyn(i) {
   let L = 0;
-  for (const l of ['q', 's', 'e']) for (const u of procAgg(l).syn) if (u.tier === i) L += u.v * L10(1 + tierBought(u.src));
+  for (const l of ['q', 's', 'e']) { const us = procAgg(l).synBy[i]; if (us) for (const u of us) L += u.v * L10(1 + tierBought(u.src)); }
   return L;
 }
 const cdMult = k => Math.max(CD_FLOOR, Math.pow(10, procSum(k)));

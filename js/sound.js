@@ -59,7 +59,7 @@ function voiceNodes(ac, dest, t, syl, pitch, vol) {
 }
 function voice(syl, pitch = 1) {
   if (!syl) return;
-  VIZ.kick = 1; VIZ.seed = syl.on.charCodeAt(0); // the dots bounce even with the sound off
+  VIZ.kick = 1; VIZ.seed = syl.on.charCodeAt(0); vizWake(); // the dots bounce even with the sound off
   if (!S || !S.settings.sound || SIMULATING) return;
   const ac = audio(); if (!ac) return;
   const t = ac.currentTime; if (t - (SND.lastVoice || 0) < 0.045) return; // about 22 syllables a second at most
@@ -67,7 +67,9 @@ function voice(syl, pitch = 1) {
   voiceNodes(ac, voiceOut(ac), t, syl, pitch, 0.26 * S.settings.volume);
 }
 // A ring of dots around a talking orb that moves with the voice
-const VIZ = { orbs: [], kick: 0, seed: 0, bins: null };
+const VIZ = { orbs: [], kick: 0, seed: 0, bins: null, raf: 0 };
+// the dots only move while someone talks: once every ring has settled the loop sleeps until the next voice
+const vizWake = () => { if (!VIZ.raf && VIZ.orbs.length) VIZ.raf = requestAnimationFrame(vizFrame); };
 function attachViz(orb, n = 16) {
   if (!orb || orb._viz) return;
   const ring = document.createElement('div'); ring.className = 'viz';
@@ -75,15 +77,17 @@ function attachViz(orb, n = 16) {
   orb.appendChild(ring); orb.classList.add('has-viz'); orb._viz = { dots, level: new Array(n).fill(0) };
   if (VIZ.orbs.length > 1) VIZ.orbs = VIZ.orbs.filter(o => o.isConnected);
   VIZ.orbs.push(orb);
-  if (VIZ.orbs.length === 1) requestAnimationFrame(vizFrame);
+  vizWake();
 }
 function vizFrame() {
-  requestAnimationFrame(vizFrame);
+  VIZ.raf = 0;
   let live = !!(SND.an && S && S.settings.sound && SND.ctx && SND.ctx.state === 'running');
   if (live) { if (!VIZ.bins) VIZ.bins = new Uint8Array(SND.an.frequencyBinCount); SND.an.getByteFrequencyData(VIZ.bins); live = VIZ.bins.some(b => b > 8); }
   VIZ.kick *= 0.86;
+  let awake = false;
   for (const orb of VIZ.orbs) {
     const v = orb._viz, talking = orb.classList.contains('talk'), n = v.dots.length, R = orb.offsetWidth / 2 + Math.max(5, orb.offsetWidth * 0.12);
+    if (talking) awake = true;
     if (!R) continue;
     let any = false;
     for (let i = 0; i < n; i++) {
@@ -97,8 +101,10 @@ function vizFrame() {
       v.dots[i].style.transform = `rotate(${(360 / n) * i}deg) translateY(${(-R - L * R * 0.45).toFixed(1)}px) scale(${(1 + L * 1.6).toFixed(2)})`;
       v.dots[i].style.opacity = (0.35 + L * 0.65).toFixed(2);
     }
+    if (any) awake = true;
     orb.classList.toggle('viz-on', any);
   }
+  if (awake) VIZ.raf = requestAnimationFrame(vizFrame);
 }
 function htmlSlice(html, n) {
   let out = '', count = 0, i = 0;
@@ -123,7 +129,7 @@ function typewriter(el, html, { speed = 30, pitch = 1, orb = null, onDone = null
     if (n >= total) return finish();
     timer = setTimeout(step, /[.!?…]/.test(ch) ? 280 : /[,;:—]/.test(ch) ? 140 : speed);
   };
-  if (orb) orb.classList.add('talk');
+  if (orb) { orb.classList.add('talk'); vizWake(); }
   el.innerHTML = '';
   timer = setTimeout(step, speed);
   return { finish, isDone: () => done };

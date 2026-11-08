@@ -126,7 +126,7 @@ const QUPG = [
 const SUPG = [
   { id: 's1', name: 'Fracture', cost: 1, auto: true, desc: 'The root of the tree. The Architect starts dealing you cards: three every ten minutes, keep one (Fortune tab).' },
   // Radiance: raw power
-  { id: 'sF', name: 'Forgeworks', cost: 2, auto: true, desc: 'Unlock the Shard repeatables: Shard Forge, Clock Tuning and Prism (below the web).' },
+  { id: 'sF', name: 'Forgeworks', cost: 2, auto: true, desc: 'Unlock the Shard repeatables: Shard Forge, Clock Tuning and Prism (the Repeatable button on the Shard web).' },
   { id: 's3', name: 'Crystal Lattice', cost: 2, desc: 'Quanta production ×(1 + Shards earned this Ascension)^0.4.', eff: () => fmtMult(latticeExp() * S.totalShards.add(1).log10()) },
   { id: 's7', name: 'Deep Resonance', cost: 300, desc: 'Resonance +0.15.' },
   { id: 's19', name: 'Focused Light', cost: 1.5e4, desc: 'Flicker, Spark, Ember and Flame ×10 each.' },
@@ -267,7 +267,15 @@ const EUPG = [
 // every field upgrade, per field, with its web; plus plain descriptions for the ones written with fx()
 const FU = {};
 for (const k of FIELDS) FU[k] = [].concat(QUPG.filter(u => u[k]).map(u => ['q', u]), SUPG.filter(u => u[k]).map(u => ['s', u]), EUPG.filter(u => u[k]).map(u => ['e', u]));
-const fSum = k => { let s = 0; for (const [l, u] of FU[k]) if (l === 'q' ? S.qUpg[u.id] : l === 's' ? hasS(u.id) : S.eUpg[u.id]) s += u[k]; return s; };
+// sums of the grown upgrades' fields, remembered until ownership changes (a new grown upgrade bumps UPG_VER too)
+let FSUM_C = null;
+const fSum = k => {
+  let c = FSUM_C; const iso = isolated();
+  if (!c || c.S !== S || c.v !== UPG_VER || c.q !== S.qUpg || c.s !== S.sUpg || c.e !== S.eUpg || c.iso !== iso) c = FSUM_C = { S, v: UPG_VER, q: S.qUpg, s: S.sUpg, e: S.eUpg, iso, m: {} };
+  if (k in c.m) return c.m[k];
+  let s = 0; for (const [l, u] of FU[k]) if (l === 'q' ? S.qUpg[u.id] : l === 's' ? hasS(u.id) : S.eUpg[u.id]) s += u[k];
+  return (c.m[k] = s);
+};
 const niceX = v => { const x = Math.pow(10, v); return x >= 1e5 && Math.abs(v - Math.round(v)) < 1e-9 ? '1e' + Math.round(v) : x >= 1000 ? Math.round(x).toLocaleString('en-US') : String(+x.toFixed(3)); };
 const FIELD_TXT = { qm: 'Quanta production ×', hi: 'Every generator above Flicker ×', shard: 'Shard gain ×', ess: 'Essence gain ×', pc: 'Flickers ×', res: 'Resonance +', clock: 'Clock Speed base +' };
 for (const u of [].concat(QUPG, SUPG, EUPG)) if (!u.desc) u.desc = FIELDS.filter(k => u[k]).map(k => FIELD_TXT[k] + (FLOG[k] ? niceX(u[k]) : u[k]) + (k === 'pc' ? ' per Clock Speed level' : '') + '.').join(' ');

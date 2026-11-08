@@ -222,6 +222,7 @@ function dynMake(layer, id, parent, b, c, depth, twig) {
   for (const f of FIELDS) if (u[f]) FU[f].push([layer, u]);
   const n = { id, parent, b, depth, twig: twig || false, costLog: c };
   D.nodes[id] = n; D.list.push(n);
+  webChanged(layer); // a new upgrade exists (a loaded save may already own it): sums and frontiers count again
   return n;
 }
 // Automata never run out: owning Automata N (from IX up) adds Automata N+1, an autobuyer for the next generator
@@ -235,7 +236,7 @@ function growAutomata() {
       const u = { id, name: 'Automata ' + ROMAN(k + 1), cost: c < 300 ? roundSig(Math.pow(10, c)) : Infinity, auto: true, dyn: true, desc: 'An autobuyer for ' + plural(genDef(k).name) + '. Owning it adds the next Automata.' };
       SUPG.push(u); SBY[id] = u;
       const n = { id, parent: 'ab' + (k - 1), b: 1, depth: k, twig: false, costLog: c, big: true };
-      D.nodes[id] = n; D.list.push(n);
+      D.nodes[id] = n; D.list.push(n); webChanged('s');
     }
   }
 }
@@ -258,8 +259,19 @@ function dynLine(layer, b, parent, c, depth, gen, idAt, twig) {
     bp = id; bc += dynStep(layer, bc) * k * (0.85 + 0.3 * mulberry(hashStr('step:' + idAt(j + 1)))());
   }
 }
+// what a web's growth and frontier depend on: what you own there. Buying bumps UPG_VER / MINOR_VER, resets swap the
+// objects, written ideas change the counts; so while this stays the same, the last answer still holds
+const webVer = layer => [S, S[UPG_KEY[layer]], S.minor[layer], !!S.eUpg.e36, LAYER_VER[layer], S.proc[layer], S.forge[layer].length]; // e36 Overgrowth starts the growth
+const sameVer = (a, b) => { if (!a || a.length !== b.length) return false; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false; return true; };
 function growDynamic(layer) {
-  const D = dynState(layer), W = WEB_DEF[layer], own = id => !!S[UPG_KEY[layer]][id];
+  const D = dynState(layer);
+  if (sameVer(D.ver, webVer(layer))) return D; // nothing new owned: nothing new grows
+  growDynamicNow(layer, D);
+  D.ver = webVer(layer); // after growing (a new node bumps UPG_VER)
+  return D;
+}
+function growDynamicNow(layer, D) {
+  const W = WEB_DEF[layer], own = id => !!S[UPG_KEY[layer]][id];
   if (layer === 's') growAutomata();
   if (!S.eUpg.e36) return D; // Overgrowth (Essence web) starts the endless growth
   for (const tip of D.tips) {
@@ -290,19 +302,57 @@ function priceUpgradeWeb(gap = QGAP) {
 priceUpgradeWeb();
 // Force layout: springs along edges, repulsion between nodes, anchors pull notables to their branch.
 // where a new endless node goes: a step out from the node it grows from, forks turning off to their side
-function dynPlace(layer, nodes, pos, dn) {
+// Big webs used to grow into themselves: every line stepped the same way, so lines crossed into knots and spilled into
+// the next branch. Now each new node takes the least crowded of a few spots near its preferred direction, keeps
+// growing outward, and stays inside its own branch's slice of the circle (halfway to the neighbouring branches).
+const SECTORS = {};
+function branchSector(layer, b) {
+  if (!SECTORS[layer]) {
+    const A = WEB_DEF[layer].branches.map(br => br.angle * Math.PI / 180);
+    SECTORS[layer] = A.map((a, i) => {
+      let lo = Math.PI, hi = Math.PI; // room on each side, up to halfway to the next branch
+      A.forEach((o, j) => { if (j === i) return; const d = Math.atan2(Math.sin(o - a), Math.cos(o - a)); if (d > 0) hi = Math.min(hi, d / 2); else lo = Math.min(lo, -d / 2); });
+      return { a, lo: lo - 0.04, hi: hi - 0.04 };
+    });
+  }
+  return SECTORS[layer][b];
+}
+// a coarse grid of placed nodes, so "how close is the nearest node" looks at a few cells instead of every node
+const GRID_C = 200;
+function posGrid(pos) { const g = new Map(); for (const k in pos) gridAdd(g, k, pos[k]); return g; }
+function gridAdd(g, id, p) { const key = Math.floor(p[0] / GRID_C) + ',' + Math.floor(p[1] / GRID_C); let c = g.get(key); if (!c) g.set(key, c = []); c.push([id, p]); }
+function gridNearest(g, x, y, skip) {
+  const cx = Math.floor(x / GRID_C), cy = Math.floor(y / GRID_C); let m = GRID_C * GRID_C;
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+    const c = g.get((cx + i) + ',' + (cy + j)); if (!c) continue;
+    for (const [id, p] of c) { if (id === skip) continue; const d = (p[0] - x) ** 2 + (p[1] - y) ** 2; if (d < m) m = d; }
+  }
+  return Math.sqrt(m);
+}
+function dynPlace(layer, nodes, pos, dn, grid = posGrid(pos)) {
   const pp = pos[dn.parent] || [0, 0], gp = nodes[dn.parent] && nodes[dn.parent].dyn ? pos[nodes[dn.parent].parent] : null;
   let dx = pp[0] - (gp ? gp[0] : 0), dy = pp[1] - (gp ? gp[1] : 0); const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
   const turn = dn.twig === 'L' ? -0.85 : dn.twig === 'R' ? 0.85 : (dn.depth % 2 ? 0.15 : -0.15);
-  const vx = dx - dy * turn, vy = dy + dx * turn, vl = Math.hypot(vx, vy) || 1;
-  return [pp[0] + vx / vl * 125, pp[1] + vy / vl * 125];
+  const sec = WEB_DEF[layer].branches[dn.b] ? branchSector(layer, dn.b) : null, rp = Math.hypot(pp[0], pp[1]);
+  let best = null, bs = -Infinity;
+  for (const dt of [0, 0.35, -0.35, 0.7, -0.7, 1.05, -1.05, 1.4, -1.4]) for (const dist of [125, 165]) {
+    const t = Math.atan(turn) + dt, vx = dx * Math.cos(t) - dy * Math.sin(t), vy = dy * Math.cos(t) + dx * Math.sin(t);
+    const x = pp[0] + vx * dist, y = pp[1] + vy * dist;
+    let sc = gridNearest(grid, x, y, dn.parent) - 22 * Math.abs(dt) - (dist > 125 ? 10 : 0);
+    if (Math.hypot(x, y) < rp + 50) sc -= 120; // keep growing outward
+    if (sec) { const d = Math.atan2(Math.sin(Math.atan2(y, x) - sec.a), Math.cos(Math.atan2(y, x) - sec.a)), out = d > sec.hi ? d - sec.hi : d < -sec.lo ? -sec.lo - d : 0; sc -= out * Math.max(400, Math.hypot(x, y)) * 2; }
+    if (sc > bs) { bs = sc; best = [x, y]; }
+  }
+  gridAdd(grid, dn.id, best);
+  return best;
 }
 // one of the Architect's ideas joins the web: the idea and its connector, at the least crowded spot near its parent
 function archAdd(layer, i, nodes, edges, pos) {
-  const W = WEB_DEF[layer], u = S.forge[layer][i];
+  const W = WEB_DEF[layer], u = S.forge[layer][i], p0 = u.parent;
   if (u.branch === undefined) { u.branch = ARCH_BRANCH[layer](u.kind, u.tier); u.parent = pickParentWeb(layer, u.branch, S.forge[layer].slice(0, i)); }
   const id = 'a' + i, cid = 'c' + i;
   u.parent = bigParent(layer, nodes[u.parent] ? u.parent : W.root);
+  if (u.parent !== p0) webChanged(layer); // the idea moved: what can be bought next to it changed
   const parent = nodes[u.parent] ? u.parent : W.root;
   nodes[cid] = connectorNode(layer, i); nodes[cid].parent = parent;
   nodes[id] = { id, type: 'arch', arch: i, br: u.branch, parent, anchor: null };
@@ -332,11 +382,12 @@ function webArchOnly(layer, c, nArch) {
 }
 function webGrowOnly(layer, c, D) {
   const nodes = c.nodes, edges = c.edges, pos = WEB_POS[layer], adj = c.adj, added = [];
+  const grid = posGrid(pos);
   for (let i = c.nDyn; i < D.list.length; i++) {
     const dn = D.list[i], n = dynNode(layer, dn.id);
     nodes[dn.id] = n; edges.push([dn.parent, dn.id]);
     adj[dn.id] = [dn.parent]; (adj[dn.parent] = adj[dn.parent] || []).push(dn.id);
-    pos[dn.id] = dynPlace(layer, nodes, pos, dn); n.anchor = pos[dn.id].slice(); added.push(dn.id);
+    pos[dn.id] = dynPlace(layer, nodes, pos, dn, grid); n.anchor = pos[dn.id].slice(); added.push(dn.id);
   }
   relaxNew(added, nodes, pos);
   return (WEB_CACHE[layer] = { nodes, edges, adj, pos, nArch: c.nArch, nDyn: D.list.length, S });
@@ -503,21 +554,27 @@ function webAvail(layer, n) {
   for (const nb of st.adj[n.id]) if (webOwned(layer, st.nodes[nb])) return true;
   return false;
 }
-const webCostLog = (layer, n) => n.type === 'arch' ? procCost(layer, n.arch) : n.costLog;
+const webCostLog = (layer, n) => n.type === 'arch' ? procCost(layer, n.arch) : n.connector !== undefined ? procCost(layer, n.connector) - 0.5 : n.costLog;
 function webBuy(layer, id) {
   const n = typeof id === 'string' ? webNode(layer, id) : id;
   if (!n || !webAvail(layer, n)) return false;
   const W = WEB_DEF[layer], cost = webCostLog(layer, n);
   if (S[W.cur].log10() < cost) return false;
   if (n.type === 'arch') return buyProc(layer, n.arch);
-  if (n.type === 'minor') { S[W.cur] = S[W.cur].sub(D.fromLog(cost)).max0(); S.minor[layer][n.id] = true; MINOR_VER++; return true; }
+  if (n.type === 'minor') { S[W.cur] = S[W.cur].sub(D.fromLog(cost)).max0(); S.minor[layer][n.id] = true; MINOR_VER++; webChanged(layer); return true; }
   return layer === 'q' ? buyQ(n.upg) : layer === 's' ? buyS(n.upg) : buyE(n.upg);
 }
+// everything you could buy next in a web (affordable or not). The keepers ask for it every step, so it is kept
+// until something is bought, reset or written there (late in the game a fresh one takes half a millisecond)
+const FRONTIER = {};
 function webFrontier(layer) {
-  const st = webStatic(layer), out = [], D = growDynamic(layer);
-  for (const id in D.nodes) { const x = dynNode(layer, id); if (webAvail(layer, x)) out.push(x); }
+  const D = growDynamic(layer), v = webVer(layer), c = FRONTIER[layer];
+  if (c && sameVer(c.v, v)) return c.out;
+  const st = webStatic(layer), out = [], up = S[UPG_KEY[layer]];
+  for (const id in D.nodes) { if (up[id]) continue; const x = dynNode(layer, id); if (webAvail(layer, x)) out.push(x); }
   for (const id in st.nodes) { const n = st.nodes[id]; if (webAvail(layer, n)) out.push(n); }
   for (let i = 0; i < S.forge[layer].length; i++) for (const id of ['c' + i, 'a' + i]) { const x = webNode(layer, id); if (x && webAvail(layer, x)) out.push(x); }
+  FRONTIER[layer] = { v, out };
   return out;
 }
 // buy the cheapest affordable nodes next to what you own (used by the Quanta upgrade autobuyer)
@@ -534,7 +591,7 @@ function webAutoBuy(layer, max = 40, branch, keepChoices) {
   for (let g = 0; g < max; g++) {
     let best = null, bc = Infinity;
     for (const n of webFrontier(layer)) { if (branch !== undefined && n.br !== branch && n.type !== 'root') continue; if (keepChoices && n.type === 'notable' && webForkOther(layer, n.upg)) continue; const c = webCostLog(layer, n); if (c < bc) { bc = c; best = n; } }
-    if (!best || S[cur].log10() < bc || !webBuy(layer, best)) break;
+    if (!best || S[cur].log10() < bc || !webBuy(layer, best.id)) break; // by id: checked again as it is now
     bought++;
   }
   return bought;
@@ -588,9 +645,10 @@ function webGraph(layer) {
   let grew = false;
   for (let i = 0; i < nArch; i++) if (archAdd(layer, i, nodes, edges, pos)) grew = true;
   // endless growth: each new node steps outward from the one it grows from (new branches turn off to the side)
+  const grid = posGrid(pos);
   for (const dn of D.list) {
     const n = dynNode(layer, dn.id); nodes[dn.id] = n; edges.push([dn.parent, dn.id]);
-    const at = dynPlace(layer, nodes, pos, dn);
+    const at = dynPlace(layer, nodes, pos, dn, grid);
     pos[dn.id] = at; n.anchor = at.slice(); grew = true;
   }
   if (grew) relax(nodes, edges, pos, 140);
@@ -629,26 +687,54 @@ function webInfo(layer, n) {
   if (n.type === 'minor') return { name: n.eff.text, label: (n.connector !== undefined ? 'Bonus node, grown by the Architect' : 'Bonus node') + (br ? ' · ' + br.name : ''), desc: n.eff.text + '.' };
   const u = layer === 'q' ? QBY[n.upg] : layer === 's' ? SBY[n.upg] : EBY[n.upg];
   const other = webForkOther(layer, n.upg), ou = other && (layer === 's' ? SBY[other] : layer === 'q' ? QBY[other] : EBY[other]);
-  const choice = ou ? 'Path choice: you get this or ' + ou.name + ', not both. Buying one closes the other' + (layer === 's' ? ' (Reshape the tree to switch).' : '.') : '';
+  const choice = ou ? 'Path choice: you get this or ' + ou.name + ', not both. Buying one closes the other' + (layer === 's' ? ' (Reshape to switch).' : '.') : '';
   return { name: u.name, label: n.type === 'root' ? 'The root' : (ou ? 'Path choice · ' : n.dyn && !n.big ? 'Endless growth · ' : 'Notable · ') + (br ? br.name : ''), desc: u.desc, eff: u.eff, choice };
 }
 const BR_HUE = [['var(--es)', 'var(--esr)'], ['var(--q)', 'var(--qr)'], ['var(--sh)', 'var(--shr)'], ['var(--ok)', '110,242,180'], ['#f2f5ff', '242,245,255']]; // the Sky path is white
-function buildWebView(T, layer, tabId) {
+function buildWebView(T, layer, tabId, extra = {}) {
   const W = WEB_DEF[layer];
   const wrap = h('div', { class: 'treeview' });
   const svg = sv('svg', { class: 'treesvg' }), world = sv('g'), gE = sv('g'), gN = sv('g');
   world.append(gE, gN); svg.append(world);
+  // the glow of owned nodes: a soft disc in the branch colour drawn once as a gradient (a blur filter per node was
+  // redone for every node on every frame, which is what made big webs crawl)
+  const haloId = 'halo-' + layer + '-', defs = sv('defs');
+  BR_HUE.map(c => c[0]).concat('#e7eaff').forEach((col, i) => {
+    const g = sv('radialGradient', { id: haloId + i });
+    for (const [o, a] of [[0, 0.5], [0.5, 0.42], [0.75, 0.16], [1, 0]]) { const st = sv('stop', { offset: o, 'stop-opacity': a }); st.style.stopColor = col; g.append(st); } // style, not the attribute: the colours are CSS variables
+    defs.append(g);
+  });
+  svg.prepend(defs);
   const pType = h('div', { class: 'pb' }), pName = h('div', { class: 'pn' }), pDesc = h('div', { class: 'pd' }), pEff = h('div', { class: 'pe' }), pWhy = h('div', { class: 'pw' }), pCost = h('div', { class: 'pc' }), pFork = h('div', { class: 'pf' });
   const pBuy = h('button', {}, 'Buy');
   const panel = h('div', { class: 'nodepanel' }, pType, pName, pDesc, pFork, pEff, pWhy, pCost, pBuy);
   const isQ = layer === 'q', buyAll = h('button', { class: 'buyall', onclick: () => sfx((isQ ? buyAllUpgrades() : buyAllShards()) ? 'upgrade' : 'fail'), title: veil(isQ ? 'Buy every upgrade you can afford, cheapest first (key U)' : 'Buy every Shard upgrade you can afford, cheapest first; path choices are left to you (key B)') }, 'Buy all');
-  const tools = h('div', { class: 'treetools' }, h('button', { onclick: () => zoomBy(1.25) }, '+'), h('button', { onclick: () => zoomBy(0.8) }, '−'), h('button', { onclick: () => fit(true) }, 'Fit'), h('button', { onclick: () => tidy(), title: 'Re-sort the whole web' }, 'Tidy'), layer !== 'e' ? buyAll : '');
+  const tools = h('div', { class: 'treetools' }, h('button', { onclick: () => zoomBy(1.25) }, '+'), h('button', { onclick: () => zoomBy(0.8) }, '−'), h('button', { onclick: () => fit(true) }, 'Fit'), h('button', { onclick: () => tidy(), title: 'Re-sort the whole web' }, 'Tidy'), layer !== 'e' ? buyAll : '', ...(extra.tools || []));
   if (layer !== 'e') up(() => show(buyAll, isQ ? wholesaleOn() : shardWholesaleOn()), tabId);
   const hint = h('div', { class: 'treehint' }, 'Drag to move · scroll to zoom · click a node to inspect it · double-click to buy (the whole path if needed)');
-  wrap.append(svg, tools, panel, hint);
+  wrap.append(svg, tools, panel, hint, ...(extra.panels || []));
   T.append(wrap);
   let view = { x: 0, y: 0, k: 0.5 }, anim = null, sel = null, hover = null, fitted = false, builtG = null, els = {}, edgeEls = [], forkEls = [], shown = {}, tweening = false;
-  const apply = () => world.setAttribute('transform', `translate(${view.x.toFixed(1)},${view.y.toFixed(1)}) scale(${view.k.toFixed(4)})`);
+  const apply = () => { world.setAttribute('transform', `translate(${view.x.toFixed(1)},${view.y.toFixed(1)}) scale(${view.k.toFixed(4)})`); recull(); };
+  // Only what is near the screen is drawn: a late web has thousands of nodes, each bobbing and glowing. Far out
+  // (nodes a few pixels wide) the bob, the flowing paths and the glow are too small to see, so they rest.
+  let cullT = 0, cullAt = 0, cullLost = false;
+  function cull() {
+    cullT = 0; cullAt = performance.now();
+    const Wd = wrap.clientWidth, Hd = wrap.clientHeight; if (!Wd) { cullLost = true; return; } // another tab: again once this one shows
+    const k = view.k, mx = Wd * 0.6 / k + 60, my = Hd * 0.6 / k + 60; // over half a screen to spare, so a drag never shows the edge
+    const x0 = -view.x / k - mx, x1 = (Wd - view.x) / k + mx, y0 = -view.y / k - my, y1 = (Hd - view.y) / k + my;
+    let n = 0;
+    for (const id in els) { const p = shown[id], on = !!p && p[0] >= x0 && p[0] <= x1 && p[1] >= y0 && p[1] <= y1; if (on) n++; setC(els[id], 'cull', !on); }
+    for (const [ln, a, b, arc] of edgeEls) {
+      const p = shown[a], q = shown[b]; if (!p || !q) continue;
+      let ax = Math.min(p[0], q[0]), bx = Math.max(p[0], q[0]), ay = Math.min(p[1], q[1]), by = Math.max(p[1], q[1]);
+      if (arc) { const cx = (p[0] + q[0]) * 2, cy = (p[1] + q[1]) * 2; ax = Math.min(ax, cx); bx = Math.max(bx, cx); ay = Math.min(ay, cy); by = Math.max(by, cy); }
+      setC(ln, 'cull', bx < x0 || ax > x1 || by < y0 || ay > y1);
+    }
+    setC(svg, 'calm', IS_PHONE ? k < 0.4 || n > 160 : k < 0.3 || n > 400);
+  }
+  function recull() { if (!cullT) cullT = setTimeout(cull, Math.max(0, 120 - (performance.now() - cullAt))); }
   function animateTo(v) {
     const start = !anim; anim = v;
     if (!start) return;
@@ -698,9 +784,10 @@ function buildWebView(T, layer, tabId) {
   svg.addEventListener('wheel', e => { e.preventDefault(); const r = svg.getBoundingClientRect(); zoomBy(e.deltaY < 0 ? 1.12 : 1 / 1.12, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
   const buyPath = id => { const path = webPath(layer, id); if (!path || !path.length) return 0; let n = 0; for (const pid of path) { if (!webBuy(layer, pid)) break; n++; } return n; };
   pBuy.addEventListener('click', () => { if (sel) sfx(buyPath(sel) ? 'upgrade' : 'fail'); });
-  function placeAll() {
-    for (const id in els) { const p = shown[id]; els[id].setAttribute('transform', `translate(${p[0].toFixed(1)},${p[1].toFixed(1)})`); }
+  function placeAll(only) { // only: the nodes that moved (and the lines touching them); none = everything
+    for (const id in els) { if (only && !only.has(id)) continue; const p = shown[id]; els[id].setAttribute('transform', `translate(${p[0].toFixed(1)},${p[1].toFixed(1)})`); }
     for (const [ln, a, b, arc] of edgeEls) {
+      if (only && !only.has(a) && !only.has(b)) continue;
       const p = shown[a], q = shown[b]; if (!p || !q) continue;
       if (arc) { const cx = (p[0] + q[0]) * 2, cy = (p[1] + q[1]) * 2; ln.setAttribute('d', `M${p[0].toFixed(1)},${p[1].toFixed(1)} Q${cx.toFixed(1)},${cy.toFixed(1)} ${q[0].toFixed(1)},${q[1].toFixed(1)}`); }
       else ln.setAttribute('d', `M${p[0].toFixed(1)},${p[1].toFixed(1)} L${q[0].toFixed(1)},${q[1].toFixed(1)}`);
@@ -710,6 +797,7 @@ function buildWebView(T, layer, tabId) {
       ln.setAttribute('d', `M${p[0].toFixed(1)},${p[1].toFixed(1)} L${q[0].toFixed(1)},${q[1].toFixed(1)}`);
       lb.setAttribute('transform', `translate(${((p[0] + q[0]) / 2).toFixed(1)},${(Math.min(p[1], q[1]) - 42).toFixed(1)})`); // above the pair, clear of their names
     }
+    recull();
   }
   // Tidy: forget every remembered position and lay the whole web out again (the nodes glide to their new spots)
   function tidy() {
@@ -720,17 +808,38 @@ function buildWebView(T, layer, tabId) {
   function tween() {
     if (tweening) return; tweening = true;
     const step = () => {
-      const G = webGraph(layer); let moving = false;
-      for (const id in els) { const s = shown[id], g = G.pos[id]; if (!g) continue; const dx = g[0] - s[0], dy = g[1] - s[1]; if (Math.abs(dx) + Math.abs(dy) > 0.4) { s[0] += dx * 0.12; s[1] += dy * 0.12; moving = true; } else { s[0] = g[0]; s[1] = g[1]; } }
-      placeAll();
+      const G = webGraph(layer); let moving = false; const moved = new Set();
+      for (const id in els) {
+        const s = shown[id], g = G.pos[id]; if (!g) continue; const dx = g[0] - s[0], dy = g[1] - s[1];
+        if (Math.abs(dx) + Math.abs(dy) > 0.4) { s[0] += dx * 0.12; s[1] += dy * 0.12; moving = true; moved.add(id); } else if (dx || dy) { s[0] = g[0]; s[1] = g[1]; moved.add(id); }
+      }
+      if (moved.size) placeAll(moved);
       if (moving) requestAnimationFrame(step); else tweening = false;
     };
     requestAnimationFrame(step);
   }
+  // the web only grew (same nodes and lines, a few more): draw just the new ones instead of all of it again
+  let drawnEdges = 0;
+  function extend(grown) {
+    const G = webGraph(layer), hold = gE.querySelector('.tfork, .tforkl'); // new lines go under the path-choice tags
+    for (let k = drawnEdges; k < G.edges.length; k++) { const ln = edgeEl(G, G.edges[k]); if (hold) gE.insertBefore(ln, hold); else gE.append(ln); }
+    drawnEdges = G.edges.length;
+    let i = Object.keys(els).length; const added = new Set();
+    for (const id in G.nodes) if (!els[id]) {
+      const n = G.nodes[id]; if (n.dyn && !shown[id] && shown[n.parent]) shown[id] = shown[n.parent].slice(); // a new node grows out of its parent
+      nodeEl(G, id, i++, grown); added.add(id);
+    }
+    placeAll(added); tween(); // every new line touches a new node
+  }
+  function edgeEl(G, [a, b, arc]) {
+    const ln = sv('path', { class: 'te' + (arc ? ' arc' : '') }); ln.style.setProperty('--ec', BR_HUE[Math.max(0, G.nodes[b].br)] ? `rgba(${BR_HUE[Math.max(0, G.nodes[b].br)][1]},.7)` : 'rgba(200,200,255,.6)');
+    edgeEls.push([ln, a, b, arc]); return ln;
+  }
   function rebuild(grown) {
     const G = webGraph(layer);
     gE.textContent = ''; gN.textContent = ''; els = {}; edgeEls = []; forkEls = [];
-    for (const [a, b, arc] of G.edges) { const ln = sv('path', { class: 'te' + (arc ? ' arc' : '') }); ln.style.setProperty('--ec', BR_HUE[Math.max(0, G.nodes[b].br)] ? `rgba(${BR_HUE[Math.max(0, G.nodes[b].br)][1]},.7)` : 'rgba(200,200,255,.6)'); gE.append(ln); edgeEls.push([ln, a, b, arc]); }
+    for (const e of G.edges) gE.append(edgeEl(G, e));
+    drawnEdges = G.edges.length;
     // path choices: a dashed line between the two sides and a CHOOSE ONE tag between them
     for (const [a, b] of webStatic(layer).forks) {
       const ln = sv('path', { class: 'tfork' }), lb = sv('g', { class: 'tforkl' }), tx = sv('text', { y: 4 });
@@ -738,17 +847,21 @@ function buildWebView(T, layer, tabId) {
       gE.append(ln, lb); forkEls.push([ln, lb, a, b, tx]);
     }
     let i = 0;
-    for (const id in G.nodes) {
+    for (const id in G.nodes) nodeEl(G, id, i++, grown);
+    placeAll(); tween();
+  }
+  function nodeEl(G, id, i, grown) {
+    {
       const n = G.nodes[id], g = sv('g', { class: 'tn ' + n.type + (n.gen ? ' gen' : '') });
       g.style.setProperty('--bc', n.br < 0 ? '#e7eaff' : BR_HUE[n.br][0]);
-      const body = sv('g', { class: 'tbody' }); body.style.animationDelay = (-((i++ * 0.37) % 5)).toFixed(2) + 's';
+      const body = sv('g', { class: 'tbody' }); body.style.animationDelay = (-((i * 0.37) % 5)).toFixed(2) + 's';
       const r = n.type === 'root' ? 30 : n.type === 'notable' ? (n.gen ? 13 : 19) : n.type === 'arch' ? 15 : 8;
       const shape = n.type === 'arch' ? sv('polygon', { class: 'tshape', points: `0,${-r} ${r},0 0,${r} ${-r},0` }) : sv('circle', { class: 'tshape', r });
-      body.append(shape);
+      body.append(sv('circle', { class: 'thalo', r: r + (n.type === 'minor' ? 7 : 11), fill: `url(#${haloId}${n.br < 0 || !BR_HUE[n.br] ? BR_HUE.length : n.br})` }), shape);
       if (n.type === 'notable' && webForkOther(layer, n.upg)) body.append(sv('circle', { class: 'tforkring', r: r + 8 })); // one side of a path choice
       if (n.type !== 'minor') { body.append(sv('circle', { class: 'tcore', r: n.type === 'root' ? 9 : n.gen ? 3.5 : 5 })); const lbl = sv('text', { class: 'tl', y: r + 16 }); lbl.textContent = webInfo(layer, n).name; body.append(lbl); }
       g.append(body);
-      if (grown >= 0 && ((n.type === 'arch' && n.arch >= grown) || (n.connector !== undefined && n.connector >= grown))) g.classList.add('fresh');
+      if (grown >= 0 && ((n.type === 'arch' && n.arch >= grown) || (n.connector !== undefined && n.connector >= grown))) { g.classList.add('fresh'); setTimeout(() => g.classList.remove('fresh'), 1400); }
       // nodes still in the fog cannot be inspected or bought: you have to get close first
       const hidden = () => g.classList.contains('fog');
       g.addEventListener('click', e => { e.stopPropagation(); if (!hidden()) sel = id; });
@@ -758,17 +871,22 @@ function buildWebView(T, layer, tabId) {
       gN.append(g); els[id] = g;
       if (!shown[id]) { const par = (n.type === 'arch' || n.connector !== undefined) ? shown[n.parent] : null; shown[id] = (par || G.pos[id]).slice(); }
     }
-    placeAll(); tween();
   }
-  let distKey = '', dist = {};
+  let dist = {}, passV = null, passG = null, passSel = null, availIds = [];
   up(() => {
     const G = webGraph(layer);
-    if (builtG !== G) { const grown = builtG && builtG.S === S && G.nArch > builtG.nArch ? builtG.nArch : -1; if (!builtG || builtG.S !== S) shown = {}; rebuild(grown); if (grown >= 0) reveal('a' + (G.nArch - 1)); builtG = G; }
-    // hop distance from what you own (drives the fog of the unexplored web)
-    const ownedIds = []; for (const id in G.nodes) if (webOwned(layer, G.nodes[id])) ownedIds.push(id);
-    const key = ownedIds.join(',') + '|' + G.nArch;
-    if (key !== distKey) {
-      distKey = key; dist = {}; const q = ownedIds.length ? ownedIds.slice() : [W.root];
+    if (builtG !== G) {
+      const grown = builtG && builtG.S === S && G.nArch > builtG.nArch ? builtG.nArch : -1;
+      if (!builtG || builtG.S !== S) shown = {};
+      if (builtG && builtG.S === S && G.nodes === builtG.nodes && G.edges === builtG.edges) extend(grown); else rebuild(grown); // grew in place, or a fresh layout
+      if (grown >= 0) reveal('a' + (G.nArch - 1)); builtG = G;
+    }
+    // a full pass over every node only when what you own, the web itself or the selection changed
+    const ver = webVer(layer), full = !sameVer(passV, ver) || passG !== builtG || passSel !== sel;
+    if (full) {
+      // hop distance from what you own (drives the fog of the unexplored web)
+      const ownedIds = []; for (const id in G.nodes) if (webOwned(layer, G.nodes[id])) ownedIds.push(id);
+      dist = {}; const q = ownedIds.length ? ownedIds.slice() : [W.root];
       for (const id of q) dist[id] = 0;
       while (q.length) { const id = q.shift(); for (const nb of G.adj[id]) if (!(nb in dist)) { dist[nb] = dist[id] + 1; q.push(nb); } }
       const count = W.branches.map(() => 0); for (const id of ownedIds) { const b = G.nodes[id].br; if (b >= 0) count[b]++; }
@@ -776,25 +894,30 @@ function buildWebView(T, layer, tabId) {
       wrap.style.setProperty('--tint', tot ? `rgba(${BR_HUE[top][1]},${(0.05 + Math.min(0.12, tot / 300)).toFixed(3)})` : 'rgba(var(--shr),.05)');
     }
     {
-      const topY = wrap.getBoundingClientRect().top + scrollY, bar = ($('topbar') || document.body).getBoundingClientRect().bottom;
-      const want = Math.max(IS_PHONE ? 300 : 420, Math.round(layer === 'q' ? innerHeight - topY - (IS_PHONE ? 76 : 84) : innerHeight - bar - 60));
+      const topY = wrap.getBoundingClientRect().top + scrollY; // the page does not scroll on web tabs: the web fills what is left
+      const want = Math.max(200, Math.round(innerHeight - topY - (IS_PHONE ? 46 : 50)));
       if (Math.abs(want - wrap.clientHeight) > 4) { wrap.style.height = want + 'px'; fitted = false; }
     }
     if (!fitted && wrap.clientWidth) { fit(false); fitted = true; }
+    if (cullLost && wrap.clientWidth) { cullLost = false; recull(); }
     const curLog = S[W.cur].log10(), owned = {};
-    for (const id in els) {
-      const n = G.nodes[id], g = els[id], o = webOwned(layer, n), av = !o && webAvail(layer, n), d = dist[id] === undefined ? 99 : dist[id];
-      owned[id] = o;
-      setC(g, 'owned', o); setC(g, 'can', av && curLog >= webCostLog(layer, n)); setC(g, 'avail', av);
-      setC(g, 'forked', webForked(layer, n)); setC(g, 'far', !o && !av && d <= 3); setC(g, 'fog', !o && !av && d > 3);
-      setC(g, 'sel', sel === id);
-    }
-    for (const [ln, a, b] of edgeEls) { setC(ln, 'on', !!owned[a] && !!owned[b]); setC(ln, 'fogged', !owned[a] && !owned[b] && (dist[a] > 3 || dist[b] > 3)); }
-    for (const [ln, lb, a, b, tx] of forkEls) {
-      const done = !!owned[a] || !!owned[b], open = !done && (webAvail(layer, G.nodes[a]) || webAvail(layer, G.nodes[b]));
-      for (const el of [ln, lb]) { setC(el, 'done', done); setC(el, 'off', !done && !open); } // only once you can actually choose
-      for (const id of [a, b]) if (els[id]) setC(els[id], 'fork-on', done || open);
-      setC(lb, 'open', open); setT(tx, done ? 'PATH CHOSEN' : 'CHOOSE ONE');
+    if (!full) { for (const id of availIds) if (els[id]) setC(els[id], 'can', curLog >= webCostLog(layer, G.nodes[id])); } // only prices against what you have
+    else {
+      passV = ver; passG = builtG; passSel = sel; availIds = [];
+      for (const id in els) {
+        const n = G.nodes[id], g = els[id], o = webOwned(layer, n), av = !o && webAvail(layer, n), d = dist[id] === undefined ? 99 : dist[id];
+        owned[id] = o; if (av) availIds.push(id);
+        setC(g, 'owned', o); setC(g, 'can', av && curLog >= webCostLog(layer, n)); setC(g, 'avail', av);
+        setC(g, 'forked', webForked(layer, n)); setC(g, 'far', !o && !av && d <= 3); setC(g, 'fog', !o && !av && d > 3);
+        setC(g, 'sel', sel === id);
+      }
+      for (const [ln, a, b] of edgeEls) { setC(ln, 'on', !!owned[a] && !!owned[b]); setC(ln, 'fogged', !owned[a] && !owned[b] && (dist[a] > 3 || dist[b] > 3)); }
+      for (const [ln, lb, a, b, tx] of forkEls) {
+        const done = !!owned[a] || !!owned[b], open = !done && (webAvail(layer, G.nodes[a]) || webAvail(layer, G.nodes[b]));
+        for (const el of [ln, lb]) { setC(el, 'done', done); setC(el, 'off', !done && !open); } // only once you can actually choose
+        for (const id of [a, b]) if (els[id]) setC(els[id], 'fork-on', done || open);
+        setC(lb, 'open', open); setT(tx, done ? 'PATH CHOSEN' : 'CHOOSE ONE');
+      }
     }
     if (sel && els[sel] && els[sel].classList.contains('fog')) sel = null; // e.g. after a Reshape the node went back into the fog
     if (hover && els[hover] && els[hover].classList.contains('fog')) hover = null;

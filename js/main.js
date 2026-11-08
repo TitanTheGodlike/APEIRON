@@ -50,6 +50,7 @@ function init() {
   for (const l of ['q', 's', 'e']) S.forge[l].forEach((u, i) => { if (u.own === undefined) u.own = i < S.proc[l]; });
   if (S.sUpg.s4) { for (const id of ['ab0', 'ab1', 'ab2', 'ab3', 'abC']) S.sUpg[id] = true; delete S.sUpg.s4; }
   if (S.sUpg.s6) { for (const id of ['ab4', 'ab5', 'ab6', 'ab7', 'ab8', 'abL', 'abH', 'abK']) S.sUpg[id] = true; delete S.sUpg.s6; }
+  webChanged(); // the lines above may have changed what you own
   // Quanta ideas became cheaper and weaker: re-value the ones already written; ideas now spread over their branch
   if (S.forgeVer !== FORGE_VER) { for (const u of S.forge.q) u.v = forgeValue('q', u.kind, u.n); for (const l of ['q', 's', 'e']) respreadIdeas(l); S.forgeVer = FORGE_VER; PROC_AGG = {}; }
   attachViz($('say').querySelector('.orb'), 14);

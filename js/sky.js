@@ -201,29 +201,37 @@ function startWind() {
   up(() => setC(w, 'on', hasE('e52') && !(S.settings.ui && S.settings.ui.motion === false)));
 }
 let STARS_HIDDEN = false; // set by the sky: in daylight the stars are invisible
+// stars are a pixel or two: past 2x screens (phones are often 3x) the extra pixels only cost drawing time
+const starDpr = () => Math.min(2, window.devicePixelRatio || 1);
 function startStars() {
   const c = $('stars'), g = c.getContext('2d');
   let W = 0, H = 0, stars = [], last = 0;
   const resize = () => {
-    const d = window.devicePixelRatio || 1;
+    const d = starDpr();
     W = c.width = Math.floor(innerWidth * d); H = c.height = Math.floor(innerHeight * d);
     c.style.width = innerWidth + 'px'; c.style.height = innerHeight + 'px';
     stars = Array.from({ length: Math.round(innerWidth * innerHeight / 4500) }, () => ({ x: Math.random() * W, y: Math.random() * H, z: Math.random(), p: Math.random() * 6.28, hue: Math.random() < 0.15 ? 270 : Math.random() < 0.3 ? 190 : 225 }));
+    // one colour per hue and brightness step, made once (not a new colour string per star per frame); drawn colour by colour
+    for (const s of stars) s.col = `hsl(${s.hue},90%,${80 + Math.round(s.z * 3) * 5}%)`;
+    stars.sort((a, b) => a.col < b.col ? -1 : a.col > b.col ? 1 : 0);
   };
   resize(); addEventListener('resize', resize);
   const draw = ts => {
     requestAnimationFrame(draw);
     if (ts - last < 33 || document.body.classList.contains('nostars') || STARS_HIDDEN) return; // nothing to see: no drawing
     const dt = Math.min(0.1, (ts - last) / 1000); last = ts;
-    const d = window.devicePixelRatio || 1;
+    const d = starDpr();
     g.clearRect(0, 0, W, H);
+    let col = '';
     for (const s of stars) {
       s.y -= (3 + s.z * 12) * dt * d; if (s.y < 0) { s.y = H; s.x = Math.random() * W; }
       s.p += dt * (0.6 + s.z * 1.4);
       const a = 0.15 + 0.6 * s.z * (0.55 + 0.45 * Math.sin(s.p)), r = (0.5 + s.z * 1.3) * d;
-      g.fillStyle = `hsla(${s.hue},90%,${80 + s.z * 15}%,${a})`;
+      if (s.col !== col) g.fillStyle = col = s.col;
+      g.globalAlpha = a;
       g.fillRect(s.x, s.y, r, r);
     }
+    g.globalAlpha = 1;
   };
   requestAnimationFrame(draw);
 }

@@ -37,8 +37,17 @@ function buildArchTab() {
 }
 
 /* ---------------- Guide ---------------- */
+// live numbers at the end of a Guide section (they used to sit above the Shard and Essence webs)
+const guideNow = (title, f) => () => '<div class="guide-now"><b>' + title + '</b> ' + f() + '</div>';
 function buildGuideTab() {
   const T = UI.tabs.guide;
+  const shardNow = guideNow('Right now:', () => `you have <b class="hl-sh">${fmt(S.shards.floor(), 0)}</b> Shards (${fmt(S.totalShards.floor(), 0)} earned ${ascendKnown() ? 'this Ascension' : 'so far'}, ${S.collapses} Collapses). ` +
+    `Collapsing needs ${fmt(D.fromLog(collapseReqLog()))} Quanta and resets Quanta, generators, Clock Speed${hasS('s2') ? '' : ' and Quanta upgrades'}. ` +
+    `Shard gain: ×10 every ${CFG.shardDiv} orders of magnitude past the requirement, then ${fmtMult(shardMultLog())} from bonuses. ` +
+    `Shards are based on the most Quanta you reached this run: <b>${fmt(D.fromLog(Math.max(0, runBestLog())))}</b>.` + (canCollapse() ? ` Collapsing now gives <b class="hl-sh">${fmt(shardGain(), 0)}</b>.` : ''));
+  const ascNow = guideNow('Right now:', () => `you have <b class="hl-es">${fmt(S.essence.floor(), 0)}</b> Essence (${fmt(S.totalEssence.floor(), 0)} total, ${S.ascensions} Ascensions). ` +
+    `Ascending needs ${fmt(D.fromLog(CFG.limit))} Quanta and resets ${ascResetText()}.` +
+    (hasE('e6') ? ` Inspiration: Quanta production <b>${fmtMult(inspirationLog())}</b> (×10 more for every ${hasE('e55') ? CFG.inspireSec / 2 : CFG.inspireSec} seconds past the Limit). Essence gain: ×10 every ${CFG.ascDiv} orders of magnitude past the Limit${essMultLog() > 0 ? ', then ' + fmtMult(essMultLog()) : ''}.` : ' Each Ascension gives 1 Essence until you break the Limit.'));
   const sections = [
     [() => true, 'Quanta and Pulse', 'Quanta is the main number. <b>Pulse</b> (key P) gives you Quanta by hand and recharges in 1.5 seconds. At first it gives 1 Quanta; Kindling, the first upgrade, makes every Pulse also grant a second of production, and Pulse upgrades, Lucky Pulses and cards make it stronger still, though Pulse boosts soften once a Pulse is worth more than about two recharges of production. It stays worth clicking for your first several Collapses, and whenever a fresh run is getting going.'],
     [() => true, 'Generators', 'Flickers make Quanta every second. Every other generator makes the one below it: Sparks make Flickers, Embers make Sparks, and so on. So a higher tier boosts everything underneath it. There is no last tier: whenever you buy the highest one, a new one appears above it. Your first world is heavy: Sparks and every higher generator make about 6× less than normal (Flickers are not slowed). Every Collapse makes it lighter, until after a few it is gone.'],
@@ -46,9 +55,9 @@ function buildGuideTab() {
     [() => true, 'Clock Speed', 'Multiplies every generator at once. Each level costs more than the last, but it is always worth buying. It starts once you own a Flicker.'],
     [() => true, 'Upgrades', 'The <b>Upgrade web</b> holds hundreds of upgrades paid in Quanta, in three branches: Light (production), Harmony (resonance and clock) and Cascade (higher tiers and Shards). Buy any node next to one you own; big upgrades link straight to each other, and the small bonus nodes between them are detours that some upgrades branch off. Nodes still in the fog cannot be bought yet, and every upgrade costs a bit more than the one before. Until you own Memory (Shard web) the Upgrade web resets when you Collapse; Wholesale (Shard web) adds a <b>Buy all</b> button (key U). A dot on a tab means something there is affordable. <b>Max all</b> (key M) buys as many generators and Clock Speed levels as you can afford.'],
     [() => S.ai.log.length > 0, 'The Architect', 'The game\'s own AI. It talks to you in a speech bubble, writes endless upgrades for every layer (Quanta, Shards, Essence) that grow as diamond nodes in the webs, and names every new generator tier. Each new upgrade is invented when you buy the previous one, shaped by how you play: it builds for your favourite and newest generators, rewards clicking if you click a lot, and rewards idling if you leave the game running.'],
-    [shardsVisible, 'Collapse and Shards', 'At 1e25 Quanta you can Collapse: Quanta, generators and Clock Speed reset, and you get Shards. Shards buy upgrades in the <b>Shard tree</b>: start at Fracture, then grow three branches. The first nodes open new things rather than boosting old ones: Fracture starts the Architect’s cards, Forgeworks unlocks the Shard repeatables, Wholesale adds a Buy all button to the Upgrade web and Shard Visions lets the Architect invent Shard ideas. Memory, deeper in Clockwork and expensive, keeps your Upgrade web through Collapses. Shard Wholesale, in the Essence web, adds a Buy all button to the Shard web (key B) that never makes a path choice for you. Radiance is raw power, Clockwork is speed and automation, Echoes is the Shard economy and the active abilities <b>Surge</b> and <b>Time Fold</b>. At each fork you choose one of two paths. <b>Reshape the tree</b> refunds every Shard so you can try a different build. More Quanta at the moment you Collapse means more Shards.'],
+    [shardsVisible, 'Collapse and Shards', 'At 1e25 Quanta you can Collapse: Quanta, generators and Clock Speed reset, and you get Shards. Shards buy upgrades in the <b>Shard tree</b>: start at Fracture, then grow three branches. The first nodes open new things rather than boosting old ones: Fracture starts the Architect’s cards, Forgeworks unlocks the Shard repeatables, Wholesale adds a Buy all button to the Upgrade web and Shard Visions lets the Architect invent Shard ideas. Memory, deeper in Clockwork and expensive, keeps your Upgrade web through Collapses (until then the Upgrade web resets when you Collapse). Shard Wholesale, in the Essence web, adds a Buy all button to the Shard web (key B) that never makes a path choice for you. Radiance is raw power, Clockwork is speed and automation, Echoes is the Shard economy and the active abilities <b>Surge</b> and <b>Time Fold</b>. At each fork you choose one of two paths. <b>Reshape</b> (on the Shard web) refunds every Shard so you can try a different build; the Architect’s diamond nodes stay. More Quanta at the moment you Collapse means more Shards. The Shard repeatables are behind the <b>Repeatable</b> button on the Shard web.', shardNow],
     [autoVisible, 'Automation', 'The Clockwork branch of the Shard web has one autobuyer per generator: Automata I buys Flickers, II buys Sparks, and from Automata IX on every one you own adds the next, so there is always one more. Clockmaker buys Clock Speed; Lightkeeper, Harmonist and Cascader each buy one Upgrade-web node every 5 seconds; Self-Collapse adds Auto-Collapse. Later, the Prism, Gear and Echo Stewards in the Essence web do the same for the Shard web, leaving path choices to you. Configure them all in the Automation tab.'],
-    [ascVisible, 'The Limit and Ascension', 'Quanta stops at 1e308, the Limit. There you can Ascend for Essence. At first an Ascension resets everything but Essence: Quanta, generators, the Upgrade web, Shards, the whole Shard web and its repeatables. The <b>Memory</b> branch of the Essence web lets you keep more: Muscle Memory keeps your automation, Perfect Recall the Shard web, Deep Memory the Upgrade web. Essence buys nodes in the <b>Essence web</b>; its root, <b>Apeiron</b>, breaks the Limit for good, so buy it first. Past it, every order of magnitude is a little harder to reach (dampening), but while you are past it the Architect gathers <b>Inspiration</b>: Quanta production ×10 for every minute you spend there, so you never stop moving. It starts over with every Ascension, so each new world has to climb to the Limit on its own first. Overgrowth, in the Memory branch, makes the outer tips of all three webs keep growing, so there is always another upgrade.'],
+    [ascVisible, 'The Limit and Ascension', 'Quanta stops at 1e308, the Limit. There you can Ascend for Essence. At first an Ascension resets everything but Essence: Quanta, generators, the Upgrade web, Shards, the whole Shard web and its repeatables. The <b>Memory</b> branch of the Essence web lets you keep more: Muscle Memory keeps your automation, Perfect Recall the Shard web, Deep Memory the Upgrade web. Essence buys nodes in the <b>Essence web</b>; its root, <b>Apeiron</b>, breaks the Limit for good, so buy it first. Past it, every order of magnitude is a little harder to reach (dampening), but while you are past it the Architect gathers <b>Inspiration</b>: Quanta production ×10 for every minute you spend there, so you never stop moving. It starts over with every Ascension, so each new world has to climb to the Limit on its own first. The Essence web starts at Apeiron and grows five branches: Starlight is raw power, Memory is what you keep and automation, Trials is Shards, Essence and Challenges, Wonders unlocks new things to do, and the white Sky path straight up is the long road to morning. Everything in it is permanent, and Challenge completions are too. Overgrowth, in the Memory branch, makes the outer tips of all three webs keep growing, so there is always another upgrade. The Essence repeatables are behind the <b>Repeatable</b> button on the Essence web.', ascNow],
     [cardsOn, 'Cards', 'Once you buy Fracture, the root of the Shard web, the Architect deals you three cards every ten minutes of play (see the <b>Fortune</b> tab, which also holds your Boons once you have the Observatory). Keep one. Cards are Common, Rare, Epic or Legendary, and each rolls a little stronger or weaker. They give Quanta, speed up every generator, boost your top tier, Pulse, Lucky Pulses, Resonance or idle play for a while, add Shards or Essence to your next prestige, hand you production on the spot, or flip a coin for a big boost.'],
     [() => hasE('e3'), 'Challenges', 'Runs with a handicap. Reach the goal to complete one; every Challenge can be completed again and again with a higher goal and a stronger reward.'],
     [ascVisible, 'Wonders', 'The fourth branch of the Essence web unlocks new things to do. <b>Observatory</b>: with every Ascension you choose a <b>Boon</b> that lasts until the next one (Twin Stars lets you keep two, Wide Sky adds a choice and makes them stronger). <b>Nova</b> is a third ability (key N): Quanta production to the power 1.04 for 20 seconds. <b>Reflex</b> fires your abilities as soon as they are ready, <b>Heartbeat</b> presses Pulse every 3 seconds, <b>Full House</b> and <b>Second Hand</b> improve your cards, <b>Afterglow</b> starts every Collapse with your first ten generators, <b>Reliquary</b> keeps Relics and Anomalies through Ascension. Straight up from Apeiron runs the white <b>Sky</b> path, the dearest of all: Pale Horizon, First Light, <b>Wind in Your Hair</b> (a wind through the whole game), Birdsong, Morning Glow and at the very top <b>Bright Blue Sky</b>, which ends the long night. Watch the sky behind the game: the night fills in as you climb the generator ladder, and the further you get into the Essence web, the closer the day comes.'],
@@ -56,11 +65,11 @@ function buildGuideTab() {
     [() => true, 'Appearance', 'Options → Appearance lets you change the color theme, the UI size, and turn the starfield, animations, rainbow generator colors and pop-up notifications on or off.'],
     [() => true, 'Saving','The game saves itself every 10 seconds in this browser and keeps progressing while you are away, at 10% speed. After a big update, an older save gets a one-time notice offering a fresh start; your save keeps working either way. Use Options → Export to make a backup.'],
   ];
-  for (const [vis, title, body] of sections) {
+  for (const [vis, title, body, live] of sections) {
     const info = h('div', { class: 'info' }), el = h('div', {}, h('h2', {}, title), info);
     let shown = null;
     T.append(el);
-    up(() => { const v = vis(); show(el, v); if (!v) return; const html = veilText(body); if (html !== shown) { shown = html; info.innerHTML = html; } }, 'guide');
+    up(() => { const v = vis(); show(el, v); if (!v) return; const html = veilText(body) + (live ? veilText(live()) : ''); if (html !== shown) { shown = html; info.innerHTML = html; } }, 'guide');
   }
 }
 
@@ -100,10 +109,20 @@ function buildUpgTab() {
     const on = !S.tut.off && S.tut.upgSeen && !S.tut.upgDone; show(gBox, on);
     if (on && !gTw) gTw = typewriter(gTxt, 'This is the <b>Upgrade web</b>. It grows out from the middle: you can buy any node that touches one you own. <b>Big nodes</b> are the main upgrades, the <b>small ones</b> between them are cheap bonuses, and where two paths split you pick one of them. ' + (IS_PHONE ? '<b>Tap</b> a node to read it and buy it from there (or <b>double-tap</b> it). Drag to look around, pinch to zoom.' : '<b>Click</b> a node to read it, <b>double-click</b> to buy it (and the path to it if needed). Drag to look around, scroll to zoom.'), { speed: 22, pitch: 1.15, orb: gOrb });
   }, 'upg');
-  T.append(h('h2', {}, 'Upgrade web'));
-  const note = h('div', { class: 'muted webnote', style: 'margin:-2px 0 8px' }); T.append(note);
-  buildWebView(T, 'q', 'upg');
-  up(() => setT(note, 'Buy any node next to one you own. Big upgrades link straight to each other; the small bonus nodes between them are detours, and some upgrades branch off them. Diamonds are the Architect’s ideas. ' + (!collapseKnown() ? '' : hasS('s2') ? 'Memory keeps this web through Collapses.' : 'The web resets when you Collapse until you own Memory (Shard web).')), 'upg');
+  buildWebView(T, 'q', 'upg'); // the web alone, filling the screen: what it all means is in the Guide
+}
+// the Repeatable cards of a web tab live in a panel over the web, opened from the web's toolbar (the tab does not scroll)
+function repPanel(kind, defs, store, cur, curName, tabId, unlocked, lockText) {
+  const grid = h('div', { class: 'cards' }), lock = h('div', { class: 'muted' }, lockText || '');
+  const panel = h('div', { class: 'reppanel ' + kind }, h('h2', { style: 'margin-top:0' }, 'Repeatable'), lock, grid);
+  let open = false;
+  const btn = h('button', { class: 'repbtn', onclick: () => { open = !open; render(true); } }, 'Repeatable');
+  for (const d of defs) { const [el, fn] = repCard(kind, d, store, cur, curName); grid.append(el); up(fn, tabId); }
+  up(() => {
+    setC(panel, 'on', open); setC(btn, 'on', open); if (panel.parentElement) setC(panel.parentElement, 'rep-open', open);
+    const on = unlocked ? unlocked() : true; show(grid, on); show(lock, !on);
+  }, tabId);
+  return { btn, panel };
 }
 
 // Relics and Anomalies: the rewards of secret achievements, in a tab of their own (the webs get their tabs to themselves)
@@ -141,22 +160,11 @@ function buildRelicTab() {
 
 function buildShardTab() {
   const T = UI.tabs.shard;
-  const info = h('div', { class: 'info' }); T.append(info);
-  up(() => setH(info, `You have <b class="hl-sh">${fmt(S.shards.floor(), 0)}</b> Shards (${fmt(S.totalShards.floor(), 0)} earned ${ascendKnown() ? 'this Ascension' : 'so far'}, ${S.collapses} Collapses).<br>` +
-    `Collapsing needs ${fmt(D.fromLog(collapseReqLog()))} Quanta and resets Quanta, generators, Clock Speed${hasS('s2') ? '' : ' and Quanta upgrades'}. ` +
-    `Shard gain: ×10 every ${CFG.shardDiv} orders of magnitude past the requirement, then ${fmtMult(shardMultLog())} from bonuses.` +
-    ` Shards are based on the most Quanta you reached this run: <b>${fmt(D.fromLog(Math.max(0, runBestLog())))}</b>.` +
-    (canCollapse() ? ` Collapsing now gives <b class="hl-sh">${fmt(R.sg, 0)}</b>.` : '')), 'shard');
-  T.append(h('h2', {}, 'Shard web'));
-  const reshape = h('button', { onclick: () => modal('Reshape the tree', 'Refund every Shard you spent on the tree so you can choose different paths. Your current run restarts (no Shards are gained or lost).', [['Reshape', () => { if (reshapeTree()) { sfx('collapse'); toast('The tree is bare again. All your Shards are back.', 'sh'); } }], ['Cancel', () => true]]) }, 'Reshape the tree');
-  T.append(h('div', { class: 'opt-row' }, reshape, h('span', { class: 'muted' }, 'Buy any node next to one you own. At a fork you pick one of two paths. The Architect grows new diamond nodes off whatever you own. Reshaping refunds everything except the Architect’s nodes.')));
-  buildWebView(T, 's', 'shard');
-  const rh = h('h2', {}, 'Repeatable'), rlock = h('div', { class: 'muted' }, 'Buy Forgeworks, the first node of the Radiance branch, to unlock the Shard repeatables.');
-  const rg = h('div', { class: 'cards' }); T.append(rh, rlock, rg);
-  up(() => { const on = srepOn(); show(rg, on); show(rlock, !on); }, 'shard');
-  for (const d of SREP) { const [el, fn] = repCard('sh', d, 'sRep', 'shards', 'Shards'); rg.append(el); up(fn, 'shard'); }
-  const iso = h('div', { class: 'muted', style: 'margin-top:8px' }, 'Isolation is active: non-automation Shard upgrades and repeatables are disabled.');
-  T.append(iso); up(() => show(iso, isolated()), 'shard');
+  const reshape = h('button', { title: 'Refund every Shard you spent on the tree so you can choose different paths (the Architect’s diamond nodes stay)', onclick: () => modal('Reshape the tree', 'Refund every Shard you spent on the tree so you can choose different paths. Your current run restarts (no Shards are gained or lost).', [['Reshape', () => { if (reshapeTree()) { sfx('collapse'); toast('The tree is bare again. All your Shards are back.', 'sh'); } }], ['Cancel', () => true]]) }, 'Reshape');
+  const rp = repPanel('sh', SREP, 'sRep', 'shards', 'Shards', 'shard', srepOn, 'Buy Forgeworks, the first node of the Radiance branch, to unlock the Shard repeatables.');
+  const iso = h('div', { class: 'webbanner' }, 'Isolation is active: non-automation Shard upgrades and repeatables are disabled.');
+  up(() => show(iso, isolated()), 'shard');
+  buildWebView(T, 's', 'shard', { tools: [reshape, rp.btn], panels: [rp.panel, iso] });
 }
 
 function buildAutoTab() {
@@ -273,17 +281,8 @@ function ascResetText() {
 }
 function buildAscTab() {
   const T = UI.tabs.asc;
-  const info = h('div', { class: 'info' }); T.append(info);
-  up(() => setH(info, `You have <b class="hl-es">${fmt(S.essence.floor(), 0)}</b> Essence (${fmt(S.totalEssence.floor(), 0)} total, ${S.ascensions} Ascensions).<br>` +
-    `Ascending needs ${fmt(D.fromLog(CFG.limit))} Quanta and resets ${ascResetText()}. Essence upgrades and Challenge completions are permanent; the Memory branch keeps more each time.` +
-    (hasE('e6') ? ` <br>The Architect's <b class="hl-sh">Inspiration</b>: Quanta production <b>${fmtMult(inspirationLog())}</b> (×10 more for every ${CFG.inspireSec} seconds you spend past the Limit; it starts over when you Ascend).` : '') +
-    (hasE('e6') ? ` Essence gain: ×10 every ${CFG.ascDiv} orders of magnitude past the Limit${essMultLog() > 0 ? ', then ' + fmtMult(essMultLog()) : ''}.` : ' Each Ascension gives 1 Essence until you break the Limit.')), 'asc');
-  T.append(h('h2', {}, 'Essence web'));
-  T.append(h('div', { class: 'muted', style: 'margin:-2px 0 8px' }, 'Start at Apeiron, then grow five branches: Starlight is raw power, Memory is what you keep and automation, Trials is Shards, Essence and Challenges, Wonders unlocks new things to do, and the white Sky path straight up is the long road to morning. Diamonds are the Architect’s ideas. Everything here is permanent.'));
-  buildWebView(T, 'e', 'asc');
-  T.append(h('h2', {}, 'Repeatable'));
-  const rg = h('div', { class: 'cards' }); T.append(rg);
-  for (const d of EREP) { const [el, fn] = repCard('es', d, 'eRep', 'essence', 'Essence'); rg.append(el); up(fn, 'asc'); }
+  const rp = repPanel('es', EREP, 'eRep', 'essence', 'Essence', 'asc');
+  buildWebView(T, 'e', 'asc', { tools: [rp.btn], panels: [rp.panel] });
 }
 
 function buildChalTab() {

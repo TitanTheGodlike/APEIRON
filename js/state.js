@@ -120,6 +120,9 @@ function genStep(i) {
 const genCostLog = (i, n = 1) => quadSumLog(genDef(i).base, genStep(i), CFG.genScale, tierBought(i), n);
 const genMax = i => quadMax(lq(), genDef(i).base, genStep(i), CFG.genScale, tierBought(i));
 
+// how many keys an object has (owned upgrades), remembered until ownership changes: counting 1,300 every step adds up
+const KEYN = new WeakMap();
+function keyCount(o) { const c = KEYN.get(o); if (c && c.v === UPG_VER) return c.n; let n = 0; for (const k in o) n++; KEYN.set(o, { v: UPG_VER, n }); return n; }
 function achMultLog() { return Object.keys(S.ach).length * L10(1.1); }
 // Multipliers come in two kinds: `all` speeds up every generator (Clock Speed),
 // `q` multiplies Quanta production only (everything from upgrades and prestige).
@@ -139,7 +142,7 @@ function globalMultLog() {
   if (hasQ('q20')) L += L10(S.gens.length);
   if (hasS('s15')) L += 3;
   if (hasS('s20')) L += 2 * L10(S.gens.length);
-  if (hasS('s24')) L += Object.keys(S.sUpg).length * L10(1.3);
+  if (hasS('s24')) L += keyCount(S.sUpg) * L10(1.3);
   if (hasS('s28')) L += 4;
   if (hasE('e16')) L += 6;
   if (surgeActive()) L += 3;
@@ -152,10 +155,10 @@ function globalMultLog() {
   if (hasE('e2')) L += 3 + 1.5 * S.totalEssence.add(1).log10();
   L += S.eRep.amp;
   L += 3 * L10(1 + S.chal.comps[4]);
-  return { all, q: L };
+  return { all, q: L, lres: L10(resonance()) }; // resonance once per step, not once per generator
 }
 function tierMultLog(i, gl) {
-  let L = gl.all + Math.floor(S.gens[i].bought / resStep(i)) * L10(resonance()) + procSyn(i);
+  let L = gl.all + Math.floor(S.gens[i].bought / resStep(i)) * (gl.lres !== undefined ? gl.lres : L10(resonance())) + procSyn(i);
   if (i === 0) {
     L += gl.q;
     if (hasQ('q2')) L += L10(1 + Math.max(0, lq()));

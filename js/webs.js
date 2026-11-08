@@ -300,51 +300,87 @@ function priceUpgradeWeb(gap = QGAP) {
   for (const u of order) { const c = prev === -Infinity ? L10(20) : Math.max(qPrice(u.cost0), prev + gap); u.cost = c < 300 ? L10(roundSig(Math.pow(10, c), 2)) : Math.round(c * 10) / 10; prev = c; }
 }
 priceUpgradeWeb();
-// Force layout: springs along edges, repulsion between nodes, anchors pull notables to their branch.
-// where a new endless node goes: a step out from the node it grows from, forks turning off to their side
-// Big webs used to grow into themselves: every line stepped the same way, so lines crossed into knots and spilled into
-// the next branch. Now each new node takes the least crowded of a few spots near its preferred direction, keeps
-// growing outward, and stays inside its own branch's slice of the circle (halfway to the neighbouring branches).
+// The endless growth is laid out as a tidy fan, so its lines never cross. (Placing each new node at the least
+// crowded spot near its parent still let lines cross into knots once a web got big.) Every grown node sits on a ring
+// by how many steps it is from the written web; the rings start just outside everything written. A line runs
+// straight out, its forks keep to their own side, neighbours on a ring keep a gap, and the lines of a branch keep the
+// order of the upgrades they grow from, inside the branch's slice of the circle (halfway to the neighbouring
+// branches). Placing all of it again takes a few milliseconds, so it is redone whenever the web grows.
 const SECTORS = {};
 function branchSector(layer, b) {
   if (!SECTORS[layer]) {
     const A = WEB_DEF[layer].branches.map(br => br.angle * Math.PI / 180);
     SECTORS[layer] = A.map((a, i) => {
       let lo = Math.PI, hi = Math.PI; // room on each side, up to halfway to the next branch
-      A.forEach((o, j) => { if (j === i) return; const d = Math.atan2(Math.sin(o - a), Math.cos(o - a)); if (d > 0) hi = Math.min(hi, d / 2); else lo = Math.min(lo, -d / 2); });
+      A.forEach((o, j) => { if (j === i || !GROW[layer].kinds[j]) return; const d = Math.atan2(Math.sin(o - a), Math.cos(o - a)); if (d > 0) hi = Math.min(hi, d / 2); else lo = Math.min(lo, -d / 2); }); // only growing branches share out the circle (the rings start beyond the others anyway)
       return { a, lo: lo - 0.04, hi: hi - 0.04 };
     });
   }
   return SECTORS[layer][b];
 }
-// a coarse grid of placed nodes, so "how close is the nearest node" looks at a few cells instead of every node
-const GRID_C = 200;
-function posGrid(pos) { const g = new Map(); for (const k in pos) gridAdd(g, k, pos[k]); return g; }
-function gridAdd(g, id, p) { const key = Math.floor(p[0] / GRID_C) + ',' + Math.floor(p[1] / GRID_C); let c = g.get(key); if (!c) g.set(key, c = []); c.push([id, p]); }
-function gridNearest(g, x, y, skip) {
-  const cx = Math.floor(x / GRID_C), cy = Math.floor(y / GRID_C); let m = GRID_C * GRID_C;
-  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
-    const c = g.get((cx + i) + ',' + (cy + j)); if (!c) continue;
-    for (const [id, p] of c) { if (id === skip) continue; const d = (p[0] - x) ** 2 + (p[1] - y) ** 2; if (d < m) m = d; }
-  }
-  return Math.sqrt(m);
-}
-function dynPlace(layer, nodes, pos, dn, grid = posGrid(pos)) {
-  const pp = pos[dn.parent] || [0, 0], gp = nodes[dn.parent] && nodes[dn.parent].dyn ? pos[nodes[dn.parent].parent] : null;
-  let dx = pp[0] - (gp ? gp[0] : 0), dy = pp[1] - (gp ? gp[1] : 0); const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
-  const turn = dn.twig === 'L' ? -0.85 : dn.twig === 'R' ? 0.85 : (dn.depth % 2 ? 0.15 : -0.15);
-  const sec = WEB_DEF[layer].branches[dn.b] ? branchSector(layer, dn.b) : null, rp = Math.hypot(pp[0], pp[1]);
-  let best = null, bs = -Infinity;
-  for (const dt of [0, 0.35, -0.35, 0.7, -0.7, 1.05, -1.05, 1.4, -1.4]) for (const dist of [125, 165]) {
-    const t = Math.atan(turn) + dt, vx = dx * Math.cos(t) - dy * Math.sin(t), vy = dy * Math.cos(t) + dx * Math.sin(t);
-    const x = pp[0] + vx * dist, y = pp[1] + vy * dist;
-    let sc = gridNearest(grid, x, y, dn.parent) - 22 * Math.abs(dt) - (dist > 125 ? 10 : 0);
-    if (Math.hypot(x, y) < rp + 50) sc -= 120; // keep growing outward
-    if (sec) { const d = Math.atan2(Math.sin(Math.atan2(y, x) - sec.a), Math.cos(Math.atan2(y, x) - sec.a)), out = d > sec.hi ? d - sec.hi : d < -sec.lo ? -sec.lo - d : 0; sc -= out * Math.max(400, Math.hypot(x, y)) * 2; }
-    if (sc > bs) { bs = sc; best = [x, y]; }
-  }
-  gridAdd(grid, dn.id, best);
-  return best;
+const DYN_GAP = 128, DYN_RING = 140, DYN_FILL = 0.92;
+function dynLayout(layer, nodes, pos, keep, only) { // keep: a node already placed stays put while it is near its tidy spot; only: the branches to place again
+  const D = dynState(layer), W = WEB_DEF[layer];
+  if (!D.list.length) return;
+  const kids = {}, rank = dn => dn.twig === 'L' ? 0 : dn.twig === 'R' ? 2 : 1; // left fork, the line, right fork
+  for (const dn of D.list) (kids[dn.parent] = kids[dn.parent] || []).push(dn);
+  for (const k in kids) kids[k].sort((x, y) => rank(x) - rank(y));
+  const rel = (x, y, a) => Math.atan2(Math.sin(Math.atan2(y, x) - a), Math.cos(Math.atan2(y, x) - a));
+  W.branches.forEach((br, b) => {
+    if (only && !only.has(b)) return;
+    const sec = branchSector(layer, b), groups = [];
+    for (const p in kids) if (!D.nodes[p]) { const ch = kids[p].filter(dn => dn.b === b); if (ch.length) groups.push({ p, ch, t: rel(...(pos[p] || [0, 0]), sec.a) }); }
+    if (!groups.length) return;
+    groups.sort((x, y) => x.t - y.t);
+    // the rings start outside every written node and idea of this slice
+    let rin = 0;
+    for (const id in pos) { const n = nodes[id]; if (!n || n.dyn) continue; const q = pos[id], d = rel(q[0], q[1], sec.a); if (d > -sec.lo - 0.12 && d < sec.hi + 0.12) rin = Math.max(rin, Math.hypot(q[0], q[1])); }
+    rin += DYN_RING + 20;
+    // every ring in order around the circle: depth first, so a left fork and all of its growth come before the line
+    const rings = [], up = {}, below = {};
+    const walk = (v, d, ch) => {
+      for (const c of ch) {
+        (rings[d] = rings[d] || []).push(c.id); up[c.id] = v; (below[v] = below[v] || []).push(c.id);
+        const next = kids[c.id] ? kids[c.id].filter(x => x.b === b) : [];
+        if (next.length) walk(c.id, d + 1, next);
+      }
+    };
+    const t0 = {}; for (const g of groups) { t0[g.p] = g.t; walk(g.p, 1, g.ch); }
+    // a ring a step further out than the one before; only a ring too crowded for the slice moves out (with all beyond it)
+    const width = sec.lo + sec.hi, rad = [];
+    for (let d = 1; d < rings.length; d++) rad[d] = Math.max(d > 1 ? rad[d - 1] + DYN_RING : rin, rings[d].length * DYN_GAP / (width * DYN_FILL));
+    const R = d => rad[d];
+    const ang = {}, at = id => id in ang ? ang[id] : t0[id];
+    // one ring: each node as close to where it wants to be as the gap (and the slice) allow, keeping the order
+    // (pool adjacent violators: neighbours that would come too close move as one block, to their weighted middle)
+    const settle = (ids, want, wt, g) => {
+      const blocks = [];
+      for (let i = 0; i < ids.length; i++) {
+        blocks.push({ v: want[i] - i * g, n: 1, w: wt ? wt[i] : 1 });
+        while (blocks.length > 1 && blocks[blocks.length - 2].v > blocks[blocks.length - 1].v) { const b2 = blocks.pop(), b1 = blocks[blocks.length - 1]; b1.v = (b1.v * b1.w + b2.v * b2.w) / (b1.w + b2.w); b1.n += b2.n; b1.w += b2.w; }
+      }
+      const lo = -sec.lo, hi = Math.max(lo, sec.hi - (ids.length - 1) * g);
+      let i = 0; for (const bl of blocks) { const v = Math.min(hi, Math.max(lo, bl.v)); for (let j = 0; j < bl.n; j++, i++) ang[ids[i]] = v + i * g; }
+    };
+    const lean = (id, g) => { const c = D.nodes[id]; return c.twig === 'L' ? -g : c.twig === 'R' ? g : 0; }; // a fork starts off to its side
+    // first every node straight out from the one it grows from; then, ring by ring, inward and outward a few times,
+    // each node moves to the middle of the node it grows from and the ones growing from it. A fan that spreads wide
+    // further out spreads its inner rings too, instead of every line bending sideways at the crowded rings
+    for (let d = 1; d < rings.length; d++) { const ids = rings[d], g = DYN_GAP / R(d); settle(ids, ids.map(id => at(up[id]) + lean(id, g)), null, g); }
+    const even = d => {
+      const ids = rings[d], g = DYN_GAP / R(d), gn = d + 1 < rings.length ? DYN_GAP / R(d + 1) : g, want = [], wt = [];
+      for (const id of ids) { let s = at(up[id]) + lean(id, g), w = 1; for (const c of below[id] || []) { s += ang[c] - lean(c, gn); w++; } want.push(s / w); wt.push(w); }
+      settle(ids, want, wt, g);
+    };
+    for (let k = 0; k < 8; k++) { for (let d = rings.length - 1; d >= 1; d--) even(d); for (let d = 1; d < rings.length; d++) even(d); }
+    // growing: a node near its new tidy spot stays where it was (no jitter on every purchase), one further off moves
+    // just far enough. Never further than half a gap from tidy, so the web cannot drift into a mess over time
+    if (keep) for (let d = 1; d < rings.length; d++) {
+      const ids = rings[d], g = DYN_GAP / R(d), tol = 0.5 * g;
+      settle(ids, ids.map(id => { if (!pos[id]) return ang[id]; const w = rel(pos[id][0], pos[id][1], sec.a); return Math.min(ang[id] + tol, Math.max(ang[id] - tol, w)); }), null, g);
+    }
+    for (let d = 1; d < rings.length; d++) { const r = R(d); for (const id of rings[d]) pos[id] = [Math.cos(sec.a + ang[id]) * r, Math.sin(sec.a + ang[id]) * r]; }
+  });
 }
 // one of the Architect's ideas joins the web: the idea and its connector, at the least crowded spot near its parent
 function archAdd(layer, i, nodes, edges, pos) {
@@ -378,23 +414,22 @@ function webArchOnly(layer, c, nArch) {
   for (let i = c.nArch; i < nArch; i++) { const ids = archAdd(layer, i, nodes, edges, pos); if (ids) added.push(...ids); }
   for (let k = e0; k < edges.length; k++) { const [a, b] = edges[k]; (adj[a] = adj[a] || []).push(b); (adj[b] = adj[b] || []).push(a); }
   relaxNew(added, nodes, pos);
+  dynLayout(layer, nodes, pos, true); // the idea may push the rings out
   return (WEB_CACHE[layer] = { nodes, edges, adj, pos, nArch, nDyn: c.nDyn, S });
 }
 function webGrowOnly(layer, c, D) {
-  const nodes = c.nodes, edges = c.edges, pos = WEB_POS[layer], adj = c.adj, added = [];
-  const grid = posGrid(pos);
+  const nodes = c.nodes, edges = c.edges, pos = WEB_POS[layer], adj = c.adj, grew = new Set();
   for (let i = c.nDyn; i < D.list.length; i++) {
-    const dn = D.list[i], n = dynNode(layer, dn.id);
-    nodes[dn.id] = n; edges.push([dn.parent, dn.id]);
+    const dn = D.list[i];
+    nodes[dn.id] = dynNode(layer, dn.id); edges.push([dn.parent, dn.id]); grew.add(dn.b);
     adj[dn.id] = [dn.parent]; (adj[dn.parent] = adj[dn.parent] || []).push(dn.id);
-    pos[dn.id] = dynPlace(layer, nodes, pos, dn, grid); n.anchor = pos[dn.id].slice(); added.push(dn.id);
   }
-  relaxNew(added, nodes, pos);
+  dynLayout(layer, nodes, pos, true, grew); // the new nodes join their rings (the nodes that make room glide there)
   return (WEB_CACHE[layer] = { nodes, edges, adj, pos, nArch: c.nArch, nDyn: D.list.length, S });
 }
 // settle only the new nodes: pushed away from everything near them, pulled toward the node they grow from
 function relaxNew(ids, nodes, pos, iters = 25) {
-  const all = Object.keys(nodes);
+  const all = Object.keys(nodes).filter(k => !nodes[k].dyn);
   for (let it = 0; it < iters; it++) for (const id of ids) {
     const p = pos[id]; let fx = 0, fy = 0;
     for (const k of all) {
@@ -407,6 +442,8 @@ function relaxNew(ids, nodes, pos, iters = 25) {
     p[0] += fx; p[1] += fy;
   }
 }
+// Force layout: springs along edges, repulsion between nodes, anchors pull notables to their branch. (The written web and the ideas;
+// the endless growth is placed by dynLayout.)
 function relax(nodes, edges, pos, iters) {
   const ids = Object.keys(nodes), n = ids.length, idx = {};
   ids.forEach((id, i) => { idx[id] = i; });
@@ -577,6 +614,8 @@ function webFrontier(layer) {
   FRONTIER[layer] = { v, out };
   return out;
 }
+// the tab dot: something you could buy right now (next to what you own, not the side of a path choice you left)
+function webCanBuy(layer) { const cur = S[WEB_DEF[layer].cur].log10(); for (const n of webFrontier(layer)) if (cur >= webCostLog(layer, n)) return true; return false; }
 // buy the cheapest affordable nodes next to what you own (used by the Quanta upgrade autobuyer)
 const wholesaleOn = () => !!S.sUpg.sB;
 // Wholesale: buy every affordable Upgrade-web node, cheapest first
@@ -644,14 +683,9 @@ function webGraph(layer) {
   for (const id in st.nodes) if (!pos[id]) pos[id] = st.pos[id].slice();
   let grew = false;
   for (let i = 0; i < nArch; i++) if (archAdd(layer, i, nodes, edges, pos)) grew = true;
-  // endless growth: each new node steps outward from the one it grows from (new branches turn off to the side)
-  const grid = posGrid(pos);
-  for (const dn of D.list) {
-    const n = dynNode(layer, dn.id); nodes[dn.id] = n; edges.push([dn.parent, dn.id]);
-    const at = dynPlace(layer, nodes, pos, dn, grid);
-    pos[dn.id] = at; n.anchor = at.slice(); grew = true;
-  }
-  if (grew) relax(nodes, edges, pos, 140);
+  if (grew) relax(nodes, edges, pos, 140); // the written web and the ideas; the endless growth is placed after it
+  for (const dn of D.list) { nodes[dn.id] = dynNode(layer, dn.id); edges.push([dn.parent, dn.id]); }
+  dynLayout(layer, nodes, pos);
   const adj = {};
   for (const id in nodes) adj[id] = [];
   for (const [a, b] of edges) { adj[a].push(b); adj[b].push(a); }

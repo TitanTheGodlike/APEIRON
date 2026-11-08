@@ -244,7 +244,6 @@ function ensureOpen(layer) {
   return made;
 }
 const cheapestOpen = layer => { const o = openIdeas(layer); return o.length ? o[0] : -1; };
-const openAffordable = layer => openIdeas(layer).some(i => S[PROC[layer].cur].log10() >= procCost(layer, i));
 const procCost = (layer, n) => Math.max(0, PROC[layer].costLog(n) - procAgg(layer).insight - cardSum('ideas') - (hasR('ascetic') ? 3 : 0));
 let PROC_AGG = {}, UPG_VER = 0;
 // what you own changed: UPG_VER for anything (sums, counts), LAYER_VER for one web (its frontier and growth); no layer = all

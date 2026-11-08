@@ -40,9 +40,9 @@ function buildHeader() {
 /* ---------------- Nav ---------------- */
 const TABS = [
   ['gen', 'Generators', () => true, () => false],
-  ['upg', 'Upgrades', () => true, () => QUPG.some(u => !S.qUpg[u.id] && lq() >= u.cost) || openAffordable('q')],
-  ['shard', 'Shards', shardsVisible, () => SUPG.some(u => !S.sUpg[u.id] && S.shards.gte(u.cost)) || (shardsVisible() && openAffordable('s'))],
-  ['asc', 'Ascension', ascVisible, () => EUPG.some(u => !S.eUpg[u.id] && S.essence.gte(u.cost)) || (streamVisible('e') && openAffordable('e'))],
+  ['upg', 'Upgrades', () => true, () => webCanBuy('q')], // only what you can buy right now,
+  ['shard', 'Shards', shardsVisible, () => shardsVisible() && webCanBuy('s')], // not the side of a path choice you left,
+  ['asc', 'Ascension', ascVisible, () => ascVisible() && webCanBuy('e')],
   ['cards', 'Fortune', () => cardsOn() || boonOn(), () => !!S.cards.hand || !!S.boon.hand],
   ['relic', 'Relics', () => RELICS.some(r => rewardUnlocked(r.id)) || ANOMALIES.some(a => rewardUnlocked(a.id)), () => RELICS.some(r => rewardUnlocked(r.id) && !hasR(r.id) && lq() >= r.cost)],
   ['auto', 'Automation', autoVisible, () => false],
